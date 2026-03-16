@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Super Canvas Knight</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
         body, html {
             margin: 0;
@@ -792,9 +793,47 @@
     // ═══════════════════════════════════════════════════════════════
     // LOBBY HOST / JOIN
     // ═══════════════════════════════════════════════════════════════
-    let gameMode  = null; // 'host' | 'guest'
-    let roomCode  = null;
+    let gameMode   = null; // 'host' | 'guest'
+    let roomCode   = null;
     let _lobbyPoll = null;
+
+    // ── Socket.io ─────────────────────────────────────────────────
+    // ⚠️ Mettre l'URL Railway après déploiement
+    const SOCKET_SERVER = 'https://YOUR-RAILWAY-URL.up.railway.app';
+    let socket = null;
+    let networkFrameCount = 0;
+
+    function initSocket() {
+        socket = io(SOCKET_SERVER, { transports: ['websocket'], reconnectionAttempts: 5 });
+
+        socket.on('connect', () => console.log('[socket] connected'));
+        socket.on('connect_error', (e) => console.warn('[socket] error', e.message));
+
+        socket.on('peer-joined', ({ pseudo, skinIndex }) => {
+            showNotification(`⚔️ ${pseudo} a rejoint la partie !`, '#00e5ff');
+        });
+
+        socket.on('peer-state', (data) => {
+            if (remotePlayer) remotePlayer.updateFromNetwork(data);
+        });
+
+        // Guest reçoit le signal de départ de l'hôte
+        socket.on('game-start', () => {
+            if (gameMode === 'guest') startGame();
+        });
+
+        socket.on('peer-disconnected', ({ pseudo }) => {
+            showNotification(`${pseudo ?? 'Votre partenaire'} s'est déconnecté`, '#E52521');
+            if (remotePlayer) remotePlayer.visible = false;
+        });
+
+        socket.on('game-event', (event) => {
+            if (event.type === 'score' && scoreDisplay) {
+                score = event.score;
+                scoreDisplay.innerText = `🪙 ${score}`;
+            }
+        });
+    }
 
     function onAuthSuccess(pseudo) {
         document.getElementById('authScreen').classList.add('hidden');
@@ -923,6 +962,15 @@
         clearInterval(_lobbyPoll);
         document.getElementById('lobbyScreen').classList.add('hidden');
         document.getElementById('startScreen').classList.remove('hidden');
+
+        // Connexion au serveur de jeu temps réel
+        initSocket();
+
+        // Guest : bouton JOUER désactivé — c'est l'hôte qui déclenche
+        if (gameMode === 'guest') {
+            const btn = document.getElementById('startBtn');
+            if (btn) { btn.innerText = "En attente de l'hôte…"; btn.disabled = true; }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -3132,10 +3180,73 @@
         }
     }
 
+    // ── Joueur distant (rendu depuis données réseau) ─────────────────
+    class RemotePlayer {
+        constructor() {
+            this.x = -9999; this.y = -9999;
+            this.width = 50; this.height = 50;
+            this.facingRight = true;
+            this.isAttacking = false; this.attackTimer = 0; this.comboStep = 0;
+            this.hp = 100; this.maxHp = 100;
+            this.grounded = false; this.hurtTimer = 0;
+            this.skin = null;
+            this.pseudo = ''; this.visible = false;
+            this.vx = 0; this.vy = 0; this.idleTime = 0;
+        }
+
+        updateFromNetwork(data) {
+            this.x          = data.x;
+            this.y          = data.y;
+            this.vx         = data.vx  ?? 0;
+            this.vy         = data.vy  ?? 0;
+            this.facingRight = data.facingRight;
+            this.isAttacking = data.isAttacking;
+            this.attackTimer = data.attackTimer ?? 0;
+            this.comboStep   = data.comboStep   ?? 0;
+            this.hp          = data.hp;
+            this.maxHp       = data.maxHp ?? 100;
+            this.grounded    = data.grounded;
+            this.hurtTimer   = data.hurtTimer ?? 0;
+            this.pseudo      = data.pseudo ?? '';
+            if (data.skinIndex !== undefined) this.skin = SKINS[data.skinIndex] ?? SKINS[0];
+            this.visible = true;
+        }
+
+        draw() {
+            if (!this.visible || !this.skin) return;
+            if (this.hurtTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
+
+            const isFemale = this.skin.gender === 'F';
+
+            // Pseudo en cyan (distingue du joueur local)
+            ctx.fillStyle = '#00e5ff';
+            ctx.font = 'bold 16px "Segoe UI", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = 'black';
+            ctx.strokeText(this.pseudo, this.x + this.width / 2, this.y - 15);
+            ctx.fillText(this.pseudo,   this.x + this.width / 2, this.y - 15);
+
+            if (isFemale) {
+                drawFemaleChar(ctx, this.skin, this.x, this.y, this.facingRight, this.vy, false);
+            } else {
+                drawMaleChar(ctx, this.skin, this.x, this.y, this.facingRight, this.vy, false);
+            }
+
+            // Barre de vie
+            if (this.hp < this.maxHp) {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(this.x, this.y - 12, this.width, 6);
+                ctx.fillStyle = '#00e5ff';
+                ctx.fillRect(this.x + 1, this.y - 11, ((this.width - 2) * this.hp) / this.maxHp, 4);
+            }
+        }
+    }
+
     class Skeleton {
         constructor(x, y, minX, maxX) {
-            this.width = 50;  
-            this.height = 50; 
+            this.width = 50;
+            this.height = 50;
             this.x = x;
             this.y = y;
             this.vx = 0;
@@ -3614,7 +3725,8 @@
     }
 
     // --- INSTANCIATION DES DONNÉES DE JEU ---
-    const player = new Player();
+    const player       = new Player();
+    const remotePlayer = new RemotePlayer();
 
     function buildLevel() {
         platforms = [];
@@ -3717,6 +3829,24 @@
             cameraX += (targetCameraX - cameraX) * 0.1;
             cameraY += (targetCameraY - cameraY) * 0.1;
             updateShake();
+
+            // ── Envoi état réseau toutes les 3 frames (~20fps) ────
+            networkFrameCount = (networkFrameCount + 1) % 3;
+            if (socket && socket.connected && networkFrameCount === 0 && roomCode) {
+                socket.emit('player-state', {
+                    x: player.x,          y: player.y,
+                    vx: player.vx,         vy: player.vy,
+                    facingRight: player.facingRight,
+                    isAttacking: player.isAttacking,
+                    attackTimer: player.attackTimer,
+                    comboStep:   player.comboStep,
+                    hp: player.hp,         maxHp: player.maxHp,
+                    grounded: player.grounded,
+                    hurtTimer: player.hurtTimer,
+                    skinIndex: currentSkinIndex,
+                    pseudo:    player.pseudo
+                });
+            }
         }
 
         ctx.fillStyle = '#2C3E50';
@@ -3742,7 +3872,8 @@
         }
 
         player.draw();
-        
+        remotePlayer.draw(); // joueur distant (multijoueur)
+
         // On dessine les particules de sang au-dessus du reste
         bloodDrops.forEach(bd => bd.draw());
         hitEffects.forEach(he => he.draw());
@@ -3812,10 +3943,23 @@
         player.skin = SKINS[currentSkinIndex];
         syncAbilityBtn();
         
-        scoreDisplay.innerText = `🪙 ${score}`; 
+        scoreDisplay.innerText = `🪙 ${score}`;
         scoreDisplay.style.color = 'white';
         if (livesDisplay) livesDisplay.innerText = `❤️ ${lives}`;
-        
+
+        // ── Connexion socket : annoncer son arrivée dans la room ──
+        if (socket && socket.connected && roomCode) {
+            socket.emit('join-game', {
+                roomCode,
+                pseudo:    player.pseudo,
+                role:      gameMode ?? 'solo',
+                skinIndex: currentSkinIndex
+            });
+            // L'hôte envoie le signal de départ au guest
+            if (gameMode === 'host') socket.emit('start-game');
+        }
+
+        networkFrameCount = 0;
         gameState = 'PLAYING';
         gameLoop();
     }

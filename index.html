@@ -3282,30 +3282,138 @@
             if (!this.visible || !this.skin) return;
             if (this.hurtTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
 
+            const W = this.width, H = this.height;
             const isFemale = this.skin.gender === 'F';
+            const isMoving = Math.abs(this.vx) > 0.1;
+            const walkAnim  = (this.grounded && isMoving) ? Math.sin(Date.now() / 40) * 12 : 0;
+            const jumpAnim  = !this.grounded ? -10 : 0;
+            const bodyBob   = (this.grounded && isMoving) ? Math.abs(Math.cos(Date.now() / 80)) * 2 : 0;
 
-            // Pseudo en cyan (distingue du joueur local)
+            // Décalage d'attaque (lunge)
+            let attackOffsetX = 0, attackOffsetY = 0;
+            if (this.isAttacking) {
+                let progress = 1 - (this.attackTimer / 10);
+                let pCurve   = Math.sin(progress * Math.PI);
+                if      (this.comboStep === 0) { attackOffsetX = (this.facingRight?1:-1)*pCurve*6;  attackOffsetY = pCurve*4; }
+                else if (this.comboStep === 1) { attackOffsetX = (this.facingRight?1:-1)*pCurve*14; attackOffsetY = pCurve*2; }
+                else if (this.comboStep === 2) { attackOffsetX = (this.facingRight?1:-1)*pCurve*2;  attackOffsetY = -pCurve*12; }
+                else                           { attackOffsetX = (this.facingRight?1:-1)*pCurve*18; attackOffsetY = pCurve*4; }
+            }
+
+            const drawX = this.x + attackOffsetX;
+            const bodyY = this.y - bodyBob + attackOffsetY;
+
+            // ── Pseudo (cyan = joueur distant) ─────────────────────────────
             ctx.fillStyle = '#00e5ff';
             ctx.font = 'bold 16px "Segoe UI", sans-serif';
             ctx.textAlign = 'center';
             ctx.lineWidth = 3;
             ctx.strokeStyle = 'black';
-            ctx.strokeText(this.pseudo, this.x + this.width / 2, this.y - 15);
-            ctx.fillText(this.pseudo,   this.x + this.width / 2, this.y - 15);
+            ctx.strokeText(this.pseudo, drawX + W/2, bodyY - 15);
+            ctx.fillText(this.pseudo,   drawX + W/2, bodyY - 15);
 
+            // ── Cape ────────────────────────────────────────────────────────
+            drawCapeStrands(ctx, this.skin, drawX, bodyY, W, H, this.facingRight, this.vy, this.vx, this.grounded, isMoving);
+
+            // ── Cheveux (féminin) ───────────────────────────────────────────
             if (isFemale) {
-                drawFemaleChar(ctx, this.skin, this.x, this.y, this.facingRight, this.vy, false);
-            } else {
-                drawMaleChar(ctx, this.skin, this.x, this.y, this.facingRight, this.vy, false);
+                drawHairStrands(ctx, this.skin, drawX, bodyY, W, H, this.facingRight, this.vy, this.vx, this.grounded, isMoving);
             }
 
-            // Barre de vie
-            if (this.hp < this.maxHp) {
-                ctx.fillStyle = '#000';
-                ctx.fillRect(this.x, this.y - 12, this.width, 6);
-                ctx.fillStyle = '#00e5ff';
-                ctx.fillRect(this.x + 1, this.y - 11, ((this.width - 2) * this.hp) / this.maxHp, 4);
+            // ── Jambes ──────────────────────────────────────────────────────
+            const legWalk      = (this.grounded && isMoving) ? walkAnim : 0;
+            const legAirOffset = this.grounded ? 0 : 6;
+            const legW = isFemale ? 12 : 14;
+            ctx.fillStyle = '#3a404d';
+            ctx.beginPath(); ctx.roundRect(this.x + 8  + legWalk, this.y + H - 25 + jumpAnim + legAirOffset, legW, 29, 4); ctx.fill();
+            ctx.beginPath(); ctx.roundRect(this.x + 28 - legWalk, this.y + H - 25 + jumpAnim + legAirOffset, legW, 29, 4); ctx.fill();
+
+            // ── Corps ────────────────────────────────────────────────────────
+            if (isFemale) {
+                let ag = ctx.createLinearGradient(drawX, bodyY, drawX+W, bodyY+H);
+                ag.addColorStop(0, this.skin.armor[0]); ag.addColorStop(0.5, this.skin.armor[1]); ag.addColorStop(1, this.skin.armor[2]);
+                ctx.fillStyle = ag;
+                ctx.beginPath();
+                ctx.moveTo(drawX+2,   bodyY);      ctx.lineTo(drawX+W-2, bodyY);
+                ctx.lineTo(drawX+W,   bodyY+H*0.35); ctx.lineTo(drawX+W-5, bodyY+H*0.45);
+                ctx.lineTo(drawX+W-3, bodyY+H);    ctx.lineTo(drawX+3,   bodyY+H);
+                ctx.lineTo(drawX+5,   bodyY+H*0.45); ctx.lineTo(drawX,   bodyY+H*0.35);
+                ctx.closePath(); ctx.fill();
+                ctx.fillStyle = this.skin.tunic;
+                ctx.beginPath();
+                ctx.moveTo(drawX+5,   bodyY+H*0.44); ctx.lineTo(drawX+W-5, bodyY+H*0.44);
+                ctx.lineTo(drawX+W-3, bodyY+H);      ctx.lineTo(drawX+3,   bodyY+H);
+                ctx.closePath(); ctx.fill();
+                ctx.fillStyle = this.skin.trim; ctx.fillRect(drawX+3, bodyY+H-4, W-6, 4);
+                ctx.fillStyle = '#222';          ctx.fillRect(drawX+3, bodyY+H*0.43, W-6, 5);
+                ctx.fillStyle = this.skin.trim;  ctx.fillRect(drawX+W/2-4, bodyY+H*0.41, 8, 8);
+                drawHelmet(ctx, this.skin, drawX, bodyY, W, this.facingRight, 0, false);
+            } else {
+                let ag = ctx.createLinearGradient(drawX, bodyY, drawX+W, bodyY+H);
+                ag.addColorStop(0, this.skin.armor[0]); ag.addColorStop(0.5, this.skin.armor[1]); ag.addColorStop(1, this.skin.armor[2]);
+                ctx.fillStyle = ag;
+                ctx.beginPath(); ctx.roundRect(drawX, bodyY, W, H, 8); ctx.fill();
+                ctx.fillStyle = this.skin.tunic;
+                ctx.beginPath(); ctx.roundRect(drawX, bodyY+H*0.4, W, H*0.6, {bottomLeft:8,bottomRight:8}); ctx.fill();
+                ctx.fillStyle = this.skin.trim;  ctx.fillRect(drawX, bodyY+H-4, W, 4);
+                ctx.fillStyle = '#222';          ctx.fillRect(drawX, bodyY+H*0.4, W, 6);
+                ctx.fillStyle = this.skin.trim;  ctx.fillRect(drawX+W/2-5, bodyY+H*0.38, 10, 10);
+                ctx.fillStyle = '#222';          ctx.fillRect(drawX+W/2-2, bodyY+H*0.41, 4, 4);
+                ctx.fillStyle = this.skin.trim;  ctx.fillRect(drawX+W/2-3, bodyY+H*0.55, 6, 14);
+                ctx.fillRect(drawX+W/2-8, bodyY+H*0.6, 16, 4);
+                drawHelmet(ctx, this.skin, drawX, bodyY, W, this.facingRight, 0, false);
             }
+
+            // ── Épée + trail de combo ────────────────────────────────────────
+            ctx.save();
+            const handX = this.facingRight ? drawX+W/2+10 : drawX+W/2-10;
+            const handY = bodyY + H * 0.55;
+            ctx.translate(handX, handY);
+            if (!this.facingRight) ctx.scale(-1, 1);
+
+            if (this.isAttacking) {
+                let progress = 1 - (this.attackTimer / 10);
+                let alpha    = Math.sin(progress * Math.PI);
+                let startAngle, endAngle, radius, scaleY;
+                if      (this.comboStep === 0) { startAngle=-Math.PI*0.7; endAngle=Math.PI*0.4;  radius=75;  scaleY=1; }
+                else if (this.comboStep === 1) { startAngle=-Math.PI*0.8; endAngle=Math.PI*0.3;  radius=95;  scaleY=0.3; }
+                else if (this.comboStep === 2) { startAngle= Math.PI*0.6; endAngle=-Math.PI*0.5; radius=85;  scaleY=1; }
+                else                           { startAngle=-Math.PI;     endAngle=Math.PI*1.2;  radius=110; scaleY=0.4; }
+                let currentAngle = startAngle + progress*(endAngle-startAngle);
+                ctx.scale(1, scaleY);
+                let r2 = this.comboStep===3?255:0, g2=this.comboStep===3?215:255, b2=this.comboStep===3?0:255;
+                let gr;
+                if (this.comboStep === 3) {
+                    gr = ctx.createRadialGradient(0,0,radius*0.3,0,0,radius);
+                    gr.addColorStop(0, `rgba(${r2},${g2},${b2},0)`);
+                    gr.addColorStop(1, `rgba(${r2},${g2},${b2},${alpha*0.8})`);
+                } else {
+                    gr = ctx.createLinearGradient(Math.cos(startAngle)*radius,Math.sin(startAngle)*radius,Math.cos(currentAngle)*radius,Math.sin(currentAngle)*radius);
+                    gr.addColorStop(0, `rgba(${r2},${g2},${b2},0)`);
+                    gr.addColorStop(1, `rgba(${r2},${g2},${b2},${alpha*0.9})`);
+                }
+                ctx.fillStyle = gr;
+                ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,radius,startAngle,currentAngle,endAngle<startAngle); ctx.closePath(); ctx.fill();
+                if (this.comboStep === 3) {
+                    ctx.fillStyle = `rgba(255,255,255,${alpha*0.4})`;
+                    ctx.beginPath(); ctx.arc(0,0,radius*1.05,0,Math.PI*2); ctx.fill();
+                }
+                ctx.rotate(currentAngle);
+            } else {
+                ctx.rotate(-Math.PI / 6);
+            }
+
+            ctx.fillStyle = '#B0C4DE'; ctx.fillRect(-3, -35, 6, 35);
+            ctx.fillStyle = '#DAA520'; ctx.fillRect(-10, 0, 20, 4);
+            ctx.fillStyle = '#222';    ctx.fillRect(-3, 4, 6, 8);
+            ctx.fillStyle = '#DAA520'; ctx.beginPath(); ctx.arc(0, 14, 4, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+
+            // ── Barre de vie (cyan = distant) ───────────────────────────────
+            ctx.fillStyle = '#000';
+            ctx.fillRect(this.x, this.y - 12, W, 6);
+            ctx.fillStyle = '#00e5ff';
+            ctx.fillRect(this.x+1, this.y-11, ((W-2)*Math.max(0,this.hp))/this.maxHp, 4);
         }
     }
 

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a0510"/>
+      <stop offset="100%" stop-color="#080208"/>
+    </radialGradient>
+    <radialGradient id="wings" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3a0030"/>
+      <stop offset="100%" stop-color="#150010"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="128" fill="url(#bg)"/>
+  <!-- Ailes démon -->
+  <path d="M128,90 Q55,50 20,80 Q50,65 65,105 Q40,110 30,145 Q62,110 95,120" fill="url(#wings)"/>
+  <path d="M128,90 Q201,50 236,80 Q206,65 191,105 Q216,110 226,145 Q194,110 161,120" fill="url(#wings)"/>
+  <!-- Nervures ailes -->
+  <path d="M128,90 Q90,70 55,85" stroke="#8b0030" stroke-width="1.5" fill="none" opacity="0.7"/>
+  <path d="M128,90 Q166,70 201,85" stroke="#8b0030" stroke-width="1.5" fill="none" opacity="0.7"/>
+  <!-- Corps -->
+  <ellipse cx="128" cy="162" rx="46" ry="50" fill="#2a1a1a"/>
+  <!-- Armure démon -->
+  <path d="M92,155 L128,148 L164,155 L164,200 L128,208 L92,200 Z" fill="#3a2020"/>
+  <path d="M92,155 L128,150 L164,155" fill="#4a2828" stroke="#8b0000" stroke-width="1"/>
+  <!-- Épaulières à crocs -->
+  <ellipse cx="78" cy="152" rx="22" ry="14" fill="#3a2020" stroke="#8b0000" stroke-width="1"/>
+  <polygon points="65,143 72,132 78,143" fill="#8b0000"/>
+  <polygon points="75,140 82,128 88,140" fill="#8b0000"/>
+  <ellipse cx="178" cy="152" rx="22" ry="14" fill="#3a2020" stroke="#8b0000" stroke-width="1"/>
+  <polygon points="191,143 184,132 178,143" fill="#8b0000"/>
+  <polygon points="181,140 174,128 168,140" fill="#8b0000"/>
+  <!-- Tête démon -->
+  <ellipse cx="128" cy="102" rx="44" ry="46" fill="#2a1a1a"/>
+  <ellipse cx="128" cy="100" rx="38" ry="40" fill="#3a2020"/>
+  <!-- Cornes -->
+  <path d="M104,74 Q94,42 100,22 Q110,48 115,70" fill="#3a2020" stroke="#8b0000" stroke-width="1"/>
+  <path d="M152,74 Q162,42 156,22 Q146,48 141,70" fill="#3a2020" stroke="#8b0000" stroke-width="1"/>
+  <path d="M106,72 Q98,46 103,28 Q111,50 116,69" fill="#8b0000" opacity="0.5"/>
+  <!-- Yeux rouges fendus -->
+  <ellipse cx="112" cy="98" rx="12" ry="10" fill="#1a0000"/>
+  <ellipse cx="144" cy="98" rx="12" ry="10" fill="#1a0000"/>
+  <ellipse cx="112" cy="98" rx="9" ry="8" fill="#cc0000"/>
+  <ellipse cx="144" cy="98" rx="9" ry="8" fill="#cc0000"/>
+  <ellipse cx="112" cy="98" rx="2" ry="7" fill="#ff0000"/>
+  <ellipse cx="144" cy="98" rx="2" ry="7" fill="#ff0000"/>
+  <circle cx="110" cy="95" r="2" fill="white" opacity="0.4"/>
+  <circle cx="142" cy="95" r="2" fill="white" opacity="0.4"/>
+  <!-- Bouche avec crocs -->
+  <path d="M108,115 Q128,128 148,115" fill="#1a0808" stroke="#8b0000" stroke-width="1"/>
+  <polygon points="116,115 119,126 122,115" fill="white" opacity="0.8"/>
+  <polygon points="124,115 127,128 130,115" fill="white" opacity="0.8"/>
+  <polygon points="132,115 135,126 138,115" fill="white" opacity="0.8"/>
+  <circle cx="128" cy="128" r="126" fill="none" stroke="#8b0000" stroke-width="3" opacity="0.6"/>
+</svg>

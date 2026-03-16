@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270">
+  <defs>
+    <linearGradient id="ice" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a1828"/>
+      <stop offset="50%" stop-color="#0e2038"/>
+      <stop offset="100%" stop-color="#061020"/>
+    </linearGradient>
+    <radialGradient id="iceglow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#4a9eff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#4a9eff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="480" height="270" fill="url(#ice)"/>
+  <rect width="480" height="270" fill="url(#iceglow)"/>
+  <!-- Cristaux de glace -->
+  <!-- Cristal gauche -->
+  <polygon points="60,270 45,180 60,160 75,180" fill="#4a9eff" opacity="0.25"/>
+  <polygon points="60,270 45,180 60,160 75,180" fill="none" stroke="#8ac8ff" stroke-width="1" opacity="0.6"/>
+  <polygon points="40,270 25,200 40,175 55,200" fill="#6ab8ff" opacity="0.2"/>
+  <polygon points="40,270 25,200 40,175 55,200" fill="none" stroke="#8ac8ff" stroke-width="0.8" opacity="0.5"/>
+  <!-- Cristal centre gauche -->
+  <polygon points="160,270 140,150 160,120 180,150" fill="#4a9eff" opacity="0.3"/>
+  <polygon points="160,270 140,150 160,120 180,150" fill="none" stroke="#a0d8ff" stroke-width="1.5" opacity="0.6"/>
+  <polygon points="140,270 125,175 140,148 155,175" fill="#6ab8ff" opacity="0.18"/>
+  <!-- Cristal centre -->
+  <polygon points="240,270 215,110 240,70 265,110" fill="#4a9eff" opacity="0.35"/>
+  <polygon points="240,270 215,110 240,70 265,110" fill="none" stroke="#c0e8ff" stroke-width="2" opacity="0.7"/>
+  <line x1="240" y1="70" x2="240" y2="270" stroke="#a0d8ff" stroke-width="1" opacity="0.4"/>
+  <!-- Cristal centre droit -->
+  <polygon points="320,270 300,155 320,128 340,155" fill="#4a9eff" opacity="0.3"/>
+  <polygon points="320,270 300,155 320,128 340,155" fill="none" stroke="#a0d8ff" stroke-width="1.5" opacity="0.6"/>
+  <!-- Cristal droit -->
+  <polygon points="420,270 400,175 420,148 440,175" fill="#4a9eff" opacity="0.25"/>
+  <polygon points="420,270 400,175 420,148 440,175" fill="none" stroke="#8ac8ff" stroke-width="1" opacity="0.5"/>
+  <polygon points="445,270 430,195 445,170 460,195" fill="#6ab8ff" opacity="0.2"/>
+  <!-- Flocons de neige -->
+  <g transform="translate(80,60)" opacity="0.4">
+    <line x1="0" y1="-12" x2="0" y2="12" stroke="#c0e8ff" stroke-width="1.5"/>
+    <line x1="-10" y1="-6" x2="10" y2="6" stroke="#c0e8ff" stroke-width="1.5"/>
+    <line x1="-10" y1="6" x2="10" y2="-6" stroke="#c0e8ff" stroke-width="1.5"/>
+    <circle cx="0" cy="0" r="2" fill="#c0e8ff"/>
+  </g>
+  <g transform="translate(380,80)" opacity="0.35">
+    <line x1="0" y1="-10" x2="0" y2="10" stroke="#c0e8ff" stroke-width="1.5"/>
+    <line x1="-8" y1="-5" x2="8" y2="5" stroke="#c0e8ff" stroke-width="1.5"/>
+    <line x1="-8" y1="5" x2="8" y2="-5" stroke="#c0e8ff" stroke-width="1.5"/>
+  </g>
+  <g transform="translate(200,40)" opacity="0.3">
+    <line x1="0" y1="-14" x2="0" y2="14" stroke="#c0e8ff" stroke-width="1.5"/>
+    <line x1="-12" y1="-7" x2="12" y2="7" stroke="#c0e8ff" stroke-width="1.5"/>
+    <line x1="-12" y1="7" x2="12" y2="-7" stroke="#c0e8ff" stroke-width="1.5"/>
+    <circle cx="0" cy="0" r="2.5" fill="#c0e8ff"/>
+  </g>
+  <!-- Brume givrée sol -->
+  <rect x="0" y="220" width="480" height="50" fill="#4a9eff" opacity="0.08"/>
+  <!-- Contour -->
+  <rect x="0" y="0" width="480" height="270" fill="none" stroke="#4a9eff" stroke-width="4"/>
+  <rect x="6" y="6" width="468" height="258" fill="none" stroke="#8ac8ff" stroke-width="1.5" opacity="0.4"/>
+</svg>

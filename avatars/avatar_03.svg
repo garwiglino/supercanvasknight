@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1e0a3e"/>
+      <stop offset="100%" stop-color="#0a0412"/>
+    </radialGradient>
+    <radialGradient id="orb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="60%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#4c1d95"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="128" fill="url(#bg)"/>
+  <!-- Aura magique -->
+  <circle cx="128" cy="128" r="110" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.4"/>
+  <circle cx="128" cy="128" r="95" fill="none" stroke="#c084fc" stroke-width="0.5" opacity="0.3"/>
+  <!-- Chapeau de mage -->
+  <polygon points="128,15 90,100 166,100" fill="#1e0a3e" stroke="#7c3aed" stroke-width="2"/>
+  <polygon points="128,15 92,98 164,98" fill="#2d1060"/>
+  <!-- Bord chapeau -->
+  <ellipse cx="128" cy="100" rx="46" ry="12" fill="#3d1880"/>
+  <ellipse cx="128" cy="100" rx="46" ry="12" fill="none" stroke="#7c3aed" stroke-width="2"/>
+  <!-- Étoile sur chapeau -->
+  <polygon points="128,35 131,44 140,44 133,50 136,59 128,53 120,59 123,50 116,44 125,44" fill="#c084fc"/>
+  <!-- Visage -->
+  <ellipse cx="128" cy="128" rx="34" ry="36" fill="#d4a574"/>
+  <!-- Barbe/cheveux blancs -->
+  <ellipse cx="128" cy="155" rx="28" ry="18" fill="#e8e8f0"/>
+  <path d="M100,140 Q90,170 95,195" stroke="#e8e8f0" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M156,140 Q166,170 161,195" stroke="#e8e8f0" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <!-- Yeux brillants -->
+  <ellipse cx="116" cy="122" rx="6" ry="6" fill="#7c3aed"/>
+  <ellipse cx="140" cy="122" rx="6" ry="6" fill="#7c3aed"/>
+  <circle cx="116" cy="122" r="3" fill="#c084fc"/>
+  <circle cx="140" cy="122" r="3" fill="#c084fc"/>
+  <circle cx="117" cy="121" r="1.5" fill="white"/>
+  <circle cx="141" cy="121" r="1.5" fill="white"/>
+  <!-- Sourcils blancs -->
+  <path d="M109,115 Q116,112 122,115" stroke="#e8e8f0" stroke-width="2.5" fill="none"/>
+  <path d="M134,115 Q140,112 147,115" stroke="#e8e8f0" stroke-width="2.5" fill="none"/>
+  <!-- Nez -->
+  <path d="M126,130 Q128,136 130,130" stroke="#c0905a" stroke-width="1.5" fill="none"/>
+  <!-- Orbe magique -->
+  <circle cx="128" cy="205" r="22" fill="url(#orb)"/>
+  <circle cx="128" cy="205" r="22" fill="none" stroke="#c084fc" stroke-width="2"/>
+  <circle cx="121" cy="198" r="5" fill="white" opacity="0.4"/>
+  <!-- Bâton -->
+  <rect x="124" y="165" width="8" height="45" rx="4" fill="#3d1880" stroke="#7c3aed" stroke-width="1"/>
+  <!-- Robe -->
+  <path d="M90,175 Q128,185 166,175 L180,256 H76 Z" fill="#2d1060"/>
+  <path d="M90,175 Q128,180 166,175" fill="#3d1880"/>
+  <circle cx="128" cy="128" r="126" fill="none" stroke="#c084fc" stroke-width="3" opacity="0.5"/>
+</svg>

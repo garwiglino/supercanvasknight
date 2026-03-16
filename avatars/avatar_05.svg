@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a0000"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <radialGradient id="eyeglow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff4400"/>
+      <stop offset="100%" stop-color="#880000"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="128" fill="url(#bg)"/>
+  <!-- Aura rouge -->
+  <circle cx="128" cy="128" r="105" fill="none" stroke="#880000" stroke-width="1" opacity="0.6"/>
+  <!-- Crâne principal -->
+  <ellipse cx="128" cy="105" rx="54" ry="58" fill="#e8e0d4"/>
+  <ellipse cx="128" cy="100" rx="50" ry="52" fill="#f0e8dc"/>
+  <!-- Mâchoire -->
+  <rect x="96" y="140" width="64" height="38" rx="10" fill="#e8e0d4"/>
+  <rect x="96" y="140" width="64" height="32" rx="8" fill="#f0e8dc"/>
+  <!-- Dents -->
+  <rect x="102" y="158" width="10" height="18" rx="2" fill="#f0e8dc"/>
+  <rect x="114" y="158" width="10" height="18" rx="2" fill="#f0e8dc"/>
+  <rect x="126" y="158" width="10" height="18" rx="2" fill="#f0e8dc"/>
+  <rect x="138" y="158" width="10" height="18" rx="2" fill="#f0e8dc"/>
+  <rect x="150" y="158" width="10" height="18" rx="2" fill="#f0e8dc"/>
+  <!-- Ligne dents haut -->
+  <rect x="100" y="152" width="12" height="10" rx="2" fill="#d8d0c4"/>
+  <rect x="114" y="152" width="12" height="10" rx="2" fill="#d8d0c4"/>
+  <rect x="128" y="152" width="12" height="10" rx="2" fill="#d8d0c4"/>
+  <rect x="142" y="152" width="12" height="10" rx="2" fill="#d8d0c4"/>
+  <!-- Orbites yeux -->
+  <ellipse cx="108" cy="105" rx="20" ry="22" fill="#1a0000"/>
+  <ellipse cx="148" cy="105" rx="20" ry="22" fill="#1a0000"/>
+  <!-- Yeux brillants -->
+  <ellipse cx="108" cy="105" rx="14" ry="16" fill="url(#eyeglow)"/>
+  <ellipse cx="148" cy="105" rx="14" ry="16" fill="url(#eyeglow)"/>
+  <circle cx="108" cy="105" r="6" fill="#ff6600"/>
+  <circle cx="148" cy="105" r="6" fill="#ff6600"/>
+  <circle cx="108" cy="105" r="3" fill="white" opacity="0.5"/>
+  <circle cx="148" cy="105" r="3" fill="white" opacity="0.5"/>
+  <!-- Fissures crâne -->
+  <path d="M128,50 L122,80 L118,65" stroke="#c8c0b4" stroke-width="1.5" fill="none"/>
+  <path d="M155,75 L148,95 L158,88" stroke="#c8c0b4" stroke-width="1" fill="none"/>
+  <!-- Nez (trou) -->
+  <path d="M122,128 L128,140 L134,128" fill="#2a1010" opacity="0.6"/>
+  <!-- Ombres crâne -->
+  <ellipse cx="128" cy="75" rx="30" ry="10" fill="#c8c0b4" opacity="0.3"/>
+  <circle cx="128" cy="128" r="126" fill="none" stroke="#880000" stroke-width="3" opacity="0.7"/>
+  <!-- Particules -->
+  <circle cx="60" cy="60" r="3" fill="#880000" opacity="0.6"/>
+  <circle cx="196" cy="55" r="2" fill="#ff4400" opacity="0.5"/>
+  <circle cx="45" cy="160" r="2" fill="#880000" opacity="0.4"/>
+  <circle cx="210" cy="170" r="3" fill="#ff4400" opacity="0.4"/>
+</svg>

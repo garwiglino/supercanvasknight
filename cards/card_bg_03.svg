@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270">
+  <defs>
+    <linearGradient id="lava" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a0500"/>
+      <stop offset="50%" stop-color="#2a0800"/>
+      <stop offset="100%" stop-color="#4a0a00"/>
+    </linearGradient>
+    <radialGradient id="lava1" cx="20%" cy="80%" r="30%">
+      <stop offset="0%" stop-color="#ff4400"/>
+      <stop offset="60%" stop-color="#8b0000"/>
+      <stop offset="100%" stop-color="#8b0000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lava2" cx="70%" cy="90%" r="35%">
+      <stop offset="0%" stop-color="#ff6600"/>
+      <stop offset="60%" stop-color="#cc2200"/>
+      <stop offset="100%" stop-color="#8b0000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lava3" cx="45%" cy="100%" r="40%">
+      <stop offset="0%" stop-color="#ff8800"/>
+      <stop offset="70%" stop-color="#8b0000"/>
+      <stop offset="100%" stop-color="#8b0000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="480" height="270" fill="url(#lava)"/>
+  <rect width="480" height="270" fill="url(#lava1)"/>
+  <rect width="480" height="270" fill="url(#lava2)"/>
+  <rect width="480" height="270" fill="url(#lava3)"/>
+  <!-- Fissures lave -->
+  <path d="M0,200 Q80,185 120,210 Q160,230 200,195 Q240,175 280,205 Q320,225 360,200 Q400,180 480,210" fill="none" stroke="#ff4400" stroke-width="3" opacity="0.7"/>
+  <path d="M0,230 Q60,215 100,240 Q150,260 200,235 Q260,215 320,238 Q380,255 480,230" fill="none" stroke="#ff6600" stroke-width="2" opacity="0.5"/>
+  <!-- Roche volcanique -->
+  <path d="M0,220 Q80,200 120,225 Q160,245 200,210 Q240,190 280,220 Q320,240 360,215 Q400,195 480,225 L480,270 L0,270 Z" fill="#1a0500"/>
+  <!-- Rochers -->
+  <polygon points="50,270 70,230 90,270" fill="#2a0800"/>
+  <polygon points="160,270 190,210 220,270" fill="#1a0500"/>
+  <polygon points="350,270 375,225 400,270" fill="#2a0800"/>
+  <!-- Cendres particules -->
+  <circle cx="80" cy="80" r="2" fill="#ff8800" opacity="0.5"/>
+  <circle cx="160" cy="50" r="1.5" fill="#ff6600" opacity="0.4"/>
+  <circle cx="300" cy="70" r="2" fill="#ff8800" opacity="0.6"/>
+  <circle cx="400" cy="40" r="1.5" fill="#ff4400" opacity="0.4"/>
+  <circle cx="240" cy="30" r="3" fill="#ff8800" opacity="0.3"/>
+  <circle cx="130" cy="100" r="1.5" fill="#ffaa00" opacity="0.5"/>
+  <circle cx="370" cy="90" r="2" fill="#ff6600" opacity="0.4"/>
+  <!-- Lueur volcanique haut -->
+  <rect x="0" y="0" width="480" height="50" fill="#ff2200" opacity="0.08"/>
+  <!-- Contour feu -->
+  <rect x="0" y="0" width="480" height="270" fill="none" stroke="#ff4400" stroke-width="4"/>
+  <rect x="6" y="6" width="468" height="258" fill="none" stroke="#ff8800" stroke-width="1.5" opacity="0.5"/>
+</svg>

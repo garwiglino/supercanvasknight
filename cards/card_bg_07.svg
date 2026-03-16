@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270">
+  <defs>
+    <linearGradient id="royal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a0828"/>
+      <stop offset="50%" stop-color="#120618"/>
+      <stop offset="100%" stop-color="#1e0a30"/>
+    </linearGradient>
+    <radialGradient id="centerGlow" cx="50%" cy="50%" r="40%">
+      <stop offset="0%" stop-color="#8b00a0" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#8b00a0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="480" height="270" fill="url(#royal)"/>
+  <rect width="480" height="270" fill="url(#centerGlow)"/>
+  <!-- Motif damassé répété -->
+  <g opacity="0.12" fill="#d4a017">
+    <!-- Fleur de lys centre -->
+    <path d="M240,100 Q240,80 230,70 Q240,78 240,65 Q240,78 250,70 Q240,80 240,100 Z" transform="translate(0,35)"/>
+    <path d="M240,135 L224,158 L240,152 L256,158 Z" transform="translate(0,0)"/>
+    <rect x="230" y="145" width="20" height="6" rx="3" transform="translate(0,0)"/>
+    <!-- Répétitions -->
+    <use href="#fleur" transform="translate(-120,0)"/>
+    <use href="#fleur" transform="translate(120,0)"/>
+  </g>
+  <!-- Losanges motif -->
+  <g fill="none" stroke="#d4a017" stroke-width="0.8" opacity="0.15">
+    <rect x="120" y="60" width="80" height="80" transform="rotate(45,160,100)"/>
+    <rect x="280" y="60" width="80" height="80" transform="rotate(45,320,100)"/>
+    <rect x="120" y="160" width="80" height="80" transform="rotate(45,160,200)"/>
+    <rect x="280" y="160" width="80" height="80" transform="rotate(45,320,200)"/>
+    <rect x="0" y="60" width="80" height="80" transform="rotate(45,40,100)"/>
+    <rect x="400" y="60" width="80" height="80" transform="rotate(45,440,100)"/>
+    <rect x="200" y="0" width="80" height="80" transform="rotate(45,240,40)"/>
+    <rect x="200" y="160" width="80" height="80" transform="rotate(45,240,200)"/>
+  </g>
+  <!-- Bordure royale élaborée -->
+  <rect x="0" y="0" width="480" height="270" fill="none" stroke="#d4a017" stroke-width="5"/>
+  <rect x="8" y="8" width="464" height="254" fill="none" stroke="#8b00a0" stroke-width="2"/>
+  <rect x="14" y="14" width="452" height="242" fill="none" stroke="#d4a017" stroke-width="1" opacity="0.5"/>
+  <!-- Coins fleurisés -->
+  <circle cx="14" cy="14" r="8" fill="#d4a017"/>
+  <circle cx="466" cy="14" r="8" fill="#d4a017"/>
+  <circle cx="14" cy="256" r="8" fill="#d4a017"/>
+  <circle cx="466" cy="256" r="8" fill="#d4a017"/>
+  <!-- Points intermédiaires -->
+  <circle cx="240" cy="8" r="5" fill="#d4a017"/>
+  <circle cx="240" cy="262" r="5" fill="#d4a017"/>
+  <circle cx="8" cy="135" r="5" fill="#d4a017"/>
+  <circle cx="472" cy="135" r="5" fill="#d4a017"/>
+  <!-- Emblème central -->
+  <circle cx="240" cy="135" r="40" fill="none" stroke="#d4a017" stroke-width="1.5" opacity="0.4"/>
+  <circle cx="240" cy="135" r="28" fill="none" stroke="#8b00a0" stroke-width="1" opacity="0.5"/>
+  <!-- Croix royale -->
+  <line x1="200" y1="135" x2="280" y2="135" stroke="#d4a017" stroke-width="1.5" opacity="0.4"/>
+  <line x1="240" y1="95" x2="240" y2="175" stroke="#d4a017" stroke-width="1.5" opacity="0.4"/>
+  <!-- Gemme centrale -->
+  <circle cx="240" cy="135" r="8" fill="#c084fc" opacity="0.6" stroke="#d4a017" stroke-width="1"/>
+  <circle cx="237" cy="132" r="3" fill="white" opacity="0.3"/>
+</svg>

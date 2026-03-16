@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2a1a0a"/>
+      <stop offset="100%" stop-color="#120a04"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="128" fill="url(#bg)"/>
+  <!-- Cheveux roux longs -->
+  <ellipse cx="128" cy="95" rx="44" ry="48" fill="#c0392b"/>
+  <path d="M84,110 Q72,160 78,210" stroke="#e74c3c" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <path d="M172,110 Q184,160 178,210" stroke="#c0392b" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <path d="M86,115 Q76,165 82,215" stroke="#e74c3c" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <!-- Casque valkyrie cornes -->
+  <rect x="88" y="72" width="80" height="32" rx="6" fill="#c0c0d0"/>
+  <rect x="90" y="74" width="76" height="28" rx="5" fill="#e8e8f8"/>
+  <!-- Cornes -->
+  <path d="M96,74 Q70,40 80,20 Q88,38 96,70" fill="#e8e8f8" stroke="#c0c0d0" stroke-width="1"/>
+  <path d="M160,74 Q186,40 176,20 Q168,38 160,70" fill="#e8e8f8" stroke="#c0c0d0" stroke-width="1"/>
+  <!-- Visage -->
+  <ellipse cx="128" cy="116" rx="34" ry="36" fill="#f0c090"/>
+  <!-- Yeux bleus guerrière -->
+  <ellipse cx="116" cy="110" rx="6" ry="6" fill="#1a6aaa"/>
+  <ellipse cx="140" cy="110" rx="6" ry="6" fill="#1a6aaa"/>
+  <circle cx="116" cy="110" r="3" fill="#4a9eff"/>
+  <circle cx="140" cy="110" r="3" fill="#4a9eff"/>
+  <circle cx="117" cy="109" r="1.5" fill="white"/>
+  <circle cx="141" cy="109" r="1.5" fill="white"/>
+  <!-- Sourcils déterminés -->
+  <path d="M108,103 Q116,100 122,103" stroke="#8b3a1a" stroke-width="2.5" fill="none"/>
+  <path d="M134,103 Q140,100 148,103" stroke="#8b3a1a" stroke-width="2.5" fill="none"/>
+  <!-- Cicatrice -->
+  <path d="M134,108 L138,122" stroke="#c0705a" stroke-width="2" opacity="0.7"/>
+  <!-- Nez bouche -->
+  <ellipse cx="128" cy="120" rx="3" ry="2" fill="#d4906a" opacity="0.5"/>
+  <path d="M121,128 Q128,133 135,128" stroke="#a0604a" stroke-width="2" fill="none"/>
+  <!-- Armure torse -->
+  <path d="M88,150 Q128,165 168,150 L172,256 H84 Z" fill="#8aaac8"/>
+  <path d="M104,155 L128,162 L152,155 L152,200 L128,206 L104,200 Z" fill="#b0c8e8"/>
+  <!-- Épaulières à pointes -->
+  <ellipse cx="80" cy="155" rx="24" ry="14" fill="#8aaac8"/>
+  <polygon points="68,145 80,140 80,155" fill="#c0c0d0"/>
+  <ellipse cx="176" cy="155" rx="24" ry="14" fill="#8aaac8"/>
+  <polygon points="188,145 176,140 176,155" fill="#c0c0d0"/>
+  <circle cx="128" cy="128" r="126" fill="none" stroke="#e74c3c" stroke-width="3" opacity="0.5"/>
+</svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270">
+  <defs>
+    <linearGradient id="stone" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a2010"/>
+      <stop offset="50%" stop-color="#1a1408"/>
+      <stop offset="100%" stop-color="#2e2418"/>
+    </linearGradient>
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feBlend in="SourceGraphic" mode="multiply" result="noisy"/>
+    </filter>
+  </defs>
+  <rect width="480" height="270" fill="url(#stone)"/>
+  <!-- Pierre texture lignes -->
+  <line x1="0" y1="45" x2="480" y2="48" stroke="#1a1008" stroke-width="2" opacity="0.4"/>
+  <line x1="0" y1="90" x2="480" y2="93" stroke="#1a1008" stroke-width="1.5" opacity="0.3"/>
+  <line x1="0" y1="135" x2="480" y2="131" stroke="#1a1008" stroke-width="2" opacity="0.4"/>
+  <line x1="0" y1="180" x2="480" y2="183" stroke="#1a1008" stroke-width="1.5" opacity="0.3"/>
+  <line x1="0" y1="225" x2="480" y2="222" stroke="#1a1008" stroke-width="2" opacity="0.4"/>
+  <line x1="80" y1="0" x2="75" y2="270" stroke="#1a1008" stroke-width="1" opacity="0.25"/>
+  <line x1="200" y1="0" x2="205" y2="270" stroke="#1a1008" stroke-width="1.5" opacity="0.3"/>
+  <line x1="320" y1="0" x2="315" y2="270" stroke="#1a1008" stroke-width="1" opacity="0.25"/>
+  <line x1="420" y1="0" x2="425" y2="270" stroke="#1a1008" stroke-width="1" opacity="0.2"/>
+  <!-- Ornements dorés -->
+  <rect x="0" y="0" width="480" height="270" fill="none" stroke="#d4a017" stroke-width="4"/>
+  <rect x="8" y="8" width="464" height="254" fill="none" stroke="#d4a017" stroke-width="1.5" opacity="0.5"/>
+  <!-- Coins ornementaux -->
+  <path d="M0,0 L40,0 L40,8 L8,8 L8,40 L0,40 Z" fill="#d4a017"/>
+  <path d="M480,0 L440,0 L440,8 L472,8 L472,40 L480,40 Z" fill="#d4a017"/>
+  <path d="M0,270 L40,270 L40,262 L8,262 L8,230 L0,230 Z" fill="#d4a017"/>
+  <path d="M480,270 L440,270 L440,262 L472,262 L472,230 L480,230 Z" fill="#d4a017"/>
+  <!-- Écu central -->
+  <path d="M200,80 L280,80 L290,135 L240,175 L190,135 Z" fill="#d4a017" opacity="0.12"/>
+  <path d="M200,80 L280,80 L290,135 L240,175 L190,135 Z" fill="none" stroke="#d4a017" stroke-width="2" opacity="0.5"/>
+  <!-- Épées croisées -->
+  <line x1="185" y1="100" x2="295" y2="165" stroke="#d4a017" stroke-width="2" opacity="0.35"/>
+  <line x1="295" y1="100" x2="185" y2="165" stroke="#d4a017" stroke-width="2" opacity="0.35"/>
+  <!-- Brillance pierre -->
+  <rect x="0" y="0" width="480" height="60" fill="white" opacity="0.04"/>
+</svg>

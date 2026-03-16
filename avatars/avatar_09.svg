@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a1200"/>
+      <stop offset="100%" stop-color="#0a0800"/>
+    </radialGradient>
+    <radialGradient id="crown" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe566"/>
+      <stop offset="100%" stop-color="#d4a017"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="128" fill="url(#bg)"/>
+  <!-- Manteau royal -->
+  <path d="M60,180 Q128,200 196,180 L210,256 H46 Z" fill="#8b0000"/>
+  <path d="M60,180 Q128,196 196,180" fill="#a00000" stroke="#d4a017" stroke-width="2"/>
+  <!-- Fourrure manteau -->
+  <path d="M62,183 Q128,200 194,183" fill="none" stroke="white" stroke-width="4" stroke-dasharray="6,4"/>
+  <!-- Corps robe royale -->
+  <rect x="88" y="155" width="80" height="80" rx="6" fill="#8b0000"/>
+  <rect x="94" y="163" width="68" height="70" rx="4" fill="#a00000"/>
+  <!-- Écharpe/col hermine -->
+  <path d="M82,155 Q128,170 174,155 Q170,175 128,172 Q86,175 82,155" fill="#f8f8f8"/>
+  <!-- Visage -->
+  <ellipse cx="128" cy="115" rx="38" ry="40" fill="#d4a574"/>
+  <!-- Barbe royale soignée -->
+  <path d="M104,140 Q128,155 152,140 Q148,162 128,165 Q108,162 104,140" fill="#8b6914" opacity="0.8"/>
+  <!-- Moustache -->
+  <path d="M112,130 Q120,133 128,130 Q136,133 144,130" stroke="#6b4a14" stroke-width="3" fill="none"/>
+  <!-- Yeux royaux -->
+  <ellipse cx="114" cy="110" rx="7" ry="7" fill="#2d1a00"/>
+  <ellipse cx="142" cy="110" rx="7" ry="7" fill="#2d1a00"/>
+  <circle cx="114" cy="110" r="4" fill="#8b5a14"/>
+  <circle cx="142" cy="110" r="4" fill="#8b5a14"/>
+  <circle cx="115" cy="108" r="2" fill="white" opacity="0.6"/>
+  <circle cx="143" cy="108" r="2" fill="white" opacity="0.6"/>
+  <!-- Sourcils sages -->
+  <path d="M106,103 Q114,100 120,103" stroke="#6b4a14" stroke-width="2.5" fill="none"/>
+  <path d="M136,103 Q142,100 150,103" stroke="#6b4a14" stroke-width="2.5" fill="none"/>
+  <!-- Nez noble -->
+  <path d="M126,118 Q128,125 130,118" stroke="#c0905a" stroke-width="1.5" fill="none"/>
+  <!-- Couronne -->
+  <rect x="84" y="82" width="88" height="26" rx="3" fill="url(#crown)"/>
+  <rect x="86" y="84" width="84" height="22" rx="2" fill="#ffe566"/>
+  <!-- Pointes couronne -->
+  <polygon points="90,82 98,58 106,82" fill="url(#crown)" stroke="#d4a017" stroke-width="1"/>
+  <polygon points="110,82 118,52 126,82" fill="url(#crown)" stroke="#d4a017" stroke-width="1"/>
+  <polygon points="128,82 136,48 144,82" fill="url(#crown)" stroke="#d4a017" stroke-width="1"/>
+  <polygon points="146,82 154,52 162,82" fill="url(#crown)" stroke="#d4a017" stroke-width="1"/>
+  <polygon points="162,82 170,58 178,82" fill="url(#crown)" stroke="#d4a017" stroke-width="1"/>
+  <!-- Gemmes couronne -->
+  <circle cx="98" cy="79" r="5" fill="#e52521"/>
+  <circle cx="118" cy="74" r="5" fill="#4a9eff"/>
+  <circle cx="138" cy="71" r="6" fill="#e52521" stroke="#d4a017" stroke-width="1"/>
+  <circle cx="158" cy="74" r="5" fill="#4CAF50"/>
+  <circle cx="174" cy="79" r="5" fill="#c084fc"/>
+  <circle cx="128" cy="128" r="126" fill="none" stroke="#d4a017" stroke-width="4" opacity="0.6"/>
+</svg>

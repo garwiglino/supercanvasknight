@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a0800"/>
+      <stop offset="100%" stop-color="#0a0400"/>
+    </radialGradient>
+    <radialGradient id="fire" cx="50%" cy="80%" r="60%">
+      <stop offset="0%" stop-color="#ff8c00"/>
+      <stop offset="50%" stop-color="#e52521"/>
+      <stop offset="100%" stop-color="#8b0000"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="128" fill="url(#bg)"/>
+  <!-- Ailes dragon -->
+  <path d="M128,100 Q50,60 30,110 Q50,90 80,120 Q60,130 50,160 Q80,130 110,140" fill="#8b2500" opacity="0.9"/>
+  <path d="M128,100 Q206,60 226,110 Q206,90 176,120 Q196,130 206,160 Q176,130 146,140" fill="#8b2500" opacity="0.9"/>
+  <!-- Membrane aile gauche -->
+  <path d="M128,100 Q50,60 30,110 Q50,90 80,120 Q60,130 50,160 Q80,130 110,140" fill="#c0392b" opacity="0.4"/>
+  <path d="M128,100 Q206,60 226,110 Q206,90 176,120 Q196,130 206,160 Q176,130 146,140" fill="#c0392b" opacity="0.4"/>
+  <!-- Corps dragon -->
+  <ellipse cx="128" cy="130" rx="50" ry="55" fill="#2d6a1a"/>
+  <ellipse cx="128" cy="125" rx="44" ry="48" fill="#3d8a28"/>
+  <!-- Écailles corps -->
+  <ellipse cx="118" cy="125" rx="12" ry="8" fill="#2d6a1a"/>
+  <ellipse cx="138" cy="125" rx="12" ry="8" fill="#2d6a1a"/>
+  <ellipse cx="128" cy="140" rx="12" ry="8" fill="#2d6a1a"/>
+  <!-- Tête -->
+  <ellipse cx="128" cy="85" rx="36" ry="32" fill="#3d8a28"/>
+  <!-- Cornes -->
+  <path d="M108,68 Q98,42 104,30 Q112,50 115,65" fill="#2d6a1a"/>
+  <path d="M148,68 Q158,42 152,30 Q144,50 141,65" fill="#2d6a1a"/>
+  <!-- Museau -->
+  <ellipse cx="128" cy="96" rx="22" ry="14" fill="#4aaa35"/>
+  <!-- Narines -->
+  <ellipse cx="120" cy="95" rx="4" ry="5" fill="#1a3a10"/>
+  <ellipse cx="136" cy="95" rx="4" ry="5" fill="#1a3a10"/>
+  <!-- Yeux dragons -->
+  <ellipse cx="112" cy="78" rx="10" ry="10" fill="#ff8c00"/>
+  <ellipse cx="144" cy="78" rx="10" ry="10" fill="#ff8c00"/>
+  <ellipse cx="112" cy="78" rx="5" ry="8" fill="#1a0800"/>
+  <ellipse cx="144" cy="78" rx="5" ry="8" fill="#1a0800"/>
+  <circle cx="112" cy="75" r="2.5" fill="white" opacity="0.7"/>
+  <circle cx="144" cy="75" r="2.5" fill="white" opacity="0.7"/>
+  <!-- Feu -->
+  <path d="M118,106 Q110,125 105,130 Q120,118 115,135 Q126,118 125,138 Q132,118 135,135 Q130,118 146,130 Q140,115 150,106" fill="url(#fire)" opacity="0.85"/>
+  <circle cx="128" cy="128" r="126" fill="none" stroke="#ff8c00" stroke-width="3" opacity="0.5"/>
+</svg>

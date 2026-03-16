@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270">
+  <defs>
+    <linearGradient id="forest" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a1a0a"/>
+      <stop offset="40%" stop-color="#0e2a0e"/>
+      <stop offset="100%" stop-color="#04100a"/>
+    </linearGradient>
+    <radialGradient id="moon" cx="70%" cy="15%" r="15%">
+      <stop offset="0%" stop-color="#f0e8c0"/>
+      <stop offset="100%" stop-color="#f0e8c0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moonlight" cx="70%" cy="15%" r="50%">
+      <stop offset="0%" stop-color="#d4c88a" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#d4c88a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="480" height="270" fill="url(#forest)"/>
+  <rect width="480" height="270" fill="url(#moonlight)"/>
+  <!-- Lune -->
+  <circle cx="336" cy="40" r="28" fill="#f0e8c0" opacity="0.85"/>
+  <circle cx="324" cy="33" r="24" fill="#0e2a0e"/>
+  <!-- Brume sol -->
+  <ellipse cx="240" cy="270" rx="280" ry="60" fill="#1a3a1a" opacity="0.6"/>
+  <ellipse cx="240" cy="270" rx="220" ry="40" fill="#0e2a0e" opacity="0.8"/>
+  <!-- Arbres fond -->
+  <polygon points="40,270 60,160 80,270" fill="#0a1a0a"/>
+  <polygon points="70,270 95,140 120,270" fill="#0e2a0e"/>
+  <polygon points="100,270 130,120 160,270" fill="#0a1a0a"/>
+  <polygon points="0,270 25,150 50,270" fill="#081408"/>
+  <polygon points="360,270 385,130 410,270" fill="#0a1a0a"/>
+  <polygon points="390,270 415,150 440,270" fill="#0e2a0e"/>
+  <polygon points="420,270 450,120 480,270" fill="#0a1a0a"/>
+  <!-- Arbres avant -->
+  <polygon points="0,270 30,110 60,270" fill="#061006"/>
+  <polygon points="420,270 450,100 480,270" fill="#061006"/>
+  <polygon points="200,270 240,80 280,270" fill="#081408"/>
+  <!-- Feuillage détail avant -->
+  <ellipse cx="30" cy="120" rx="40" ry="30" fill="#061006"/>
+  <ellipse cx="450" cy="110" rx="42" ry="32" fill="#061006"/>
+  <ellipse cx="240" cy="92" rx="50" ry="35" fill="#081408"/>
+  <!-- Lucioles / particules -->
+  <circle cx="150" cy="140" r="2" fill="#aaffaa" opacity="0.6"/>
+  <circle cx="320" cy="120" r="1.5" fill="#aaffaa" opacity="0.5"/>
+  <circle cx="200" cy="180" r="2" fill="#88ee88" opacity="0.4"/>
+  <circle cx="380" cy="160" r="1.5" fill="#aaffaa" opacity="0.5"/>
+  <circle cx="100" cy="200" r="2" fill="#88ee88" opacity="0.3"/>
+  <!-- Contour -->
+  <rect x="0" y="0" width="480" height="270" fill="none" stroke="#2d5a1b" stroke-width="4"/>
+  <rect x="6" y="6" width="468" height="258" fill="none" stroke="#3d7a28" stroke-width="1.5" opacity="0.4"/>
+</svg>

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270">
+  <defs>
+    <radialGradient id="blood" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#3a0000"/>
+      <stop offset="100%" stop-color="#0a0000"/>
+    </radialGradient>
+    <radialGradient id="splash1" cx="30%" cy="20%" r="25%">
+      <stop offset="0%" stop-color="#8b0000" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#8b0000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="splash2" cx="70%" cy="70%" r="30%">
+      <stop offset="0%" stop-color="#aa0000" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#aa0000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="480" height="270" fill="url(#blood)"/>
+  <rect width="480" height="270" fill="url(#splash1)"/>
+  <rect width="480" height="270" fill="url(#splash2)"/>
+  <!-- Éclaboussures sang -->
+  <circle cx="80" cy="50" r="18" fill="#8b0000" opacity="0.7"/>
+  <circle cx="72" cy="48" r="8" fill="#aa0000" opacity="0.5"/>
+  <!-- Gouttes -->
+  <circle cx="95" cy="68" r="5" fill="#8b0000" opacity="0.6"/>
+  <path d="M95,68 L98,82" stroke="#8b0000" stroke-width="3" opacity="0.5" stroke-linecap="round"/>
+  <circle cx="65" cy="72" r="4" fill="#8b0000" opacity="0.5"/>
+  <path d="M65,72 L62,88" stroke="#8b0000" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+  <!-- Éclaboussure 2 -->
+  <circle cx="370" cy="40" r="22" fill="#aa0000" opacity="0.6"/>
+  <circle cx="380" cy="55" r="10" fill="#8b0000" opacity="0.5"/>
+  <path d="M360,58 L355,75" stroke="#aa0000" stroke-width="3" opacity="0.5" stroke-linecap="round"/>
+  <path d="M388,62 L393,78" stroke="#8b0000" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+  <!-- Traînée principale -->
+  <path d="M50,0 Q80,80 60,150 Q70,200 50,270" fill="none" stroke="#8b0000" stroke-width="8" opacity="0.4" stroke-linecap="round"/>
+  <path d="M400,0 Q420,100 410,180 Q430,230 420,270" fill="none" stroke="#aa0000" stroke-width="6" opacity="0.35" stroke-linecap="round"/>
+  <!-- Traînée centre -->
+  <path d="M200,0 L215,270" stroke="#8b0000" stroke-width="4" opacity="0.25" stroke-linecap="round"/>
+  <path d="M240,0 L255,270" stroke="#aa0000" stroke-width="3" opacity="0.2" stroke-linecap="round"/>
+  <path d="M270,0 L260,270" stroke="#8b0000" stroke-width="5" opacity="0.22" stroke-linecap="round"/>
+  <!-- Flaques sol -->
+  <ellipse cx="120" cy="250" rx="45" ry="12" fill="#8b0000" opacity="0.5"/>
+  <ellipse cx="350" cy="255" rx="55" ry="10" fill="#aa0000" opacity="0.4"/>
+  <ellipse cx="240" cy="265" rx="80" ry="8" fill="#8b0000" opacity="0.35"/>
+  <!-- Petites gouttes éparpillées -->
+  <circle cx="160" cy="80" r="3" fill="#aa0000" opacity="0.5"/>
+  <circle cx="300" cy="110" r="2" fill="#8b0000" opacity="0.4"/>
+  <circle cx="180" cy="160" r="4" fill="#aa0000" opacity="0.4"/>
+  <circle cx="330" cy="180" r="3" fill="#8b0000" opacity="0.5"/>
+  <circle cx="140" cy="200" r="2" fill="#aa0000" opacity="0.3"/>
+  <!-- Contour -->
+  <rect x="0" y="0" width="480" height="270" fill="none" stroke="#8b0000" stroke-width="5"/>
+  <rect x="7" y="7" width="466" height="256" fill="none" stroke="#cc0000" stroke-width="1.5" opacity="0.4"/>
+</svg>

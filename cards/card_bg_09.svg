@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270">
+  <defs>
+    <linearGradient id="nature" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#061a06"/>
+      <stop offset="60%" stop-color="#0a2a0a"/>
+      <stop offset="100%" stop-color="#0e1a06"/>
+    </linearGradient>
+    <radialGradient id="sunlight" cx="50%" cy="0%" r="60%">
+      <stop offset="0%" stop-color="#88cc44" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#88cc44" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="480" height="270" fill="url(#nature)"/>
+  <rect width="480" height="270" fill="url(#sunlight)"/>
+  <!-- Sol herbe -->
+  <rect x="0" y="210" width="480" height="60" fill="#0e2a06"/>
+  <rect x="0" y="220" width="480" height="50" fill="#122e08"/>
+  <!-- Brins d'herbe -->
+  <g stroke="#2d5a1b" stroke-width="2" fill="none">
+    <path d="M20,220 Q18,205 22,195"/>
+    <path d="M35,220 Q38,200 33,188"/>
+    <path d="M50,220 Q48,208 52,198"/>
+    <path d="M70,220 Q72,202 68,190"/>
+    <path d="M90,220 Q88,207 92,196"/>
+    <path d="M110,220 Q113,205 108,193"/>
+    <path d="M130,220 Q128,209 133,199"/>
+    <path d="M150,220 Q148,204 153,193"/>
+    <path d="M170,220 Q173,207 168,195"/>
+    <path d="M190,220 Q188,210 192,200"/>
+    <path d="M210,220 Q213,205 208,193"/>
+    <path d="M230,220 Q228,208 233,197"/>
+    <path d="M250,220 Q253,206 248,194"/>
+    <path d="M270,220 Q268,210 273,199"/>
+    <path d="M290,220 Q293,205 288,192"/>
+    <path d="M310,220 Q308,208 313,197"/>
+    <path d="M330,220 Q333,206 328,194"/>
+    <path d="M350,220 Q348,209 353,198"/>
+    <path d="M370,220 Q373,204 368,192"/>
+    <path d="M390,220 Q388,208 393,197"/>
+    <path d="M410,220 Q413,205 408,193"/>
+    <path d="M430,220 Q428,209 433,198"/>
+    <path d="M450,220 Q453,206 448,194"/>
+    <path d="M465,220 Q463,210 467,200"/>
+  </g>
+  <!-- Arbres fond -->
+  <ellipse cx="80" cy="140" rx="55" ry="70" fill="#0e2a0e"/>
+  <rect x="74" y="205" width="12" height="40" fill="#1a0e06"/>
+  <ellipse cx="400" cy="130" rx="60" ry="80" fill="#122e12"/>
+  <rect x="394" y="205" width="12" height="40" fill="#1a0e06"/>
+  <ellipse cx="230" cy="100" rx="70" ry="90" fill="#0e2a0e"/>
+  <rect x="224" y="205" width="12" height="40" fill="#1a0e06"/>
+  <!-- Feuilles détail -->
+  <ellipse cx="60" cy="115" rx="32" ry="22" fill="#162e16"/>
+  <ellipse cx="100" cy="108" rx="28" ry="20" fill="#1a3a1a"/>
+  <ellipse cx="210" cy="75" rx="38" ry="26" fill="#162e16"/>
+  <ellipse cx="255" cy="68" rx="32" ry="22" fill="#1a3a1a"/>
+  <ellipse cx="382" cy="98" rx="36" ry="24" fill="#162e16"/>
+  <ellipse cx="420" cy="92" rx="30" ry="20" fill="#1a3a1a"/>
+  <!-- Fleurs -->
+  <circle cx="50" cy="218" r="4" fill="#ffcc44" opacity="0.8"/>
+  <circle cx="140" cy="216" r="3" fill="#ff8899" opacity="0.7"/>
+  <circle cx="290" cy="217" r="4" fill="#ffcc44" opacity="0.8"/>
+  <circle cx="380" cy="216" r="3" fill="#ff8899" opacity="0.7"/>
+  <circle cx="450" cy="218" r="4" fill="#44ccff" opacity="0.6"/>
+  <!-- Papillons -->
+  <path d="M330,155 Q320,145 325,155 Q330,148 335,155 Q340,145 330,155" fill="#ffcc44" opacity="0.5"/>
+  <path d="M165,170 Q155,160 160,170 Q165,163 170,170 Q175,160 165,170" fill="#ff8899" opacity="0.4"/>
+  <!-- Contour -->
+  <rect x="0" y="0" width="480" height="270" fill="none" stroke="#2d5a1b" stroke-width="4"/>
+  <rect x="6" y="6" width="468" height="258" fill="none" stroke="#4a9a28" stroke-width="1.5" opacity="0.4"/>
+</svg>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#04060e"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="128" fill="url(#bg)"/>
+  <!-- Lune derrière -->
+  <circle cx="128" cy="80" r="55" fill="#f0e8c0" opacity="0.08"/>
+  <!-- Ailes -->
+  <path d="M128,110 Q60,70 25,100 Q60,90 80,130 Q55,135 40,160 Q75,135 105,145" fill="#3a3050" opacity="0.9"/>
+  <path d="M128,110 Q196,70 231,100 Q196,90 176,130 Q201,135 216,160 Q181,135 151,145" fill="#3a3050" opacity="0.9"/>
+  <!-- Plumes ailes -->
+  <path d="M105,145 Q85,150 70,170 Q90,148 100,155" fill="#4a4060" opacity="0.7"/>
+  <path d="M151,145 Q171,150 186,170 Q166,148 156,155" fill="#4a4060" opacity="0.7"/>
+  <!-- Corps hibou -->
+  <ellipse cx="128" cy="155" rx="42" ry="48" fill="#3a3050"/>
+  <!-- Tête -->
+  <circle cx="128" cy="105" r="46" fill="#4a4060"/>
+  <!-- Aigrettes / cornes plumes -->
+  <ellipse cx="108" cy="65" rx="8" ry="18" fill="#3a3050" transform="rotate(-20,108,65)"/>
+  <ellipse cx="148" cy="65" rx="8" ry="18" fill="#3a3050" transform="rotate(20,148,65)"/>
+  <!-- Disque facial -->
+  <ellipse cx="128" cy="108" rx="34" ry="36" fill="#d4c8a0"/>
+  <ellipse cx="128" cy="108" rx="28" ry="30" fill="#e8dcc0"/>
+  <!-- Grands yeux -->
+  <circle cx="112" cy="102" r="17" fill="#1a1428"/>
+  <circle cx="144" cy="102" r="17" fill="#1a1428"/>
+  <circle cx="112" cy="102" r="14" fill="#d4a017"/>
+  <circle cx="144" cy="102" r="14" fill="#d4a017"/>
+  <circle cx="112" cy="102" r="8" fill="#f0c020"/>
+  <circle cx="144" cy="102" r="8" fill="#f0c020"/>
+  <circle cx="112" cy="102" r="5" fill="#0a0810"/>
+  <circle cx="144" cy="102" r="5" fill="#0a0810"/>
+  <circle cx="110" cy="99" r="2.5" fill="white" opacity="0.7"/>
+  <circle cx="142" cy="99" r="2.5" fill="white" opacity="0.7"/>
+  <!-- Bec -->
+  <polygon points="128,114 120,124 136,124" fill="#e8a020"/>
+  <polygon points="128,114 122,122 134,122" fill="#ffc040"/>
+  <!-- Plumes poitrine -->
+  <ellipse cx="128" cy="158" rx="28" ry="22" fill="#e8dcc0" opacity="0.8"/>
+  <!-- Serres -->
+  <path d="M100,220 Q95,210 98,200 Q103,210 100,220" fill="#8a7a50"/>
+  <path d="M110,224 Q106,212 108,202 Q113,213 110,224" fill="#8a7a50"/>
+  <path d="M128,226 Q126,214 128,204 Q130,214 128,226" fill="#8a7a50"/>
+  <path d="M146,224 Q142,212 144,202 Q149,213 146,224" fill="#8a7a50"/>
+  <path d="M156,220 Q153,210 156,200 Q161,210 156,220" fill="#8a7a50"/>
+  <circle cx="128" cy="128" r="126" fill="none" stroke="#d4a017" stroke-width="3" opacity="0.4"/>
+</svg>

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270">
+  <defs>
+    <linearGradient id="cyber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#000a1a"/>
+      <stop offset="50%" stop-color="#000810"/>
+      <stop offset="100%" stop-color="#000a18"/>
+    </linearGradient>
+    <radialGradient id="neon1" cx="25%" cy="50%" r="35%">
+      <stop offset="0%" stop-color="#00ffcc" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#00ffcc" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="neon2" cx="75%" cy="50%" r="35%">
+      <stop offset="0%" stop-color="#ff00cc" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#ff00cc" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="480" height="270" fill="url(#cyber)"/>
+  <rect width="480" height="270" fill="url(#neon1)"/>
+  <rect width="480" height="270" fill="url(#neon2)"/>
+  <!-- Grille perspective -->
+  <g stroke="#00ffcc" stroke-width="0.5" opacity="0.15">
+    <line x1="0" y1="270" x2="240" y2="135"/>
+    <line x1="48" y1="270" x2="240" y2="135"/>
+    <line x1="96" y1="270" x2="240" y2="135"/>
+    <line x1="144" y1="270" x2="240" y2="135"/>
+    <line x1="192" y1="270" x2="240" y2="135"/>
+    <line x1="240" y1="270" x2="240" y2="135"/>
+    <line x1="288" y1="270" x2="240" y2="135"/>
+    <line x1="336" y1="270" x2="240" y2="135"/>
+    <line x1="384" y1="270" x2="240" y2="135"/>
+    <line x1="432" y1="270" x2="240" y2="135"/>
+    <line x1="480" y1="270" x2="240" y2="135"/>
+  </g>
+  <!-- Lignes horizontales perspective -->
+  <g stroke="#00ffcc" stroke-width="0.5" opacity="0.12">
+    <line x1="0" y1="270" x2="480" y2="270"/>
+    <line x1="20" y1="245" x2="460" y2="245"/>
+    <line x1="45" y1="220" x2="435" y2="220"/>
+    <line x1="75" y1="198" x2="405" y2="198"/>
+    <line x1="108" y1="178" x2="372" y2="178"/>
+    <line x1="140" y1="162" x2="340" y2="162"/>
+    <line x1="168" y1="148" x2="312" y2="148"/>
+    <line x1="195" y1="138" x2="285" y2="138"/>
+  </g>
+  <!-- Lignes circuit -->
+  <path d="M0,80 L80,80 L80,50 L160,50 L160,80 L240,80" stroke="#00ffcc" stroke-width="1.5" fill="none" opacity="0.4"/>
+  <path d="M480,80 L400,80 L400,110 L320,110 L320,80 L240,80" stroke="#ff00cc" stroke-width="1.5" fill="none" opacity="0.35"/>
+  <path d="M0,40 L60,40 L60,100 L120,100" stroke="#00ffcc" stroke-width="1" fill="none" opacity="0.3"/>
+  <path d="M480,40 L420,40 L420,100 L360,100" stroke="#ff00cc" stroke-width="1" fill="none" opacity="0.3"/>
+  <!-- Points de connexion -->
+  <circle cx="80" cy="80" r="3" fill="#00ffcc" opacity="0.6"/>
+  <circle cx="160" cy="50" r="3" fill="#00ffcc" opacity="0.6"/>
+  <circle cx="240" cy="80" r="4" fill="#00ffcc" opacity="0.8"/>
+  <circle cx="400" cy="80" r="3" fill="#ff00cc" opacity="0.6"/>
+  <circle cx="320" cy="110" r="3" fill="#ff00cc" opacity="0.6"/>
+  <!-- Scanline -->
+  <rect x="0" y="0" width="480" height="270" fill="none" opacity="0.03">
+    <animate attributeName="y" from="-270" to="270" dur="4s" repeatCount="indefinite"/>
+  </rect>
+  <!-- Hexagones -->
+  <polygon points="240,55 254,63 254,79 240,87 226,79 226,63" fill="none" stroke="#00ffcc" stroke-width="1.5" opacity="0.5"/>
+  <polygon points="240,61 251,67 251,79 240,85 229,79 229,67" fill="#00ffcc" opacity="0.08"/>
+  <!-- Contour néon -->
+  <rect x="0" y="0" width="480" height="270" fill="none" stroke="#00ffcc" stroke-width="3"/>
+  <rect x="5" y="5" width="470" height="260" fill="none" stroke="#ff00cc" stroke-width="1.5" opacity="0.5"/>
+  <rect x="10" y="10" width="460" height="250" fill="none" stroke="#00ffcc" stroke-width="0.5" opacity="0.3"/>
+  <!-- Coins cyber -->
+  <path d="M0,0 L20,0 L20,4 L4,4 L4,20 L0,20 Z" fill="#00ffcc" opacity="0.8"/>
+  <path d="M480,0 L460,0 L460,4 L476,4 L476,20 L480,20 Z" fill="#00ffcc" opacity="0.8"/>
+  <path d="M0,270 L20,270 L20,266 L4,266 L4,250 L0,250 Z" fill="#ff00cc" opacity="0.8"/>
+  <path d="M480,270 L460,270 L460,266 L476,266 L476,250 L480,250 Z" fill="#ff00cc" opacity="0.8"/>
+</svg>

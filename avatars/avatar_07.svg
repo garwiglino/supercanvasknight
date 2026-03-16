@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0e1a0e"/>
+      <stop offset="100%" stop-color="#060a06"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="128" fill="url(#bg)"/>
+  <!-- Corps loup -->
+  <ellipse cx="128" cy="160" rx="55" ry="60" fill="#5a5a6a"/>
+  <!-- Tête loup -->
+  <ellipse cx="128" cy="100" rx="52" ry="50" fill="#6a6a7a"/>
+  <ellipse cx="128" cy="98" rx="46" ry="44" fill="#7a7a8a"/>
+  <!-- Museau -->
+  <ellipse cx="128" cy="115" rx="26" ry="18" fill="#8a8a9a"/>
+  <ellipse cx="128" cy="118" rx="20" ry="12" fill="#e8d8c8"/>
+  <!-- Truffe -->
+  <ellipse cx="128" cy="110" rx="10" ry="7" fill="#1a1a1a"/>
+  <circle cx="124" cy="108" r="2" fill="white" opacity="0.5"/>
+  <!-- Bouche -->
+  <path d="M118,122 Q128,130 138,122" stroke="#4a4a5a" stroke-width="2" fill="none"/>
+  <line x1="128" y1="122" x2="128" y2="132" stroke="#4a4a5a" stroke-width="1.5"/>
+  <!-- Yeux dorés -->
+  <ellipse cx="110" cy="94" rx="12" ry="12" fill="#1a1a1a"/>
+  <ellipse cx="146" cy="94" rx="12" ry="12" fill="#1a1a1a"/>
+  <ellipse cx="110" cy="94" rx="9" ry="10" fill="#d4a017"/>
+  <ellipse cx="146" cy="94" rx="9" ry="10" fill="#d4a017"/>
+  <ellipse cx="110" cy="94" rx="4" ry="8" fill="#1a0800"/>
+  <ellipse cx="146" cy="94" rx="4" ry="8" fill="#1a0800"/>
+  <circle cx="108" cy="91" r="2.5" fill="white" opacity="0.6"/>
+  <circle cx="144" cy="91" r="2.5" fill="white" opacity="0.6"/>
+  <!-- Sourcils -->
+  <path d="M99,83 Q110,79 120,83" stroke="#4a4a5a" stroke-width="2.5" fill="none"/>
+  <path d="M136,83 Q146,79 157,83" stroke="#4a4a5a" stroke-width="2.5" fill="none"/>
+  <!-- Oreilles -->
+  <polygon points="88,65 78,22 112,58" fill="#6a6a7a"/>
+  <polygon points="168,65 178,22 144,58" fill="#6a6a7a"/>
+  <polygon points="91,63 84,30 110,58" fill="#9a5a5a"/>
+  <polygon points="165,63 172,30 146,58" fill="#9a5a5a"/>
+  <!-- Fourrure cou -->
+  <ellipse cx="128" cy="148" rx="38" ry="22" fill="#7a7a8a"/>
+  <ellipse cx="128" cy="145" rx="30" ry="16" fill="#e8e8f0"/>
+  <!-- Pattes -->
+  <ellipse cx="85" cy="200" rx="22" ry="30" fill="#6a6a7a"/>
+  <ellipse cx="171" cy="200" rx="22" ry="30" fill="#6a6a7a"/>
+  <circle cx="128" cy="128" r="126" fill="none" stroke="#d4a017" stroke-width="3" opacity="0.4"/>
+  <!-- Lune -->
+  <circle cx="40" cy="40" r="20" fill="#f0e8c0" opacity="0.15"/>
+</svg>

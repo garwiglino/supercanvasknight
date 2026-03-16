@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1e0a2e"/>
+      <stop offset="100%" stop-color="#0a0416"/>
+    </radialGradient>
+    <radialGradient id="crown" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe566"/>
+      <stop offset="100%" stop-color="#d4a017"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="128" fill="url(#bg)"/>
+  <!-- Robe -->
+  <path d="M70,175 Q128,195 186,175 L200,256 H56 Z" fill="#6b0080"/>
+  <!-- Détails robe -->
+  <path d="M70,175 Q128,188 186,175" fill="#8b00a0" stroke="#d4a017" stroke-width="1.5"/>
+  <line x1="128" y1="178" x2="128" y2="256" stroke="#d4a017" stroke-width="1" opacity="0.5"/>
+  <!-- Cheveux longs noirs -->
+  <path d="M84,100 Q72,150 76,220" stroke="#1a1a2a" stroke-width="18" fill="none" stroke-linecap="round"/>
+  <path d="M172,100 Q184,150 180,220" stroke="#1a1a2a" stroke-width="18" fill="none" stroke-linecap="round"/>
+  <path d="M86,102 Q74,152 78,218" stroke="#2a2a3a" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <!-- Corps corsage -->
+  <rect x="92" y="155" width="72" height="60" rx="6" fill="#6b0080"/>
+  <rect x="98" y="162" width="60" height="52" rx="4" fill="#8b00a0"/>
+  <!-- Bijou poitrine -->
+  <ellipse cx="128" cy="178" rx="10" ry="12" fill="#c084fc" stroke="#d4a017" stroke-width="1.5"/>
+  <ellipse cx="128" cy="178" rx="6" ry="8" fill="#e8b4ff"/>
+  <!-- Visage -->
+  <ellipse cx="128" cy="118" rx="36" ry="38" fill="#f0c090"/>
+  <!-- Yeux verts mystérieux -->
+  <ellipse cx="114" cy="112" rx="8" ry="8" fill="#0a2a0a"/>
+  <ellipse cx="142" cy="112" rx="8" ry="8" fill="#0a2a0a"/>
+  <ellipse cx="114" cy="112" rx="6" ry="7" fill="#00aa44"/>
+  <ellipse cx="142" cy="112" rx="6" ry="7" fill="#00aa44"/>
+  <circle cx="114" cy="112" r="3.5" fill="#00dd66"/>
+  <circle cx="142" cy="112" r="3.5" fill="#00dd66"/>
+  <ellipse cx="114" cy="112" rx="1.5" ry="5" fill="#04120a"/>
+  <ellipse cx="142" cy="112" rx="1.5" ry="5" fill="#04120a"/>
+  <circle cx="112" cy="109" r="2" fill="white" opacity="0.7"/>
+  <circle cx="140" cy="109" r="2" fill="white" opacity="0.7"/>
+  <!-- Cils -->
+  <path d="M106,105 Q114,101 121,105" stroke="#1a1a2a" stroke-width="2" fill="none"/>
+  <path d="M135,105 Q142,101 149,105" stroke="#1a1a2a" stroke-width="2" fill="none"/>
+  <!-- Nez fin -->
+  <path d="M126,120 Q128,126 130,120" stroke="#d4906a" stroke-width="1.2" fill="none"/>
+  <!-- Lèvres -->
+  <path d="M119,130 Q128,136 137,130" fill="#cc4488"/>
+  <path d="M120,129 Q128,133 136,129" fill="#ff6699"/>
+  <!-- Couronne de reine -->
+  <rect x="86" y="84" width="84" height="24" rx="3" fill="url(#crown)"/>
+  <!-- Pointes plus élaborées -->
+  <polygon points="91,84 97,62 103,84" fill="url(#crown)"/>
+  <polygon points="109,84 116,55 123,84" fill="url(#crown)"/>
+  <polygon points="128,84 135,50 142,84" fill="url(#crown)"/>
+  <polygon points="147,84 154,55 161,84" fill="url(#crown)"/>
+  <polygon points="165,84 171,62 177,84" fill="url(#crown)"/>
+  <!-- Gemmes élaborées -->
+  <circle cx="97" cy="79" r="5" fill="#c084fc" stroke="#d4a017" stroke-width="1"/>
+  <circle cx="116" cy="72" r="5" fill="#e52521" stroke="#d4a017" stroke-width="1"/>
+  <circle cx="135" cy="68" r="7" fill="#c084fc" stroke="#d4a017" stroke-width="1.5"/>
+  <circle cx="154" cy="72" r="5" fill="#4a9eff" stroke="#d4a017" stroke-width="1"/>
+  <circle cx="171" cy="79" r="5" fill="#e52521" stroke="#d4a017" stroke-width="1"/>
+  <!-- Boucles d'oreilles -->
+  <circle cx="92" cy="122" r="6" fill="#d4a017" stroke="#ffe566" stroke-width="1"/>
+  <circle cx="164" cy="122" r="6" fill="#d4a017" stroke="#ffe566" stroke-width="1"/>
+  <circle cx="128" cy="128" r="126" fill="none" stroke="#c084fc" stroke-width="3" opacity="0.5"/>
+</svg>

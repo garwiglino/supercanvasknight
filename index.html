@@ -449,6 +449,76 @@
             .auth-body { padding: 16px 14px; gap: 10px; }
             .auth-input { font-size: 15px; padding: 9px; }
         }
+
+        /* ── ÉCRAN LOBBY HOST/JOIN ──────────────────────────────────── */
+        #lobbyScreen h1 { font-size: 42px; margin-bottom: 28px; }
+        .lobby-cards { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
+        .lobby-card {
+            width: 210px; padding: 32px 20px;
+            background: #2C3E50; border: 4px solid #B0C4DE; border-radius: 16px;
+            cursor: pointer; text-align: center; transition: all 0.18s; user-select: none;
+        }
+        .lobby-card:hover {
+            border-color: #FBD000; transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7); background: #34495e;
+        }
+        .lobby-card-icon  { font-size: 54px; margin-bottom: 14px; }
+        .lobby-card-title { font-size: 22px; font-weight: 900; color: #FBD000; margin-bottom: 8px; }
+        .lobby-card-desc  { font-size: 14px; color: #aaa; line-height: 1.4; }
+        .lobby-panel {
+            background: rgba(44,62,80,0.9); border: 4px solid #B0C4DE;
+            border-radius: 14px; padding: 32px 40px;
+            text-align: center; min-width: 320px; max-width: 440px;
+        }
+        .lobby-panel h2 { font-size: 22px; color: #FBD000; margin: 0 0 18px; }
+        #roomCodeDisplay {
+            font-size: 48px; font-weight: 900; letter-spacing: 12px;
+            color: #FBD000; text-shadow: 3px 3px 0 #000;
+            background: rgba(0,0,0,0.45); padding: 16px 28px;
+            border-radius: 10px; border: 3px solid #FBD000;
+            margin: 10px 0 4px; cursor: pointer; transition: background 0.15s;
+        }
+        #roomCodeDisplay:hover { background: rgba(251,208,0,0.15); }
+        .copy-hint { font-size: 13px; color: #888; margin-bottom: 16px; }
+        .lobby-wait {
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; font-size: 17px; color: #ccc; margin: 14px 0;
+        }
+        .lobby-dot {
+            width: 10px; height: 10px; border-radius: 50%; background: #FBD000;
+            animation: ldot 1.2s ease-in-out infinite;
+        }
+        .lobby-dot:nth-child(2) { animation-delay: 0.2s; }
+        .lobby-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes ldot {
+            0%,100% { opacity:0.2; transform:scale(0.8); }
+            50%      { opacity:1;   transform:scale(1.2); }
+        }
+        #joinCodeInput {
+            font-size: 34px; font-weight: 900; letter-spacing: 10px;
+            text-transform: uppercase; padding: 14px 20px;
+            border-radius: 8px; border: 3px solid #fff; background: #111;
+            color: #FBD000; text-align: center; font-family: inherit;
+            width: 100%; box-sizing: border-box; margin-bottom: 14px;
+        }
+        #joinCodeInput:focus { outline: none; border-color: #FBD000; }
+        .lobby-error { color: #E52521; font-size: 15px; font-weight: bold; min-height: 20px; margin-bottom: 10px; }
+        .lobby-btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 4px; }
+        .btn-sec {
+            background-color: #34495e !important; box-shadow: 0 6px 0 #1a252f !important;
+            font-size: 18px !important; padding: 12px 24px !important;
+        }
+        .btn-sec:hover:not(:disabled) { background-color: #415b76 !important; }
+        .guest-ready { font-size: 18px; color: #4CAF50; font-weight: bold; margin: 12px 0; }
+        @media (max-width: 1023px) {
+            #lobbyScreen h1 { font-size: 26px; margin-bottom: 16px; }
+            .lobby-card { width: 140px; padding: 20px 12px; }
+            .lobby-card-icon { font-size: 36px; }
+            .lobby-card-title { font-size: 16px; }
+            .lobby-panel { padding: 20px 18px; min-width: unset; width: 92%; }
+            #roomCodeDisplay { font-size: 32px; letter-spacing: 8px; }
+            #joinCodeInput { font-size: 24px; letter-spacing: 6px; }
+        }
     </style>
 </head>
 <body>
@@ -503,6 +573,53 @@
                     <input type="password" id="authPasswordConfirm" class="auth-input" placeholder="Confirmer le mot de passe" maxlength="64" autocomplete="new-password" style="display:none;">
                     <div id="authError" class="auth-error"></div>
                     <button id="authBtn" onclick="submitAuth()">CONNEXION</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── ÉCRAN LOBBY HOST/JOIN ──────────────────────────────────── -->
+        <div id="lobbyScreen" class="screen hidden">
+            <h1>⚔️ Mode de Jeu</h1>
+
+            <!-- Choix initial -->
+            <div id="lobbyChoice" class="lobby-cards">
+                <div class="lobby-card" onclick="hostGame()">
+                    <div class="lobby-card-icon">🏰</div>
+                    <div class="lobby-card-title">HÉBERGER</div>
+                    <div class="lobby-card-desc">Créer une partie et inviter un ami</div>
+                </div>
+                <div class="lobby-card" onclick="showJoinPanel()">
+                    <div class="lobby-card-icon">⚔️</div>
+                    <div class="lobby-card-title">REJOINDRE</div>
+                    <div class="lobby-card-desc">Rejoindre la partie d'un ami avec son code</div>
+                </div>
+            </div>
+
+            <!-- Panel HOST : affiche le code + attente -->
+            <div id="hostPanel" class="lobby-panel" style="display:none;">
+                <h2>🏰 Partie créée !</h2>
+                <p style="color:#ccc;margin:0 0 6px;">Partage ce code à ton ami :</p>
+                <div id="roomCodeDisplay" onclick="copyRoomCode()" title="Cliquer pour copier">······</div>
+                <div class="copy-hint">🖱️ Clic pour copier</div>
+                <div id="hostStatus" class="lobby-wait">
+                    <div class="lobby-dot"></div><div class="lobby-dot"></div><div class="lobby-dot"></div>
+                    <span>En attente d'un joueur...</span>
+                </div>
+                <div class="lobby-btn-row">
+                    <button class="btn-sec" onclick="cancelLobby()">ANNULER</button>
+                </div>
+            </div>
+
+            <!-- Panel JOIN : saisie du code -->
+            <div id="joinPanel" class="lobby-panel" style="display:none;">
+                <h2>⚔️ Rejoindre une partie</h2>
+                <input type="text" id="joinCodeInput" placeholder="XXXXXX" maxlength="6"
+                    oninput="this.value=this.value.toUpperCase()"
+                    onkeydown="if(event.code==='Enter') joinGame()">
+                <div id="joinError" class="lobby-error"></div>
+                <div class="lobby-btn-row">
+                    <button onclick="joinGame()">REJOINDRE</button>
+                    <button class="btn-sec" onclick="backToLobbyChoice()">RETOUR</button>
                 </div>
             </div>
         </div>
@@ -635,18 +752,6 @@
         }
     }
 
-    function onAuthSuccess(pseudo) {
-        document.getElementById('authScreen').classList.add('hidden');
-        const startScreen = document.getElementById('startScreen');
-        startScreen.classList.remove('hidden');
-        // Pseudo verrouillé sur celui du compte
-        const inp = document.getElementById('pseudoInput');
-        inp.value    = pseudo;
-        inp.disabled = true;
-        inp.title    = 'Pseudo lié à votre compte';
-        loadGameAssets();
-    }
-
     async function checkExistingToken() {
         const token  = localStorage.getItem('sckt_token');
         const pseudo = localStorage.getItem('sckt_pseudo');
@@ -683,6 +788,142 @@
 
     // Vérification auto au chargement
     checkExistingToken();
+
+    // ═══════════════════════════════════════════════════════════════
+    // LOBBY HOST / JOIN
+    // ═══════════════════════════════════════════════════════════════
+    let gameMode  = null; // 'host' | 'guest'
+    let roomCode  = null;
+    let _lobbyPoll = null;
+
+    function onAuthSuccess(pseudo) {
+        document.getElementById('authScreen').classList.add('hidden');
+        const inp = document.getElementById('pseudoInput');
+        inp.value    = pseudo;
+        inp.disabled = true;
+        loadGameAssets(); // charge en arrière-plan pendant le lobby
+        document.getElementById('lobbyScreen').classList.remove('hidden');
+    }
+
+    async function hostGame() {
+        const token = localStorage.getItem('sckt_token');
+        document.getElementById('lobbyChoice').style.display = 'none';
+        document.getElementById('hostPanel').style.display   = 'block';
+
+        try {
+            const res  = await fetch('/api/create-room', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            roomCode = data.code;
+            gameMode = 'host';
+            document.getElementById('roomCodeDisplay').innerText = roomCode;
+
+            // Polling toutes les 2s pour détecter l'arrivée du guest
+            _lobbyPoll = setInterval(async () => {
+                try {
+                    const r = await fetch('/api/room-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code: roomCode })
+                    });
+                    const d = await r.json();
+                    if (d.guest) {
+                        clearInterval(_lobbyPoll);
+                        const statusEl = document.getElementById('hostStatus');
+                        statusEl.innerHTML = `<span style="color:#4CAF50;font-size:18px;font-weight:bold;">✅ ${d.guest} a rejoint !</span>`;
+                        // Remplacer le bouton Annuler par Commencer
+                        document.querySelector('#hostPanel .lobby-btn-row').innerHTML =
+                            `<button onclick="proceedToCharSelection()">COMMENCER ▶</button>
+                             <button class="btn-sec" onclick="cancelLobby()">ANNULER</button>`;
+                    }
+                } catch(e) {}
+            }, 2000);
+
+        } catch(e) {
+            document.getElementById('hostStatus').innerHTML = `<span style="color:#E52521">Erreur : ${e.message}</span>`;
+        }
+    }
+
+    function showJoinPanel() {
+        document.getElementById('lobbyChoice').style.display = 'none';
+        document.getElementById('joinPanel').style.display   = 'block';
+        setTimeout(() => document.getElementById('joinCodeInput').focus(), 50);
+    }
+
+    async function joinGame() {
+        const code    = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+        const token   = localStorage.getItem('sckt_token');
+        const errorEl = document.getElementById('joinError');
+        const btn     = document.querySelector('#joinPanel button');
+
+        errorEl.innerText = '';
+        if (code.length !== 6) { errorEl.innerText = 'Le code fait 6 caractères'; return; }
+
+        btn.disabled = true; btn.innerText = '...';
+
+        try {
+            const res  = await fetch('/api/join-room', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, token })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                errorEl.innerText = data.error;
+                btn.disabled = false; btn.innerText = 'REJOINDRE';
+                return;
+            }
+            roomCode = code;
+            gameMode = 'guest';
+            proceedToCharSelection();
+        } catch(e) {
+            errorEl.innerText = 'Erreur de connexion';
+            btn.disabled = false; btn.innerText = 'REJOINDRE';
+        }
+    }
+
+    function backToLobbyChoice() {
+        document.getElementById('joinPanel').style.display   = 'none';
+        document.getElementById('joinError').innerText       = '';
+        document.getElementById('joinCodeInput').value       = '';
+        document.getElementById('lobbyChoice').style.display = 'flex';
+    }
+
+    function cancelLobby() {
+        clearInterval(_lobbyPoll);
+        roomCode = null; gameMode = null;
+        document.getElementById('hostPanel').style.display   = 'none';
+        document.getElementById('joinPanel').style.display   = 'none';
+        document.getElementById('roomCodeDisplay').innerText = '······';
+        document.getElementById('hostStatus').innerHTML =
+            `<div class="lobby-dot"></div><div class="lobby-dot"></div><div class="lobby-dot"></div>
+             <span>En attente d'un joueur...</span>`;
+        document.querySelector('#hostPanel .lobby-btn-row').innerHTML =
+            `<button class="btn-sec" onclick="cancelLobby()">ANNULER</button>`;
+        document.getElementById('lobbyChoice').style.display = 'flex';
+    }
+
+    function copyRoomCode() {
+        if (!roomCode) return;
+        navigator.clipboard.writeText(roomCode).then(() => {
+            const el = document.getElementById('roomCodeDisplay');
+            const old = el.innerText;
+            el.innerText = 'COPIÉ !';
+            el.style.color = '#4CAF50';
+            setTimeout(() => { el.innerText = old; el.style.color = '#FBD000'; }, 1200);
+        });
+    }
+
+    function proceedToCharSelection() {
+        clearInterval(_lobbyPoll);
+        document.getElementById('lobbyScreen').classList.add('hidden');
+        document.getElementById('startScreen').classList.remove('hidden');
+    }
 
     // ═══════════════════════════════════════════════════════════════
     // JEU

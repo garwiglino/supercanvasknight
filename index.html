@@ -832,7 +832,19 @@
                 score = event.score;
                 scoreDisplay.innerText = `🪙 ${score}`;
             }
-            // Mort d'un ennemi déclenchée par le host (id stable)
+
+            // ── VFX de combat reçu (sang + hitEffect) ───────────────────
+            if (event.type === 'combat-vfx') {
+                hitEffects.push(new HitEffect(event.x, event.y));
+                const dc = 3 + Math.floor(Math.random() * 4);
+                for (let i = 0; i < dc; i++) {
+                    bloodDrops.push(new BloodDrop(event.x, event.y,
+                        event.dir * 2 + (Math.random()*6-3),
+                        -2 - Math.random()*6));
+                }
+            }
+
+            // ── Mort d'ennemi déclenchée par le host ────────────────────
             if (event.type === 'enemy-death' && gameMode === 'guest') {
                 const e = enemies.find(en => en.id === event.id);
                 if (e && e.state !== 'DEAD') {
@@ -843,7 +855,39 @@
                     else if (event.dropType === 'coin') coins.push(new Coin(event.x, event.y));
                 }
             }
-            // Pièce collectée par le partenaire
+
+            // ── Hit envoyé par le guest → host applique les dégâts ──────
+            if (event.type === 'enemy-hit' && gameMode === 'host') {
+                const e = enemies.find(en => en.id === event.id);
+                if (e && e.state !== 'DEAD' && e.hurtTimer === 0) {
+                    e.hp -= event.damage;
+                    e.hurtTimer = 30;
+                    e.vx = event.dir * 8;
+                    e.vy = -4;
+                    triggerShake(4, 6);
+                    // VFX local
+                    hitEffects.push(new HitEffect(event.hitX, event.hitY));
+                    const dc = 3 + Math.floor(Math.random() * 4);
+                    for (let i = 0; i < dc; i++) {
+                        bloodDrops.push(new BloodDrop(event.hitX, event.hitY,
+                            event.dir * 2 + (Math.random()*6-3),
+                            -2 - Math.random()*6));
+                    }
+                    // Broadcast VFX au guest (le host ne renvoie pas, le guest a déjà spawné localement)
+                    if (e.hp <= 0) {
+                        e.state = 'DEAD';
+                        triggerShake(11, 14);
+                        const dropRoll = Math.random();
+                        const dropType = dropRoll > 0.85 ? 'force' : dropRoll > 0.7 ? 'potion' : dropRoll > 0.3 ? 'coin' : null;
+                        if (dropType === 'force') items.push(new ItemDrop(e.x, e.y, 'force'));
+                        else if (dropType === 'potion') items.push(new ItemDrop(e.x, e.y, 'potion'));
+                        else if (dropType === 'coin') coins.push(new Coin(e.x, e.y));
+                        socket.emit('game-event', { type: 'enemy-death', id: e.id, x: e.x, y: e.y, dropType });
+                    }
+                }
+            }
+
+            // ── Pièce collectée par le partenaire ────────────────────────
             if (event.type === 'coin-collected') {
                 const c = coins[event.index];
                 if (c) c.collected = true;
@@ -3271,9 +3315,8 @@
 
         interpolate() {
             if (!this.visible || this.targetX === undefined) return;
-            // Extrapolation par vélocité + correction vers la cible réseau
-            // Facteur ~0.35 = converge en ~6 frames (très fluide à 60fps / 20fps réseau)
-            const LERP = 0.35;
+            // player-state envoyé chaque frame → convergence rapide
+            const LERP = 0.7;
             this.x += (this.targetX - this.x) * LERP;
             this.y += (this.targetY - this.y) * LERP;
         }
@@ -3455,10 +3498,46 @@
                 }
                 if (this.hurtTimer > 0) this.hurtTimer--;
                 if (this.attackTimer > 0) this.attackTimer--;
-                // Attaque locale sur le joueur guest (dommages ressentis localement)
-                if (this.attackTimer === 0 && Math.abs((player.x + 25) - (this.x + 25)) < 70
-                        && Math.abs(player.y - this.y) < 50 && player.hp > 0) {
-                    this.attackTimer = 60;
+
+                // ── Le guest frappe cet ennemi (hitbox locale → event vers host) ──
+                if (player.attackHitbox && !player.hasHit.has(this)) {
+                    if (this.x < player.attackHitbox.x + player.attackHitbox.width &&
+                        this.x + this.width > player.attackHitbox.x &&
+                        this.y < player.attackHitbox.y + player.attackHitbox.height &&
+                        this.y + this.height > player.attackHitbox.y) {
+
+                        player.hasHit.add(this);
+                        this.hurtTimer = 30;
+                        this.vx = player.facingRight ? 8 : -8;
+                        this.vy = -4;
+                        player.abilityCharge = Math.min(player.abilityMaxCharge, player.abilityCharge + 1);
+                        triggerShake(4, 6);
+
+                        const hitX = this.x + this.width / 2;
+                        const hitY = this.y + this.height / 2;
+                        hitEffects.push(new HitEffect(hitX, hitY));
+                        const dc = 3 + Math.floor(Math.random() * 4);
+                        for (let i = 0; i < dc; i++) {
+                            bloodDrops.push(new BloodDrop(hitX, hitY,
+                                (player.facingRight ? 2 : -2) + (Math.random()*6-3),
+                                -2 - Math.random()*6));
+                        }
+                        // Notifier le host — il applique les dégâts et valide la mort
+                        const dmg = (player.comboStep === 3 ? 25 : 15) + (player.bonusDamage || 0);
+                        if (socket && socket.connected && roomCode) {
+                            socket.emit('game-event', {
+                                type: 'enemy-hit', id: this.id,
+                                damage: dmg, dir: player.facingRight ? 1 : -1,
+                                hitX, hitY
+                            });
+                        }
+                    }
+                }
+
+                // ── Dégâts de l'ennemi sur le joueur guest (état reçu du host) ──
+                if (this.state === 'ATTACK' && this.attackTimer === 1 &&
+                        Math.abs((player.x+25)-(this.x+25)) < 70 &&
+                        Math.abs(player.y - this.y) < 50 && player.hp > 0) {
                     player.takeDamage(15, this.facingRight ? 1 : -1);
                 }
                 return;
@@ -3559,7 +3638,7 @@
                     
                     // 1. Splash initial
                     hitEffects.push(new HitEffect(hitX, hitY));
-                    
+
                     // 2. Gouttes de sang projetées
                     let dropCount = 3 + Math.floor(Math.random() * 4); // 3 à 6 gouttes
                     for(let i=0; i<dropCount; i++) {
@@ -3567,7 +3646,12 @@
                         let vy = -2 - Math.random() * 6;
                         bloodDrops.push(new BloodDrop(hitX, hitY, vx, vy));
                     }
-                    
+
+                    // Broadcast VFX au partenaire
+                    if (socket && socket.connected && roomCode) {
+                        socket.emit('game-event', { type: 'combat-vfx', x: hitX, y: hitY, dir: player.facingRight ? 1 : -1 });
+                    }
+
                     // 3. Tacher le joueur avec du sang de l'ennemi (CUMULABLE)
                     let stainCount = 1 + Math.floor(Math.random() * 3); // 1 à 3 taches
                     for(let i=0; i<stainCount; i++) {
@@ -4032,10 +4116,8 @@
             cameraY += (targetCameraY - cameraY) * 0.1;
             updateShake();
 
-            // ── Envoi état réseau toutes les 3 frames (~20fps) ────
-            networkFrameCount = (networkFrameCount + 1) % 3;
-            if (socket && socket.connected && networkFrameCount === 0 && roomCode) {
-                // État du joueur local
+            // ── Envoi état joueur chaque frame (fluidité max) ────────────
+            if (socket && socket.connected && roomCode) {
                 socket.emit('player-state', {
                     x: player.x,          y: player.y,
                     vx: player.vx,         vy: player.vy,
@@ -4049,15 +4131,16 @@
                     skinIndex: currentSkinIndex,
                     pseudo:    player.pseudo
                 });
-                // Host : sync ennemis + pièces
-                if (gameMode === 'host') {
-                    socket.emit('enemy-sync', enemies.map(e => ({
-                        id: e.id, x: e.x, y: e.y, hp: e.hp, state: e.state,
-                        facingRight: e.facingRight, vx: e.vx, vy: e.vy,
-                        hurtTimer: e.hurtTimer, attackTimer: e.attackTimer
-                    })));
-                    socket.emit('coin-sync', coins.map((c, i) => ({ i, x: c.x, y: c.y, alive: !c.collected })));
-                }
+            }
+            // ── Sync ennemis/pièces toutes les 3 frames (host seul) ──────
+            networkFrameCount = (networkFrameCount + 1) % 3;
+            if (socket && socket.connected && networkFrameCount === 0 && roomCode && gameMode === 'host') {
+                socket.emit('enemy-sync', enemies.map(e => ({
+                    id: e.id, x: e.x, y: e.y, hp: e.hp, state: e.state,
+                    facingRight: e.facingRight, vx: e.vx, vy: e.vy,
+                    hurtTimer: e.hurtTimer, attackTimer: e.attackTimer
+                })));
+                socket.emit('coin-sync', coins.map((c, i) => ({ i, x: c.x, y: c.y, alive: !c.collected })));
             }
         }
 

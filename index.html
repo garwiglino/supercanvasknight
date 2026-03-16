@@ -554,6 +554,25 @@
         .invite-notif p { margin:0; color:#ccc; font-size:13px; }
         .invite-notif-btns { display:flex; gap:8px; margin-top:12px; }
         .invite-notif-btns button { font-size:14px !important; padding:8px 14px !important; }
+        /* Tabs social */
+        .social-tabs { display:flex; gap:4px; margin-bottom:10px; flex-shrink:0; }
+        .social-tab { flex:1; padding:7px 4px; font-size:12px; font-weight:bold; background:#2c3e50; border:2px solid #555; border-radius:8px; color:#aaa; cursor:pointer; font-family:inherit; transition:all 0.15s; white-space:nowrap; }
+        .social-tab.active { background:#2980b9; border-color:#2980b9; color:#fff; }
+        .social-tab:hover:not(.active) { background:#34495e; color:#fff; }
+        .tab-content { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+        .tab-content.hidden { display:none; }
+        .req-badge { display:inline-block; background:#E52521; color:#fff; border-radius:10px; font-size:11px; padding:1px 6px; margin-left:4px; }
+        .req-badge.hidden { display:none; }
+        .friend-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; background:#34495e; cursor:pointer; transition:background 0.15s; flex-shrink:0; }
+        .friend-item:hover { background:#2c5f82; }
+        .friend-item.selected { background:#2980b9; }
+        .friend-dot-on { width:10px; height:10px; border-radius:50%; background:#4CAF50; flex-shrink:0; }
+        .friend-dot-off { width:10px; height:10px; border-radius:50%; background:#666; flex-shrink:0; }
+        .friend-name { flex:1; font-size:15px; font-weight:bold; }
+        .req-item { padding:10px; border-radius:8px; background:#2c3e50; border:1px solid #4a6278; flex-shrink:0; }
+        .req-item-name { font-weight:bold; color:#FBD000; margin-bottom:6px; font-size:14px; }
+        .req-item-btns { display:flex; gap:6px; }
+        .req-item-btns button { font-size:13px !important; padding:6px 12px !important; }
         @media (max-width:1023px) {
             .social-layout { flex-direction:column; height:auto; }
             .social-panel { height:200px; }
@@ -651,16 +670,31 @@
             <h1>👥 Social</h1>
             <div class="social-layout">
                 <div class="social-panel">
-                    <div class="social-panel-title">🌐 Joueurs en ligne</div>
-                    <input id="socialSearch" class="social-search" placeholder="Rechercher un joueur..." oninput="filterOnlineUsers()">
-                    <div id="onlineList" class="online-list">
-                        <div class="chat-empty">Connexion...</div>
+                    <div class="social-tabs">
+                        <button class="social-tab active" id="tabBtnFriends" onclick="showSocialTab('friends')">👥 Amis</button>
+                        <button class="social-tab" id="tabBtnSearch" onclick="showSocialTab('search')">🔍 Chercher</button>
+                        <button class="social-tab" id="tabBtnRequests" onclick="showSocialTab('requests')">📩 Demandes<span id="reqBadge" class="req-badge hidden">0</span></button>
+                    </div>
+                    <div id="tabFriends" class="tab-content">
+                        <div id="friendsList" class="online-list">
+                            <div class="chat-empty">Chargement...</div>
+                        </div>
+                    </div>
+                    <div id="tabSearch" class="tab-content hidden">
+                        <input id="friendSearchInput" class="social-search" placeholder="Pseudo exact du joueur..." maxlength="30" onkeydown="if(event.key==='Enter')sendFriendRequest()">
+                        <button onclick="sendFriendRequest()" style="width:100%;margin-top:4px;">➕ Envoyer une demande d'ami</button>
+                        <div id="friendSearchResult" style="margin-top:10px;font-size:13px;"></div>
+                    </div>
+                    <div id="tabRequests" class="tab-content hidden">
+                        <div id="requestsList" class="online-list">
+                            <div class="chat-empty">Aucune demande en attente</div>
+                        </div>
                     </div>
                 </div>
                 <div class="social-panel">
-                    <div class="social-panel-title" id="chatTitle">💬 Sélectionne un joueur</div>
+                    <div class="social-panel-title" id="chatTitle">💬 Sélectionne un ami</div>
                     <div id="chatMessages" class="chat-messages">
-                        <div class="chat-empty">Clique sur un joueur<br>pour lui parler</div>
+                        <div class="chat-empty">Clique sur un ami<br>pour lui parler</div>
                     </div>
                     <div id="chatInputRow" class="chat-input-row" style="display:none">
                         <input type="text" id="chatInput" class="chat-input" placeholder="Message..." maxlength="200"
@@ -919,14 +953,14 @@
         // ── Social ───────────────────────────────────────────────────
         socket.on('online-users', (users) => {
             _onlineUsers = users;
-            renderOnlineList();
+            renderFriendsList();
         });
         socket.on('presence-update', ({ pseudo, online }) => {
             const myPseudo = localStorage.getItem('sckt_pseudo');
             if (pseudo === myPseudo) return;
             if (online) { if (!_onlineUsers.includes(pseudo)) _onlineUsers.push(pseudo); }
             else { _onlineUsers = _onlineUsers.filter(u => u !== pseudo); }
-            renderOnlineList();
+            renderFriendsList();
         });
         socket.on('dm-received', ({ from, message }) => {
             if (!_dmHistory[from]) _dmHistory[from] = [];
@@ -936,6 +970,17 @@
         });
         socket.on('invite-received', ({ from, roomCode, type }) => {
             showInviteNotif(from, roomCode, type);
+        });
+        socket.on('friend-request', ({ from }) => {
+            showFriendRequestNotif(from);
+        });
+        socket.on('friend-accept', ({ from }) => {
+            _friends.push(from);
+            renderFriendsList();
+            showNotification(`✅ ${from} a accepté ta demande d'ami !`, '#4CAF50');
+        });
+        socket.on('friend-decline', ({ from }) => {
+            showNotification(`${from} a refusé ta demande d'ami`, '#666');
         });
 
         socket.on('peer-joined', ({ pseudo, skinIndex }) => {
@@ -1152,47 +1197,110 @@
 
     // ── SOCIAL ──────────────────────────────────────────────────────
     let _onlineUsers   = [];
-    let _dmHistory     = {};   // pseudo → [{from, message}]
+    let _dmHistory     = {};
     let _selectedUser  = null;
+    let _friends       = [];   // [{pseudo}] from API
+    let _friendReqs    = [];   // [{from}] pending incoming
+    let _currentSocialTab = 'friends';
 
     function selectSocial() {
         document.getElementById('modeScreen').classList.add('hidden');
         document.getElementById('socialScreen').classList.remove('hidden');
         _selectedUser = null;
+        document.getElementById('chatTitle').textContent = '💬 Sélectionne un ami';
+        document.getElementById('chatInputRow').style.display = 'none';
+        document.getElementById('socialActions').style.display = 'none';
         if (!socket || !socket.connected) {
             initSocket();
-            socket.once('connect', () => socket.emit('get-online-users'));
+            socket.once('connect', () => {
+                socket.emit('get-online-users');
+                loadSocialData();
+            });
         } else {
             socket.emit('get-online-users');
+            loadSocialData();
         }
+    }
+
+    async function loadSocialData() {
+        const token = localStorage.getItem('sckt_token');
+        try {
+            const res = await fetch(`/api/friends?token=${encodeURIComponent(token)}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            _friends = data.friends || [];
+            _friendReqs = data.requests || [];
+            renderFriendsList();
+            renderRequestsList();
+            updateReqBadge();
+        } catch(e) {}
+    }
+
+    function updateReqBadge() {
+        const badge = document.getElementById('reqBadge');
+        if (!badge) return;
+        if (_friendReqs.length > 0) {
+            badge.textContent = _friendReqs.length;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    function showSocialTab(tab) {
+        _currentSocialTab = tab;
+        ['friends','search','requests'].forEach(t => {
+            document.getElementById(`tab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.toggle('hidden', t !== tab);
+            document.getElementById(`tabBtn${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.toggle('active', t === tab);
+        });
+    }
+
+    function renderFriendsList() {
+        const el = document.getElementById('friendsList');
+        if (!el) return;
+        if (_friends.length === 0) {
+            el.innerHTML = `<div class="chat-empty">Aucun ami pour l'instant<br><small style="color:#555">Utilise l'onglet Chercher</small></div>`;
+            return;
+        }
+        el.innerHTML = _friends.map(pseudo => {
+            const online = _onlineUsers.includes(pseudo);
+            const sel = _selectedUser === pseudo ? ' selected' : '';
+            return `<div class="friend-item${sel}" onclick="selectOnlineUser('${pseudo.replace(/'/g,"\\'")}')">
+                <div class="${online ? 'friend-dot-on' : 'friend-dot-off'}"></div>
+                <span class="friend-name">${pseudo}</span>
+                <span style="font-size:11px;color:${online?'#4CAF50':'#666'}">${online?'En ligne':'Hors ligne'}</span>
+            </div>`;
+        }).join('');
+    }
+
+    function renderRequestsList() {
+        const el = document.getElementById('requestsList');
+        if (!el) return;
+        if (_friendReqs.length === 0) {
+            el.innerHTML = `<div class="chat-empty">Aucune demande en attente</div>`;
+            return;
+        }
+        el.innerHTML = _friendReqs.map(r => `
+            <div class="req-item">
+                <div class="req-item-name">👤 ${r.from}</div>
+                <div class="req-item-btns">
+                    <button onclick="respondFriendRequest('${r.from.replace(/'/g,"\\'")}', true)">✅ Accepter</button>
+                    <button class="btn-sec" onclick="respondFriendRequest('${r.from.replace(/'/g,"\\'")}', false)">✕ Refuser</button>
+                </div>
+            </div>`).join('');
     }
 
     function filterOnlineUsers() {
-        renderOnlineList(document.getElementById('socialSearch').value.toLowerCase());
-    }
-
-    function renderOnlineList(filter = '') {
-        const myPseudo = localStorage.getItem('sckt_pseudo');
-        const el = document.getElementById('onlineList');
-        if (!el) return;
-        const filtered = _onlineUsers.filter(u => u !== myPseudo && (!filter || u.toLowerCase().includes(filter)));
-        if (filtered.length === 0) {
-            el.innerHTML = `<div class="chat-empty">${filter ? 'Aucun résultat' : 'Aucun joueur en ligne'}</div>`;
-            return;
-        }
-        el.innerHTML = filtered.map(u => `
-            <div class="online-user${_selectedUser===u?' selected':''}" onclick="selectOnlineUser('${u.replace(/'/g,"\\'")}')">
-                <div class="online-dot"></div>
-                <span class="online-name">${u}</span>
-            </div>`).join('');
+        renderFriendsList();
     }
 
     function selectOnlineUser(pseudo) {
         _selectedUser = pseudo;
         document.getElementById('chatTitle').textContent = `💬 ${pseudo}`;
         document.getElementById('chatInputRow').style.display = 'flex';
-        document.getElementById('socialActions').style.display = 'flex';
-        renderOnlineList(document.getElementById('socialSearch').value.toLowerCase());
+        const isFriend = _friends.some(f => f.toLowerCase() === pseudo.toLowerCase());
+        document.getElementById('socialActions').style.display = isFriend ? 'flex' : 'none';
+        renderFriendsList();
         renderChat();
     }
 
@@ -1225,6 +1333,61 @@
         input.value = '';
     }
 
+    async function sendFriendRequest() {
+        const input = document.getElementById('friendSearchInput');
+        const to = input?.value?.trim();
+        const resultEl = document.getElementById('friendSearchResult');
+        if (!to) return;
+        const token = localStorage.getItem('sckt_token');
+        resultEl.style.color = '#aaa';
+        resultEl.textContent = 'Envoi...';
+        try {
+            const res = await fetch('/api/friend-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, to })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                resultEl.style.color = '#E52521';
+                resultEl.textContent = data.error || 'Erreur';
+                return;
+            }
+            resultEl.style.color = '#4CAF50';
+            resultEl.textContent = `✅ Demande envoyée à ${data.targetPseudo}`;
+            input.value = '';
+            // Notify in real-time if they're online
+            if (socket?.connected) socket.emit('friend-request', { to: data.targetPseudo });
+        } catch(e) {
+            resultEl.style.color = '#E52521';
+            resultEl.textContent = 'Impossible de contacter le serveur';
+        }
+    }
+
+    async function respondFriendRequest(from, accept) {
+        const token = localStorage.getItem('sckt_token');
+        try {
+            const res = await fetch('/api/friend-respond', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, from, accept })
+            });
+            if (!res.ok) return;
+            // Update local state
+            _friendReqs = _friendReqs.filter(r => r.from !== from);
+            if (accept) {
+                _friends.push(from);
+                showNotification(`✅ ${from} est maintenant ton ami !`, '#4CAF50');
+                if (socket?.connected) socket.emit('friend-accept', { to: from });
+            } else {
+                if (socket?.connected) socket.emit('friend-decline', { to: from });
+            }
+            renderFriendsList();
+            renderRequestsList();
+            updateReqBadge();
+        } catch(e) {}
+    }
+
     async function inviteSelected() {
         if (!_selectedUser || !socket?.connected) return;
         const token = localStorage.getItem('sckt_token');
@@ -1237,7 +1400,6 @@
             if (!res.ok) throw new Error(data.error);
             socket.emit('send-invite', { to: _selectedUser, roomCode: data.code, type: 'game' });
             showNotification(`Invitation envoyée à ${_selectedUser} (${data.code})`, '#4CAF50');
-            // Entrer dans le lobby en tant qu'hôte
             roomCode = data.code; gameMode = 'host';
             document.getElementById('socialScreen').classList.add('hidden');
             document.getElementById('lobbyScreen').classList.remove('hidden');
@@ -1285,6 +1447,26 @@
             </div>`;
         document.body.appendChild(el);
         setTimeout(() => el.remove?.(), 30000);
+    }
+
+    function showFriendRequestNotif(from) {
+        const el = document.createElement('div');
+        el.className = 'invite-notif';
+        el.innerHTML = `
+            <h4>👤 Demande d'ami</h4>
+            <p><b>${from}</b> veut t'ajouter en ami</p>
+            <div class="invite-notif-btns">
+                <button onclick="respondFriendRequest('${from.replace(/'/g,"\\'")}',true);this.closest('.invite-notif').remove()">✅ Accepter</button>
+                <button class="btn-sec" onclick="respondFriendRequest('${from.replace(/'/g,"\\'")}',false);this.closest('.invite-notif').remove()">✕ Refuser</button>
+            </div>`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove?.(), 30000);
+        // Update local pending list
+        if (!_friendReqs.some(r => r.from === from)) {
+            _friendReqs.push({ from });
+            renderRequestsList();
+            updateReqBadge();
+        }
     }
 
     function acceptInvite(code, type) {

@@ -521,9 +521,6 @@
             #joinCodeInput { font-size: 24px; letter-spacing: 6px; }
         }
 
-        /* ── MODE SCREEN 4 cartes ──────────────────────────────────── */
-        #modeScreen .lobby-cards { display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:520px; }
-
         /* ── SOCIAL SCREEN ─────────────────────────────────────────── */
         .social-layout { display:flex; gap:18px; width:100%; max-width:900px; height:400px; }
         .social-panel { flex:1; background:rgba(44,62,80,0.9); border:3px solid #B0C4DE; border-radius:14px; padding:16px; display:flex; flex-direction:column; overflow:hidden; }
@@ -573,6 +570,53 @@
         .req-item-name { font-weight:bold; color:#FBD000; margin-bottom:6px; font-size:14px; }
         .req-item-btns { display:flex; gap:6px; }
         .req-item-btns button { font-size:13px !important; padding:6px 12px !important; }
+        /* ── HUB ─────────────────────────────────────────────────── */
+        .hub-layout { display:flex; width:100%; height:100%; overflow:hidden; }
+        .hub-sidebar { width:220px; min-width:220px; background:rgba(10,15,25,0.98); border-right:3px solid #2980b9; display:flex; flex-direction:column; padding:18px 14px; gap:0; overflow-y:auto; }
+        .hub-logo { font-size:20px; font-weight:900; color:#FBD000; text-align:center; margin-bottom:18px; letter-spacing:2px; text-shadow:0 0 12px rgba(251,208,0,0.4); }
+        .hub-player-card { background:rgba(41,128,185,0.12); border:2px solid #2980b9; border-radius:14px; padding:14px 12px; margin-bottom:18px; }
+        .hub-avatar { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#2980b9,#8e44ad); display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 8px; border:3px solid #FBD000; box-shadow:0 0 16px rgba(251,208,0,0.3); }
+        .hub-pseudo-name { font-size:16px; font-weight:900; color:#fff; text-align:center; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .hub-level-lbl { font-size:11px; color:#FBD000; text-align:center; margin-bottom:7px; font-weight:bold; }
+        .hub-xpbar { background:#1a252f; border-radius:6px; height:7px; overflow:hidden; margin-bottom:3px; }
+        .hub-xpbar-fill { height:100%; background:linear-gradient(90deg,#8e44ad,#e056fd); border-radius:6px; transition:width 0.5s; }
+        .hub-xp-txt { font-size:10px; color:#777; text-align:center; margin-bottom:10px; }
+        .hub-mini-stats { display:flex; gap:6px; }
+        .hub-mini-stat { flex:1; background:rgba(0,0,0,0.35); border-radius:8px; padding:6px 2px; text-align:center; }
+        .hub-mini-val { font-size:16px; font-weight:900; color:#FBD000; }
+        .hub-mini-lbl { font-size:9px; color:#888; }
+        .hub-nav { display:flex; flex-direction:column; gap:5px; flex:1; margin-bottom:10px; }
+        .hub-nav-btn { width:100%; padding:11px 14px; background:transparent; border:2px solid transparent; border-radius:10px; color:#888; font-size:13px; font-weight:bold; cursor:pointer; text-align:left; font-family:inherit; transition:all 0.15s; display:flex; align-items:center; gap:8px; }
+        .hub-nav-btn:hover { background:rgba(41,128,185,0.18); color:#ddd; border-color:#2c5f82; }
+        .hub-nav-btn.active { background:rgba(41,128,185,0.32); color:#fff; border-color:#2980b9; }
+        .hub-badge { background:#E52521; color:#fff; border-radius:10px; font-size:11px; padding:1px 7px; margin-left:auto; }
+        .hub-badge.hidden { display:none; }
+        .hub-logout-btn { width:100%; padding:9px; background:transparent; border:2px solid #c0392b; border-radius:10px; color:#c0392b; font-size:12px; font-weight:bold; cursor:pointer; font-family:inherit; transition:all 0.15s; }
+        .hub-logout-btn:hover { background:#c0392b; color:#fff; }
+        .hub-main { flex:1; display:flex; flex-direction:column; overflow:hidden; background:rgba(15,20,35,0.7); }
+        .hub-tab { flex:1; padding:30px 36px; overflow-y:auto; display:flex; flex-direction:column; }
+        .hub-tab.hidden { display:none; }
+        .hub-tab-title { font-size:26px; font-weight:900; color:#fff; margin-bottom:6px; }
+        .hub-tab-sub { font-size:14px; color:#888; margin-bottom:24px; }
+        .hub-home-stats { display:flex; gap:14px; margin-bottom:28px; flex-wrap:wrap; }
+        .hub-home-stat-box { background:rgba(41,128,185,0.14); border:2px solid #2980b9; border-radius:12px; padding:14px 22px; text-align:center; min-width:90px; }
+        .hub-home-stat-val { font-size:30px; font-weight:900; color:#FBD000; }
+        .hub-home-stat-lbl { font-size:11px; color:#aaa; margin-top:3px; }
+        .hub-cards-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; max-width:520px; }
+        .hub-card { background:rgba(44,62,80,0.75); border:2px solid #34495e; border-radius:16px; padding:28px 18px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; }
+        .hub-card:hover { border-color:#2980b9; background:rgba(41,128,185,0.18); transform:translateY(-4px); box-shadow:0 8px 24px rgba(41,128,185,0.25); }
+        .hub-card-icon { font-size:38px; margin-bottom:10px; }
+        .hub-card-title { font-size:17px; font-weight:900; color:#fff; margin-bottom:5px; }
+        .hub-card-desc { font-size:12px; color:#aaa; }
+        .hub-card-badge { position:absolute; top:12px; right:12px; background:#E52521; color:#fff; border-radius:10px; font-size:11px; padding:2px 8px; }
+        @media (max-width:1023px) {
+            .hub-sidebar { width:60px; min-width:60px; padding:12px 6px; }
+            .hub-player-card, .hub-logo, .hub-pseudo-name, .hub-level-lbl, .hub-xpbar, .hub-xp-txt, .hub-mini-stats, .hub-logout-btn { display:none; }
+            .hub-nav-btn { padding:11px; font-size:0; justify-content:center; }
+            .hub-nav-btn::first-letter { font-size:20px; }
+            .hub-tab { padding:16px; }
+            .hub-cards-grid { grid-template-columns:1fr; max-width:300px; }
+        }
         @media (max-width:1023px) {
             .social-layout { flex-direction:column; height:auto; }
             .social-panel { height:200px; }
@@ -635,80 +679,141 @@
             </div>
         </div>
 
-        <!-- ── ÉCRAN SÉLECTION MODE ──────────────────────────────────── -->
-        <div id="modeScreen" class="screen hidden">
-            <h1>⚔️ Super Canvas Knight</h1>
-            <div class="lobby-cards">
-                <div class="lobby-card" onclick="selectSolo()">
-                    <div class="lobby-card-icon">🗡️</div>
-                    <div class="lobby-card-title">SOLO</div>
-                    <div class="lobby-card-desc">Partir à l'aventure seul</div>
-                </div>
-                <div class="lobby-card" onclick="selectCoop()">
-                    <div class="lobby-card-icon">🤝</div>
-                    <div class="lobby-card-title">COOPÉRATIF</div>
-                    <div class="lobby-card-desc">Jouer à deux en ligne</div>
-                </div>
-                <div class="lobby-card" onclick="selectSocial()">
-                    <div class="lobby-card-icon">👥</div>
-                    <div class="lobby-card-title">SOCIAL</div>
-                    <div class="lobby-card-desc">Trouver des joueurs, chatter, inviter</div>
-                </div>
-                <div class="lobby-card" onclick="enterSalon()">
-                    <div class="lobby-card-icon">🏰</div>
-                    <div class="lobby-card-title">SALON</div>
-                    <div class="lobby-card-desc">Salle d'attente commune</div>
-                </div>
-            </div>
-            <div style="margin-top:24px;">
-                <button class="btn-sec" onclick="logout()" style="font-size:15px;padding:10px 22px;">🚪 Déconnexion</button>
-            </div>
-        </div>
-
-        <!-- ── ÉCRAN SOCIAL ───────────────────────────────────────────── -->
-        <div id="socialScreen" class="screen hidden">
-            <h1>👥 Social</h1>
-            <div class="social-layout">
-                <div class="social-panel">
-                    <div class="social-tabs">
-                        <button class="social-tab active" id="tabBtnFriends" onclick="showSocialTab('friends')">👥 Amis</button>
-                        <button class="social-tab" id="tabBtnSearch" onclick="showSocialTab('search')">🔍 Chercher</button>
-                        <button class="social-tab" id="tabBtnRequests" onclick="showSocialTab('requests')">📩 Demandes<span id="reqBadge" class="req-badge hidden">0</span></button>
-                    </div>
-                    <div id="tabFriends" class="tab-content">
-                        <div id="friendsList" class="online-list">
-                            <div class="chat-empty">Chargement...</div>
+        <!-- ── HUB PRINCIPAL ──────────────────────────────────────────── -->
+        <div id="hubScreen" class="screen hidden">
+            <div class="hub-layout">
+                <!-- Sidebar -->
+                <div class="hub-sidebar">
+                    <div class="hub-logo">⚔️ SCK</div>
+                    <div class="hub-player-card">
+                        <div class="hub-avatar" id="hubAvatar">⚔️</div>
+                        <div class="hub-pseudo-name" id="hubPseudo">—</div>
+                        <div class="hub-level-lbl">Niveau <span id="hubLevel">1</span></div>
+                        <div class="hub-xpbar"><div id="hubXpFill" class="hub-xpbar-fill" style="width:0%"></div></div>
+                        <div class="hub-xp-txt" id="hubXpTxt">0 / 50 XP</div>
+                        <div class="hub-mini-stats">
+                            <div class="hub-mini-stat">
+                                <div class="hub-mini-val" id="hubKills">0</div>
+                                <div class="hub-mini-lbl">Kills</div>
+                            </div>
+                            <div class="hub-mini-stat">
+                                <div class="hub-mini-val" id="hubGames">0</div>
+                                <div class="hub-mini-lbl">Parties</div>
+                            </div>
                         </div>
                     </div>
-                    <div id="tabSearch" class="tab-content hidden">
-                        <input id="friendSearchInput" class="social-search" placeholder="Pseudo exact du joueur..." maxlength="30" onkeydown="if(event.key==='Enter')sendFriendRequest()">
-                        <button onclick="sendFriendRequest()" style="width:100%;margin-top:4px;">➕ Envoyer une demande d'ami</button>
-                        <div id="friendSearchResult" style="margin-top:10px;font-size:13px;"></div>
+                    <nav class="hub-nav">
+                        <button class="hub-nav-btn active" id="navHome" onclick="showHubTab('home')">🏠 Accueil</button>
+                        <button class="hub-nav-btn" id="navPlay" onclick="showHubTab('play')">⚔️ Jouer</button>
+                        <button class="hub-nav-btn" id="navSocial" onclick="showHubTab('social')">👥 Social <span id="socialBadge" class="hub-badge hidden">0</span></button>
+                        <button class="hub-nav-btn" id="navSalon" onclick="showHubTab('salon')">🏰 Salon</button>
+                    </nav>
+                    <button class="hub-logout-btn" onclick="logout()">⏻ Déconnexion</button>
+                </div>
+                <!-- Main content -->
+                <div class="hub-main">
+                    <!-- Accueil -->
+                    <div id="hubHome" class="hub-tab">
+                        <div class="hub-tab-title">Bonjour, <span id="hubWelcomeName"></span> !</div>
+                        <div class="hub-tab-sub">Que veux-tu faire aujourd'hui ?</div>
+                        <div class="hub-home-stats">
+                            <div class="hub-home-stat-box">
+                                <div class="hub-home-stat-val" id="hubHomeLvl">1</div>
+                                <div class="hub-home-stat-lbl">Niveau</div>
+                            </div>
+                            <div class="hub-home-stat-box">
+                                <div class="hub-home-stat-val" id="hubHomeKills">0</div>
+                                <div class="hub-home-stat-lbl">Ennemis tués</div>
+                            </div>
+                            <div class="hub-home-stat-box">
+                                <div class="hub-home-stat-val" id="hubHomeGames">0</div>
+                                <div class="hub-home-stat-lbl">Parties jouées</div>
+                            </div>
+                        </div>
+                        <div class="hub-cards-grid">
+                            <div class="hub-card" onclick="showHubTab('play')">
+                                <div class="hub-card-icon">⚔️</div>
+                                <div class="hub-card-title">Jouer</div>
+                                <div class="hub-card-desc">Solo ou coopératif</div>
+                            </div>
+                            <div class="hub-card" onclick="showHubTab('social')">
+                                <div class="hub-card-icon">👥</div>
+                                <div class="hub-card-title">Social</div>
+                                <div class="hub-card-desc">Amis, messages, invitations</div>
+                                <span id="homeSocialBadge" class="hub-card-badge" style="display:none">0</span>
+                            </div>
+                            <div class="hub-card" onclick="showHubTab('salon')">
+                                <div class="hub-card-icon">🏰</div>
+                                <div class="hub-card-title">Salon</div>
+                                <div class="hub-card-desc">Salle commune</div>
+                            </div>
+                        </div>
                     </div>
-                    <div id="tabRequests" class="tab-content hidden">
-                        <div id="requestsList" class="online-list">
-                            <div class="chat-empty">Aucune demande en attente</div>
+                    <!-- Jouer -->
+                    <div id="hubPlay" class="hub-tab hidden">
+                        <div class="hub-tab-title">⚔️ Jouer</div>
+                        <div class="hub-tab-sub">Choisis ton mode de jeu</div>
+                        <div class="hub-cards-grid">
+                            <div class="hub-card" onclick="selectSolo()">
+                                <div class="hub-card-icon">🗡️</div>
+                                <div class="hub-card-title">Solo</div>
+                                <div class="hub-card-desc">Aventure en solo</div>
+                            </div>
+                            <div class="hub-card" onclick="selectCoop()">
+                                <div class="hub-card-icon">🤝</div>
+                                <div class="hub-card-title">Coopératif</div>
+                                <div class="hub-card-desc">Jouer à deux en ligne</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Social -->
+                    <div id="hubSocial" class="hub-tab hidden" style="padding:16px 20px;overflow:hidden;">
+                        <div class="social-layout" style="height:100%;max-width:none;flex:1;">
+                            <div class="social-panel">
+                                <div class="social-tabs">
+                                    <button class="social-tab active" id="tabBtnFriends" onclick="showSocialTab('friends')">👥 Amis</button>
+                                    <button class="social-tab" id="tabBtnSearch" onclick="showSocialTab('search')">🔍 Chercher</button>
+                                    <button class="social-tab" id="tabBtnRequests" onclick="showSocialTab('requests')">📩 Demandes<span id="reqBadge" class="req-badge hidden">0</span></button>
+                                </div>
+                                <div id="tabFriends" class="tab-content">
+                                    <div id="friendsList" class="online-list"><div class="chat-empty">Chargement...</div></div>
+                                </div>
+                                <div id="tabSearch" class="tab-content hidden">
+                                    <input id="friendSearchInput" class="social-search" placeholder="Pseudo exact du joueur..." maxlength="30" onkeydown="if(event.key==='Enter')sendFriendRequest()">
+                                    <button onclick="sendFriendRequest()" style="width:100%;margin-top:4px;">➕ Envoyer une demande d'ami</button>
+                                    <div id="friendSearchResult" style="margin-top:10px;font-size:13px;"></div>
+                                </div>
+                                <div id="tabRequests" class="tab-content hidden">
+                                    <div id="requestsList" class="online-list"><div class="chat-empty">Aucune demande en attente</div></div>
+                                </div>
+                            </div>
+                            <div class="social-panel">
+                                <div class="social-panel-title" id="chatTitle">💬 Sélectionne un ami</div>
+                                <div id="chatMessages" class="chat-messages"><div class="chat-empty">Clique sur un ami<br>pour lui parler</div></div>
+                                <div id="chatInputRow" class="chat-input-row" style="display:none">
+                                    <input type="text" id="chatInput" class="chat-input" placeholder="Message..." maxlength="200" onkeydown="if(event.key==='Enter')sendDM()">
+                                    <button onclick="sendDM()">➤</button>
+                                </div>
+                                <div id="socialActions" class="social-actions" style="display:none">
+                                    <button onclick="inviteSelected()">⚔️ Inviter en partie</button>
+                                    <button class="btn-sec" onclick="inviteToSalon()">🏰 Inviter au salon</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Salon -->
+                    <div id="hubSalon" class="hub-tab hidden">
+                        <div class="hub-tab-title">🏰 Salon</div>
+                        <div class="hub-tab-sub">Retrouve tes amis dans un espace commun</div>
+                        <div class="hub-cards-grid">
+                            <div class="hub-card" onclick="enterSalon()">
+                                <div class="hub-card-icon">🏰</div>
+                                <div class="hub-card-title">Entrer dans le salon</div>
+                                <div class="hub-card-desc">Rejoins la salle d'attente commune</div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="social-panel">
-                    <div class="social-panel-title" id="chatTitle">💬 Sélectionne un ami</div>
-                    <div id="chatMessages" class="chat-messages">
-                        <div class="chat-empty">Clique sur un ami<br>pour lui parler</div>
-                    </div>
-                    <div id="chatInputRow" class="chat-input-row" style="display:none">
-                        <input type="text" id="chatInput" class="chat-input" placeholder="Message..." maxlength="200"
-                            onkeydown="if(event.key==='Enter')sendDM()">
-                        <button onclick="sendDM()">➤</button>
-                    </div>
-                    <div id="socialActions" class="social-actions" style="display:none">
-                        <button onclick="inviteSelected()">⚔️ Inviter en partie</button>
-                        <button class="btn-sec" onclick="inviteToSalon()">🏰 Inviter au salon</button>
-                    </div>
-                </div>
-            </div>
-            <div style="margin-top:16px;">
-                <button class="btn-sec" onclick="backToMode()">◀ RETOUR</button>
             </div>
         </div>
 
@@ -966,7 +1071,11 @@
             if (!_dmHistory[from]) _dmHistory[from] = [];
             _dmHistory[from].push({ from, message });
             if (_selectedUser === from) renderChat();
-            else showNotification(`💬 Message de ${from}`, '#2980b9');
+            else {
+                showNotification(`💬 ${from} : ${message.substring(0,30)}`, '#2980b9');
+                const socialTab = document.getElementById('hubSocial');
+                if (socialTab?.classList.contains('hidden')) { _socialBadge++; updateSocialBadge(); }
+            }
         });
         socket.on('invite-received', ({ from, roomCode, type }) => {
             showInviteNotif(from, roomCode, type);
@@ -1131,36 +1240,112 @@
         });
     }
 
+    // ── Profil / progression ─────────────────────────────────────────
+    let _profile = { level: 1, xp: 0, maxXp: 50, totalKills: 0, gamesPlayed: 0 };
+    let _socialBadge = 0;
+
+    async function loadProfile() {
+        const token = localStorage.getItem('sckt_token');
+        try {
+            const res = await fetch(`/api/profile?token=${encodeURIComponent(token)}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            _profile = { level:1, xp:0, maxXp:50, totalKills:0, gamesPlayed:0, ...data };
+            updateHubProfile();
+        } catch(e) {}
+    }
+
+    async function saveProfile() {
+        const token = localStorage.getItem('sckt_token');
+        try {
+            await fetch('/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, ..._profile })
+            });
+        } catch(e) {}
+    }
+
+    function updateHubProfile() {
+        const p = _profile;
+        const pct = Math.min(100, (p.xp / p.maxXp) * 100);
+        document.getElementById('hubLevel').textContent      = p.level;
+        document.getElementById('hubHomeLvl').textContent    = p.level;
+        document.getElementById('hubXpFill').style.width     = pct + '%';
+        document.getElementById('hubXpTxt').textContent      = `${p.xp} / ${p.maxXp} XP`;
+        document.getElementById('hubKills').textContent      = p.totalKills;
+        document.getElementById('hubGames').textContent      = p.gamesPlayed;
+        document.getElementById('hubHomeKills').textContent  = p.totalKills;
+        document.getElementById('hubHomeGames').textContent  = p.gamesPlayed;
+    }
+
+    function updateSocialBadge() {
+        const b1 = document.getElementById('socialBadge');
+        const b2 = document.getElementById('homeSocialBadge');
+        if (!b1) return;
+        if (_socialBadge > 0) {
+            b1.textContent = _socialBadge; b1.classList.remove('hidden');
+            if (b2) { b2.textContent = _socialBadge; b2.style.display = ''; }
+        } else {
+            b1.classList.add('hidden');
+            if (b2) b2.style.display = 'none';
+        }
+    }
+
+    function showHubTab(tab) {
+        ['home','play','social','salon'].forEach(t => {
+            const capT = t.charAt(0).toUpperCase() + t.slice(1);
+            document.getElementById('hub' + capT)?.classList.toggle('hidden', t !== tab);
+            document.getElementById('nav' + capT)?.classList.toggle('active', t === tab);
+        });
+        if (tab === 'social') {
+            _socialBadge = 0;
+            updateSocialBadge();
+            if (socket?.connected) socket.emit('get-online-users');
+            loadSocialData();
+        }
+    }
+
+    function showHub() {
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById('hubScreen').classList.remove('hidden');
+        const pseudo = localStorage.getItem('sckt_pseudo') || '?';
+        document.getElementById('hubPseudo').textContent      = pseudo;
+        document.getElementById('hubWelcomeName').textContent = pseudo;
+        if (!socket || !socket.connected) initSocket();
+        else socket.emit('get-online-users');
+        loadProfile();
+        loadSocialData();
+        showHubTab('home');
+    }
+
     function onAuthSuccess(pseudo) {
         document.getElementById('authScreen').classList.add('hidden');
         const inp = document.getElementById('pseudoInput');
         inp.value    = pseudo;
         inp.disabled = true;
-        loadGameAssets(); // charge en arrière-plan pendant le choix de mode
-        document.getElementById('modeScreen').classList.remove('hidden');
+        loadGameAssets();
+        showHub();
     }
 
     function selectSolo() {
-        document.getElementById('modeScreen').classList.add('hidden');
+        document.getElementById('hubScreen').classList.add('hidden');
         gameMode = 'solo';
         roomCode = null;
         document.getElementById('startScreen').classList.remove('hidden');
     }
 
     function selectCoop() {
-        document.getElementById('modeScreen').classList.add('hidden');
+        document.getElementById('hubScreen').classList.add('hidden');
         document.getElementById('lobbyScreen').classList.remove('hidden');
     }
 
     function backToMode() {
-        // Arrêter tout jeu en cours
         cancelAnimationFrame(animationId);
         gameState = 'IDLE';
         roomCode = null; gameMode = null;
         clearInterval(_lobbyPoll);
-        // Cacher tous les écrans, montrer modeScreen
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-        document.getElementById('modeScreen').classList.remove('hidden');
         // Reset lobby panels
         document.getElementById('hostPanel').style.display   = 'none';
         document.getElementById('joinPanel').style.display   = 'none';
@@ -1171,6 +1356,7 @@
              <span>En attente d'un joueur...</span>`;
         document.querySelector('#hostPanel .lobby-btn-row').innerHTML =
             `<button class="btn-sec" onclick="cancelLobby()">ANNULER</button>`;
+        showHub();
     }
 
     function backFromStart() {
@@ -1187,8 +1373,7 @@
         localStorage.removeItem('sckt_token');
         localStorage.removeItem('sckt_pseudo');
         if (socket) { socket.disconnect(); socket = null; }
-        backToMode();
-        document.getElementById('modeScreen').classList.add('hidden');
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         document.getElementById('authScreen').classList.remove('hidden');
         document.getElementById('authError').innerText = '';
         document.getElementById('pseudoInput').value = '';
@@ -1204,22 +1389,7 @@
     let _currentSocialTab = 'friends';
 
     function selectSocial() {
-        document.getElementById('modeScreen').classList.add('hidden');
-        document.getElementById('socialScreen').classList.remove('hidden');
-        _selectedUser = null;
-        document.getElementById('chatTitle').textContent = '💬 Sélectionne un ami';
-        document.getElementById('chatInputRow').style.display = 'none';
-        document.getElementById('socialActions').style.display = 'none';
-        if (!socket || !socket.connected) {
-            initSocket();
-            socket.once('connect', () => {
-                socket.emit('get-online-users');
-                loadSocialData();
-            });
-        } else {
-            socket.emit('get-online-users');
-            loadSocialData();
-        }
+        showHubTab('social');
     }
 
     async function loadSocialData() {
@@ -1401,7 +1571,7 @@
             socket.emit('send-invite', { to: _selectedUser, roomCode: data.code, type: 'game' });
             showNotification(`Invitation envoyée à ${_selectedUser} (${data.code})`, '#4CAF50');
             roomCode = data.code; gameMode = 'host';
-            document.getElementById('socialScreen').classList.add('hidden');
+            document.getElementById('hubScreen').classList.add('hidden');
             document.getElementById('lobbyScreen').classList.remove('hidden');
             document.getElementById('lobbyChoice').style.display = 'none';
             document.getElementById('hostPanel').style.display   = 'block';
@@ -1460,6 +1630,8 @@
                 <button class="btn-sec" onclick="respondFriendRequest('${from.replace(/'/g,"\\'")}',false);this.closest('.invite-notif').remove()">✕ Refuser</button>
             </div>`;
         document.body.appendChild(el);
+        const socialTab = document.getElementById('hubSocial');
+        if (socialTab?.classList.contains('hidden')) { _socialBadge++; updateSocialBadge(); }
         setTimeout(() => el.remove?.(), 30000);
         // Update local pending list
         if (!_friendReqs.some(r => r.from === from)) {
@@ -1603,7 +1775,7 @@
         document.getElementById('lobbyChoice').style.display = 'flex';
         // Retour au choix Solo/Coop
         document.getElementById('lobbyScreen').classList.add('hidden');
-        document.getElementById('modeScreen').classList.remove('hidden');
+        showHub();
     }
 
     function copyRoomCode() {
@@ -4885,6 +5057,14 @@
             if (gameMode === 'host') socket.emit('start-game');
         }
 
+        // Restore persistent progression
+        if (_profile.level > 1) {
+            player.level = _profile.level;
+            player.xp    = _profile.xp;
+            player.maxXp = _profile.maxXp;
+            player.updateUI();
+        }
+
         networkFrameCount = 0;
         gameState = 'PLAYING';
         gameLoop();
@@ -4894,7 +5074,7 @@
         gameState = 'GAMEOVER';
         cancelAnimationFrame(animationId);
         gameOverScreen.classList.remove('hidden');
-        
+
         if (win) {
             endTitle.innerText = "NIVEAU TERMINÉ !";
             endTitle.style.color = "#4CAF50";
@@ -4903,6 +5083,14 @@
             endTitle.innerText = "FIN DE PARTIE";
             endTitle.style.color = "#E52521";
             endMessage.innerText = "Game Over ! Vous n'avez plus de vies.";
+        }
+
+        if (player) {
+            _profile.level      = player.level;
+            _profile.xp         = player.xp;
+            _profile.maxXp      = player.maxXp;
+            _profile.gamesPlayed = (_profile.gamesPlayed || 0) + 1;
+            saveProfile();
         }
     }
 

@@ -1,0 +1,3618 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Super Canvas Knight</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #111;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            touch-action: none; /* Empêche le scroll sur mobile */
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: #2C3E50; /* Ciel de nuit/crépuscule */
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 30px;
+            color: white;
+            font-size: 28px;
+            font-weight: 900;
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 250px;
+        }
+        .bar-bg {
+            width: 100%;
+            height: 22px;
+            background-color: rgba(0,0,0,0.5);
+            border: 3px solid #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.5);
+        }
+        .bar-fill {
+            height: 100%;
+            transition: width 0.2s ease-out, background-color 0.2s;
+        }
+        #hp-fill { background-color: #E52521; width: 100%; }
+        #xp-fill { background-color: #9b59b6; width: 0%; }
+        .bar-label {
+            position: absolute;
+            top: 0px;
+            left: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 0 #000;
+            z-index: 2;
+        }
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            pointer-events: auto;
+            transition: opacity 0.3s ease;
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+        .hidden { 
+            opacity: 0; 
+            pointer-events: none; 
+            display: none !important;
+        }
+        h1 { 
+            font-size: 64px; 
+            margin-bottom: 10px; 
+            text-shadow: 4px 4px 0 #E52521; 
+            color: #FBD000; 
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        p { 
+            font-size: 20px; 
+            margin-bottom: 30px; 
+            color: #ccc;
+            max-width: 600px;
+        }
+        
+        /* Styles Création de personnage */
+        .character-creator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+            background: rgba(44, 62, 80, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            border: 3px solid #B0C4DE;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+        }
+        #pseudoInput {
+            padding: 12px;
+            font-size: 24px;
+            border-radius: 8px;
+            border: 3px solid #fff;
+            background: #111;
+            color: #FBD000;
+            text-align: center;
+            margin-bottom: 20px;
+            font-family: inherit;
+            font-weight: bold;
+            width: 250px;
+        }
+        #pseudoInput:focus { outline: none; border-color: #FBD000; }
+        .char-selector {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+        .skin-btn {
+            padding: 10px 15px;
+            font-size: 24px;
+            background: #34495e !important;
+            border-radius: 8px;
+            box-shadow: 0 4px 0 #1a252f !important;
+            min-width: 60px;
+        }
+        .skin-btn:hover { background: #415b76 !important; }
+        #previewCanvas {
+            width: 120px;
+            height: 120px;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #fff;
+            border-radius: 8px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+        .skin-name {
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 28px;
+            font-family: inherit;
+            font-weight: bold;
+            color: white;
+            background-color: #E52521;
+            border: 4px solid #fff;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 6px 0 #8b0000;
+        }
+        button:hover:not(:disabled) { 
+            background-color: #ff4742; 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #8b0000;
+        }
+        button:active:not(:disabled) { 
+            transform: translateY(4px); 
+            box-shadow: 0 2px 0 #8b0000;
+        }
+        button:disabled {
+            background-color: #555;
+            box-shadow: 0 6px 0 #222;
+            cursor: not-allowed;
+            color: #aaa;
+        }
+
+        /* Menu RPG (Inventaire & Quêtes) */
+        #menuScreen {
+            display: none;
+            background: rgba(0,0,0,0.85);
+            z-index: 100;
+        }
+        .menu-window {
+            width: 80%;
+            max-width: 600px;
+            background: #2C3E50;
+            border: 4px solid #B0C4DE;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+        }
+        .menu-tabs {
+            display: flex;
+            background: #1a252f;
+        }
+        .menu-tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #ccc;
+            transition: 0.2s;
+            font-size: 18px;
+            border-bottom: 3px solid transparent;
+        }
+        .menu-tab:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .menu-tab.active { background: #2C3E50; color: #FBD000; border-bottom: 3px solid #FBD000; }
+        .menu-tab.close-tab { flex: 0.5; background: #E52521; color: white; border: none; }
+        .menu-tab.close-tab:hover { background: #ff4742; }
+        
+        .menu-content {
+            padding: 20px;
+            height: 350px;
+            overflow-y: auto;
+            text-align: left;
+            color: white;
+        }
+        .inv-grid { display: flex; flex-wrap: wrap; gap: 15px; }
+        .inv-slot { 
+            width: 80px; height: 80px; 
+            border: 2px solid #555; background: #1a252f; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 40px; cursor: pointer; position: relative; 
+            border-radius: 8px; transition: 0.2s;
+        }
+        .inv-slot:hover { border-color: #FBD000; background: #34495e; transform: scale(1.05); }
+        .item-count { 
+            position: absolute; bottom: 2px; right: 5px; 
+            font-size: 16px; font-weight: bold; text-shadow: 1px 1px 0 #000;
+        }
+        .quest-item { background: #1a252f; border: 2px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .quest-item h3 { margin: 0 0 5px 0; color: #FBD000; font-size: 22px; }
+        .quest-item p { margin: 0 0 15px 0; font-size: 16px; color: #ccc; }
+        .quest-progress { width: 100%; height: 12px; background: #111; border-radius: 6px; overflow: hidden; }
+        .quest-progress-fill { height: 100%; background: #4CAF50; transition: width 0.3s; }
+
+        /* Notifications Toasts */
+        #notificationArea {
+            position: absolute; top: 120px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; gap: 10px; pointer-events: none; z-index: 150;
+        }
+        @keyframes fadeinout {
+            0% { opacity: 0; transform: translateY(20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+
+        /* Contrôles tactiles pour mobile */
+        #touch-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 110px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 16px 14px;
+            box-sizing: border-box;
+            pointer-events: none;
+            z-index: 50;
+        }
+        .touch-btn-group { display: flex; gap: 10px; align-items: flex-end; }
+        .touch-btn {
+            width: 64px; height: 64px;
+            background: rgba(0,0,0,0.45);
+            border: 2px solid rgba(255,255,255,0.45);
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 26px; color: white; pointer-events: auto;
+            user-select: none; -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+            transition: background 0.08s, transform 0.08s;
+        }
+        .touch-btn:active {
+            background: rgba(255,255,255,0.25);
+            transform: scale(0.93);
+        }
+        .small-btn { width: 46px; height: 46px; font-size: 18px; }
+        /* Bouton ability légèrement plus grand et coloré */
+        #btn-ability {
+            background: rgba(0, 180, 220, 0.35);
+            border-color: rgba(0, 229, 255, 0.6);
+        }
+        #btn-ability:active { background: rgba(0, 229, 255, 0.5); }
+
+        /* ── ÉCRAN ROTATION PORTRAIT ─────────────────────── */
+        #rotate-screen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #111;
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            text-align: center;
+            gap: 20px;
+        }
+        #rotate-screen .rotate-icon {
+            font-size: 72px;
+            animation: spin90 1.2s ease-in-out infinite alternate;
+        }
+        #rotate-screen p {
+            font-size: 20px;
+            color: #ccc;
+            margin: 0;
+        }
+        @keyframes spin90 {
+            from { transform: rotate(-20deg); }
+            to   { transform: rotate(20deg); }
+        }
+
+        /* ── MEDIA QUERIES MOBILE ────────────────────────── */
+        @media (min-width: 1024px) {
+            #touch-controls { display: none !important; }
+            #mobile-hint { display: none !important; }
+        }
+        @media (max-width: 1023px) {
+            .hud { padding: 8px 10px; font-size: 16px; }
+            .stats-container { width: 140px; gap: 4px; }
+            .bar-bg { height: 14px; border-width: 2px; }
+            .bar-label { font-size: 10px; }
+            .menu-window { width: 95%; }
+            .menu-tab { font-size: 13px; padding: 8px; }
+            .menu-content { height: 220px; }
+
+            /* Écran de démarrage uniquement */
+            #startScreen {
+                justify-content: flex-start;
+                overflow-y: auto;
+                overflow-x: hidden;
+                padding: 10px 12px 16px;
+            }
+            #startScreen h1 { font-size: 28px; margin-bottom: 6px; }
+            #startScreen p  { font-size: 13px; margin-bottom: 10px; }
+            #startScreen button { padding: 10px 22px; font-size: 16px; }
+            .character-creator {
+                padding: 8px 12px;
+                margin-bottom: 10px;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+            #pseudoInput { font-size: 15px; width: 160px; padding: 6px; margin-bottom: 0; }
+            .char-selector { gap: 10px; margin-bottom: 0; }
+            #previewCanvas { width: 70px; height: 70px; }
+            .skin-btn { padding: 6px 10px; font-size: 18px; min-width: 40px; }
+            .skin-name { font-size: 14px; }
+            #keyboard-hint { display: none; }
+            #levelBtn { display: none; }
+        }
+
+        /* ── ÉCRAN AUTH ────────────────────────────────────────────── */
+        .auth-window {
+            width: 90%;
+            max-width: 420px;
+            background: #2C3E50;
+            border: 4px solid #B0C4DE;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+        }
+        .auth-tabs {
+            display: flex;
+            background: #1a252f;
+        }
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #ccc;
+            font-size: 18px;
+            border-bottom: 3px solid transparent;
+            transition: 0.2s;
+        }
+        .auth-tab:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .auth-tab.active { background: #2C3E50; color: #FBD000; border-bottom: 3px solid #FBD000; }
+        .auth-body {
+            padding: 28px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .auth-input {
+            padding: 12px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: 3px solid #fff;
+            background: #111;
+            color: #FBD000;
+            text-align: center;
+            font-family: inherit;
+            font-weight: bold;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .auth-input:focus { outline: none; border-color: #FBD000; }
+        .auth-error {
+            color: #E52521;
+            font-size: 15px;
+            text-align: center;
+            min-height: 22px;
+            font-weight: bold;
+        }
+        .auth-success {
+            color: #4CAF50;
+            font-size: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+        #authScreen h1 { font-size: 42px; margin-bottom: 20px; }
+        @media (max-width: 1023px) {
+            #authScreen h1 { font-size: 26px; margin-bottom: 12px; }
+            .auth-body { padding: 16px 14px; gap: 10px; }
+            .auth-input { font-size: 15px; padding: 9px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="rotate-screen">
+    <div class="rotate-icon">📱</div>
+    <p>Tourne ton téléphone<br>en mode <b>paysage</b></p>
+</div>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui-layer">
+        <!-- Zone de Notifications Animées -->
+        <div id="notificationArea"></div>
+
+        <div class="hud">
+            <div class="stats-container">
+                <div class="bar-bg">
+                    <div id="hp-fill" class="bar-fill"></div>
+                    <span class="bar-label">HP</span>
+                </div>
+                <div class="bar-bg">
+                    <div id="xp-fill" class="bar-fill"></div>
+                    <span class="bar-label" id="lvl-label">Niv. 1</span>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                <span id="scoreDisplay">🪙 0</span>
+                <span id="livesDisplay">❤️ 3</span>
+                <div id="abilityHud" style="display:flex;align-items:center;gap:6px;font-size:18px;font-weight:bold;text-shadow:2px 2px 0 #000;">
+                    <span id="abilityIcon">✨</span>
+                    <div style="width:60px;height:10px;background:rgba(0,0,0,0.5);border:2px solid #fff;border-radius:5px;overflow:hidden;">
+                        <div id="abilityCooldownBar" style="height:100%;background:#00e5ff;width:0%;transition:width 0.05s;"></div>
+                    </div>
+                    <span style="font-size:13px;color:#aaa;">[R]</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ── ÉCRAN AUTH (login / inscription) ──────────────────────── -->
+        <div id="authScreen" class="screen">
+            <h1>⚔️ Super Canvas Knight</h1>
+            <div class="auth-window">
+                <div class="auth-tabs">
+                    <div id="authTabLogin"    class="auth-tab active" onclick="switchAuthTab('login')">CONNEXION</div>
+                    <div id="authTabRegister" class="auth-tab"        onclick="switchAuthTab('register')">INSCRIPTION</div>
+                </div>
+                <div class="auth-body">
+                    <input type="text"     id="authPseudo"          class="auth-input" placeholder="Pseudo (3–12 car.)"        maxlength="12" autocomplete="username">
+                    <input type="password" id="authPassword"        class="auth-input" placeholder="Mot de passe (6+ car.)"    maxlength="64" autocomplete="current-password">
+                    <input type="password" id="authPasswordConfirm" class="auth-input" placeholder="Confirmer le mot de passe" maxlength="64" autocomplete="new-password" style="display:none;">
+                    <div id="authError" class="auth-error"></div>
+                    <button id="authBtn" onclick="submitAuth()">CONNEXION</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="startScreen" class="screen hidden">
+            <h1>Super Canvas Knight</h1>
+            
+            <!-- Créateur de personnage -->
+            <div class="character-creator">
+                <input type="text" id="pseudoInput" placeholder="Entrez un pseudo" maxlength="12" value="Héros">
+                <div style="display:flex; gap:10px; margin-bottom:12px;">
+                    <button id="genderM" class="skin-btn" style="font-size:18px; padding:8px 18px; background:#34495e !important; border:3px solid #FFD700 !important;">♂ Masculin</button>
+                    <button id="genderF" class="skin-btn" style="font-size:18px; padding:8px 18px; background:#34495e !important; border:3px solid #555 !important;">♀ Féminin</button>
+                </div>
+                <div class="char-selector">
+                    <button class="skin-btn" id="prevSkin">◀</button>
+                    <canvas id="previewCanvas" width="120" height="120"></canvas>
+                    <button class="skin-btn" id="nextSkin">▶</button>
+                </div>
+                <div class="skin-name" id="skinNameDisplay">Chevalier Classique</div>
+            </div>
+
+            <p id="keyboard-hint" style="margin-bottom: 15px;"><b>Flèches/ZSQD</b> : Bouger | <b>Espace</b> : Sauter | <b>0</b> : Attaquer | <b>Shift</b> : Dash | <b>R</b> : Capacité | <b>I/Q</b> : Menu</p>
+            <p id="mobile-hint" style="margin-bottom: 10px; font-size:13px; color:#aaa;">◀▶ Déplacer · ▲ Sauter · ⚔️ Attaquer · 💨 Dash · ✨ Capacité</p>
+            
+            <input type="file" id="levelLoader" accept=".json" style="display: none;">
+            <div style="display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center;">
+                <button id="startBtn" onclick="startGame()" disabled>CHARGEMENT...</button>
+                <button id="levelBtn" onclick="document.getElementById('levelLoader').click()" style="background-color: #2C3E50;">Charger un Niveau</button>
+            </div>
+            <p id="levelInfo" style="font-size: 16px; color: #4CAF50; margin-top: -20px; display: none;">Niveau personnalisé chargé !</p>
+        </div>
+
+        <div id="gameOverScreen" class="screen hidden">
+            <h1 id="endTitle">FIN DE PARTIE</h1>
+            <p id="endMessage">Vous êtes tombé dans le vide !</p>
+            <button onclick="startGame()">REJOUER (Entrée)</button>
+        </div>
+
+        <!-- Menu Inventaire / Quêtes -->
+        <div id="menuScreen" class="screen hidden">
+            <div class="menu-window">
+                <div class="menu-tabs">
+                    <div id="tab-inventory" class="menu-tab active" onclick="showTab('inventory')">INVENTAIRE (I)</div>
+                    <div id="tab-quests" class="menu-tab" onclick="showTab('quests')">QUÊTES (Q)</div>
+                    <div class="menu-tab close-tab" onclick="toggleMenu()">❌</div>
+                </div>
+                <div id="content-inventory" class="menu-content">
+                    <!-- Rempli en JS -->
+                </div>
+                <div id="content-quests" class="menu-content" style="display: none;">
+                    <!-- Rempli en JS -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="touch-controls" class="hidden">
+            <div class="touch-btn-group">
+                <div class="touch-btn small-btn" id="btn-inv" onclick="toggleMenu('inventory')">🎒</div>
+                <div class="touch-btn" id="btn-left">◀</div>
+                <div class="touch-btn" id="btn-right">▶</div>
+            </div>
+            <div class="touch-btn-group">
+                <div class="touch-btn" id="btn-ability">✨</div>
+                <div class="touch-btn" id="btn-attack">⚔️</div>
+                <div class="touch-btn" id="btn-dash">💨</div>
+                <div class="touch-btn" id="btn-jump">▲</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ═══════════════════════════════════════════════════════════════
+    // AUTHENTIFICATION
+    // ═══════════════════════════════════════════════════════════════
+    let currentAuthTab = 'login';
+
+    function switchAuthTab(tab) {
+        currentAuthTab = tab;
+        document.getElementById('authTabLogin').classList.toggle('active', tab === 'login');
+        document.getElementById('authTabRegister').classList.toggle('active', tab === 'register');
+        document.getElementById('authPasswordConfirm').style.display = tab === 'register' ? 'block' : 'none';
+        document.getElementById('authBtn').innerText = tab === 'login' ? 'CONNEXION' : "S'INSCRIRE";
+        document.getElementById('authPassword').autocomplete = tab === 'login' ? 'current-password' : 'new-password';
+        document.getElementById('authError').innerText = '';
+    }
+
+    async function submitAuth() {
+        const pseudo    = document.getElementById('authPseudo').value.trim();
+        const password  = document.getElementById('authPassword').value;
+        const confirm   = document.getElementById('authPasswordConfirm').value;
+        const errorEl   = document.getElementById('authError');
+        const btn       = document.getElementById('authBtn');
+
+        errorEl.className = 'auth-error';
+        errorEl.innerText = '';
+
+        if (!pseudo || pseudo.length < 3)  { errorEl.innerText = 'Pseudo : minimum 3 caractères'; return; }
+        if (!password || password.length < 6) { errorEl.innerText = 'Mot de passe : minimum 6 caractères'; return; }
+        if (currentAuthTab === 'register' && password !== confirm) { errorEl.innerText = 'Les mots de passe ne correspondent pas'; return; }
+
+        btn.disabled = true;
+        btn.innerText = '...';
+
+        try {
+            const endpoint = currentAuthTab === 'login' ? '/api/login' : '/api/register';
+            const res  = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pseudo, password })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                errorEl.innerText = data.error || 'Erreur serveur';
+                btn.disabled = false;
+                btn.innerText = currentAuthTab === 'login' ? 'CONNEXION' : "S'INSCRIRE";
+                return;
+            }
+
+            localStorage.setItem('sckt_token',  data.token);
+            localStorage.setItem('sckt_pseudo', data.pseudo);
+            onAuthSuccess(data.pseudo);
+
+        } catch (e) {
+            errorEl.innerText = 'Impossible de contacter le serveur';
+            btn.disabled = false;
+            btn.innerText = currentAuthTab === 'login' ? 'CONNEXION' : "S'INSCRIRE";
+        }
+    }
+
+    function onAuthSuccess(pseudo) {
+        document.getElementById('authScreen').classList.add('hidden');
+        const startScreen = document.getElementById('startScreen');
+        startScreen.classList.remove('hidden');
+        // Pseudo verrouillé sur celui du compte
+        const inp = document.getElementById('pseudoInput');
+        inp.value    = pseudo;
+        inp.disabled = true;
+        inp.title    = 'Pseudo lié à votre compte';
+        loadGameAssets();
+    }
+
+    async function checkExistingToken() {
+        const token  = localStorage.getItem('sckt_token');
+        const pseudo = localStorage.getItem('sckt_pseudo');
+        if (!token || !pseudo) return; // reste sur authScreen
+
+        try {
+            const res = await fetch('/api/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                onAuthSuccess(data.pseudo);
+            } else {
+                localStorage.removeItem('sckt_token');
+                localStorage.removeItem('sckt_pseudo');
+            }
+        } catch (e) {
+            // réseau KO → on reste sur l'écran auth
+            localStorage.removeItem('sckt_token');
+            localStorage.removeItem('sckt_pseudo');
+        }
+    }
+
+    // Touche Entrée sur l'écran auth
+    document.addEventListener('keydown', (e) => {
+        const auth = document.getElementById('authScreen');
+        if (auth && !auth.classList.contains('hidden') && (e.code === 'Enter' || e.code === 'NumpadEnter')) {
+            e.preventDefault();
+            submitAuth();
+        }
+    });
+
+    // Vérification auto au chargement
+    checkExistingToken();
+
+    // ═══════════════════════════════════════════════════════════════
+    // JEU
+    // ═══════════════════════════════════════════════════════════════
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // --- GESTION DES SKINS (Apparences) ---
+    const SKINS = [
+        { 
+            // Casque bascinet — calotte ronde, nasal central, panache latéral sur le sommet
+            name: "Chevalier Classique",
+            gender: 'M', helmet: 'bascinet',
+            armor: ['#e0e6ed', '#9bacba', '#617282'], 
+            tunic: '#8B0000', trim: '#FFD700', 
+            cape: '#600000', plume: '#E52521', eyes: '#00ffff' 
+        },
+        { 
+            // Chapeau de chasseur — large bord asymétrique, plume longue sur le côté, visage ouvert
+            name: "Rôdeur Sylvestre",
+            gender: 'M', helmet: 'ranger',
+            armor: ['#d5e8d4', '#82b366', '#54733e'], 
+            tunic: '#6d4c41', trim: '#d5e8d4', 
+            cape: '#1b3815', plume: '#82b366', eyes: '#a8e6cf' 
+        },
+        { 
+            // Grand heaume cylindrique massif — fente en T étroite, cornes latérales, visière basse
+            name: "Chevalier Noir",
+            gender: 'M', helmet: 'greathelm',
+            armor: ['#666666', '#333333', '#111111'], 
+            tunic: '#4a235a', trim: '#9c27b0', 
+            cape: '#000000', plume: '#9c27b0', eyes: '#ff0000' 
+        },
+        { 
+            // Barbute ouverte + couronne sertie — profil élancé, front dégagé, gems latéraux
+            name: "Paladin Doré",
+            gender: 'M', helmet: 'crown',
+            armor: ['#fff2cc', '#d6b656', '#b08d17'], 
+            tunic: '#ffffff', trim: '#e1d5e7', 
+            cape: '#ffffff', plume: '#ffffff', eyes: '#ffeb3b' 
+        },
+        {
+            // Casque ailé de valkyrie — deux ailettes latérales, nasal effilé, crête centrale
+            name: "Valkyrie Écarlate",
+            gender: 'F', helmet: 'valkyrie',
+            armor: ['#e0c8d0', '#b8889a', '#7a4a5e'],
+            tunic: '#8B0000', trim: '#FFD700',
+            cape: '#600000', hair: '#c0392b', hairTip: '#e74c3c',
+            eyes: '#ff80ab'
+        },
+        {
+            // Cagoule de cuir à capuchon — contour organique, oreilles pointues, visage ouvert
+            name: "Chasseresse des Bois",
+            gender: 'F', helmet: 'hood',
+            armor: ['#cfe0cc', '#7aaa72', '#3d6b38'],
+            tunic: '#5d3a1a', trim: '#a5d6a7',
+            cape: '#1b3815', hair: '#4a2c0a', hairTip: '#7d4e1f',
+            eyes: '#69f0ae'
+        },
+        {
+            // Masque-crâne intégral — orbites vides lumineuses, dents gravées sur la visière
+            name: "Ombre Maudite",
+            gender: 'F', helmet: 'skull',
+            armor: ['#555566', '#2e2e44', '#0d0d1a'],
+            tunic: '#3a0a4a', trim: '#b39ddb',
+            cape: '#0d0014', hair: '#1a0033', hairTip: '#9c27b0',
+            eyes: '#ea80fc'
+        },
+        {
+            // Tiare angélique ouverte — arcades dorées, ailes repliées sur les côtés, nimbe discret
+            name: "Séraphin Céleste",
+            gender: 'F', helmet: 'seraph',
+            armor: ['#f5f0ff', '#d4c5f9', '#9e82e8'],
+            tunic: '#e8e0ff', trim: '#ffe082',
+            cape: '#d4c5f9', hair: '#f5f5f5', hairTip: '#ffe082',
+            eyes: '#ffe57f'
+        }
+    ];
+    let currentSkinIndex = 0;
+
+    // --- GESTIONNAIRE D'ASSETS DYNAMIQUE ---
+    const itemDatabase = {
+        "potion": { "name": "Potion de Soin", "type": "heal", "value": 35, "iconPath": "./art/potion.svg", "iconScale": 1.0 },
+        "force": { "name": "Élixir de Force", "type": "damage", "value": 15, "iconPath": "./art/force.svg", "iconScale": 1.3 }
+    };
+    
+    const fxPaths = {
+        "init_blood": "./art/init_blood.svg",
+        "drops_blood": "./art/drops_blood.svg",
+        "floor_blood": "./art/floor_blood.svg"
+    };
+    
+    const assets = { images: {} };
+    let assetsLoaded = false;
+
+    function loadGameAssets() {
+        for (const key in itemDatabase) {
+            assets.images[key] = new Image();
+            assets.images[key].src = itemDatabase[key].iconPath;
+            assets.images[key].isLoaded = false;
+            assets.images[key].onload = () => { assets.images[key].isLoaded = true; };
+            assets.images[key].onerror = () => { assets.images[key].isLoaded = false; };
+        }
+        for (const key in fxPaths) {
+            assets.images[key] = new Image();
+            assets.images[key].src = fxPaths[key];
+            assets.images[key].isLoaded = false;
+            assets.images[key].onload = () => { assets.images[key].isLoaded = true; };
+            assets.images[key].onerror = () => { assets.images[key].isLoaded = false; };
+        }
+
+        player.resetInventory();
+
+        assetsLoaded = true;
+        const startBtn = document.getElementById('startBtn');
+        if(startBtn) {
+            startBtn.innerText = "JOUER (Entrée)";
+            startBtn.disabled = false;
+        }
+        
+        // Initialiser la prévisualisation du skin
+        drawSkinPreview();
+    }
+
+    // --- PREVISUALISATION SKIN ---
+    const previewCanvas = document.getElementById('previewCanvas');
+    const previewCtx = previewCanvas.getContext('2d');
+
+    let currentGender = 'M';
+
+    function skinsByGender() {
+        return SKINS.map((s, i) => ({ ...s, index: i })).filter(s => s.gender === currentGender);
+    }
+
+    // currentSkinIndex pointe dans le tableau global SKINS
+    function cycleFilteredSkin(dir) {
+        const filtered = skinsByGender();
+        const curPos = filtered.findIndex(s => s.index === currentSkinIndex);
+        const nextPos = ((curPos === -1 ? 0 : curPos) + dir + filtered.length) % filtered.length;
+        currentSkinIndex = filtered[nextPos].index;
+        drawSkinPreview();
+    }
+
+    document.getElementById('prevSkin').addEventListener('click', () => cycleFilteredSkin(-1));
+    document.getElementById('nextSkin').addEventListener('click', () => cycleFilteredSkin(1));
+
+    document.getElementById('genderM').addEventListener('click', () => {
+        currentGender = 'M';
+        currentSkinIndex = 0; // Chevalier Classique
+        document.getElementById('genderM').style.borderColor = '#FFD700';
+        document.getElementById('genderF').style.borderColor = '#555';
+        drawSkinPreview();
+    });
+
+    document.getElementById('genderF').addEventListener('click', () => {
+        currentGender = 'F';
+        currentSkinIndex = 4; // Valkyrie Écarlate
+        document.getElementById('genderF').style.borderColor = '#FFD700';
+        document.getElementById('genderM').style.borderColor = '#555';
+        drawSkinPreview();
+    });
+
+    function drawSkinPreview() {
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        const skin = SKINS[currentSkinIndex];
+        if (skin.gender === 'F') {
+            drawFemaleChar(previewCtx, skin, previewCanvas.width / 2 - 23, previewCanvas.height / 2 - 24 + 5, true, 0, true);
+        } else {
+            drawMaleChar(previewCtx, skin, previewCanvas.width / 2 - 25, previewCanvas.height / 2 - 25 + 5, true, 0, true);
+        }
+        document.getElementById('skinNameDisplay').innerText = skin.name;
+        syncAbilityBtn();
+    }
+
+    // ─── DESSIN MASCULIN STANDALONE ────────────────────────────────────────────
+    function drawMaleChar(rCtx, skin, px, py, facingRight, vy, isPreview) {
+        const W = 50, H = 50;
+
+        // Cape (physique Verlet)
+        drawCapeStrands(rCtx, skin, px, py, W, H, facingRight, vy || 0, 0, true, isPreview ? false : false);
+
+        // Jambes
+        rCtx.fillStyle = '#3a404d';
+        rCtx.beginPath(); rCtx.roundRect(px + 8, py + H - 18, 14, 22, 4); rCtx.fill();
+        rCtx.beginPath(); rCtx.roundRect(px + 28, py + H - 18, 14, 22, 4); rCtx.fill();
+
+        // Corps
+        let armorGrad = rCtx.createLinearGradient(px, py, px + W, py + H);
+        armorGrad.addColorStop(0, skin.armor[0]);
+        armorGrad.addColorStop(0.5, skin.armor[1]);
+        armorGrad.addColorStop(1, skin.armor[2]);
+        rCtx.fillStyle = armorGrad;
+        rCtx.beginPath(); rCtx.roundRect(px, py, W, H, 8); rCtx.fill();
+
+        rCtx.fillStyle = skin.tunic;
+        rCtx.beginPath(); rCtx.roundRect(px, py + H * 0.4, W, H * 0.6, {bottomLeft:8,bottomRight:8}); rCtx.fill();
+        rCtx.fillStyle = skin.trim; rCtx.fillRect(px, py + H - 4, W, 4);
+        rCtx.fillStyle = '#222'; rCtx.fillRect(px, py + H * 0.4, W, 6);
+        rCtx.fillStyle = skin.trim; rCtx.fillRect(px + W/2 - 5, py + H * 0.38, 10, 10);
+
+        // Casque
+        drawHelmet(rCtx, skin, px, py, W, facingRight, 0, false);
+
+        // Épée
+        rCtx.save();
+        rCtx.translate(px + W / 2 + 10, py + H * 0.55);
+        rCtx.rotate(Math.PI / 8);
+        rCtx.fillStyle = '#B0C4DE'; rCtx.fillRect(-3, -30, 6, 30);
+        rCtx.fillStyle = '#DAA520'; rCtx.fillRect(-10, 0, 20, 4);
+        rCtx.fillStyle = '#222'; rCtx.fillRect(-3, 4, 6, 8);
+        rCtx.restore();
+    }
+
+    // ─── PHYSIQUE DE CHEVEUX (Verlet) ─────────────────────────────────────────
+    const hairPhysics = new Map();
+    const HAIR_SEGS = 5, HAIR_LEN = 9, HAIR_DAMP = 0.78, HAIR_GRAV = 0.55, HAIR_STIFF = 0.6;
+
+    // ─── PHYSIQUE DE CAPE (Verlet — même principe que cheveux) ───────────────
+    const capePhysics = new Map();
+    // Segments courts = cape ramassée, pas d'étirement absurde
+    const CAPE_SEGS = 4, CAPE_LEN = 8, CAPE_DAMP = 0.80, CAPE_GRAV = 0.55, CAPE_STIFF = 0.65;
+    // Longueur max autorisée entre ancre et dernier point (anti-étirement)
+    const CAPE_MAX_REACH = CAPE_SEGS * CAPE_LEN * 1.15;
+
+    function getCapeState(skinName, anchors) {
+        if (!capePhysics.has(skinName)) {
+            capePhysics.set(skinName, anchors.map(a => {
+                const pts = [];
+                for (let i = 0; i <= CAPE_SEGS; i++)
+                    pts.push({ x: a.ax - i * 2, y: a.ay + i * CAPE_LEN, px: a.ax - i * 2, py: a.ay + i * CAPE_LEN });
+                return pts;
+            }));
+        }
+        return capePhysics.get(skinName);
+    }
+
+    // Réinitialise les points Verlet à leur position de repos (ancre + pendule léger)
+    // Appelé au respawn pour éviter les artefacts de téléportation
+    function resetCapeState(skinName) {
+        capePhysics.delete(skinName);
+    }
+
+    function resetHairState(skinName) {
+        hairPhysics.delete(skinName);
+    }
+
+    function stepCape(strands, anchors, vx, vy, grounded, isMoving, facingRight, isMale) {
+        const windX      = -vx * 0.30;
+        const gravY      = grounded ? CAPE_GRAV : CAPE_GRAV + vy * 0.05;
+        const t          = Date.now() / 1000;
+        const outDir     = facingRight ? -1 : 1;
+        // Skins masculins : biais plus fort pour compenser leur corps plus large
+        const biasIdle   = isMale ? 0.65 : 0.45;
+        const biasMove   = isMale ? 0.28 : 0.18;
+        const lateralBias = outDir * (isMoving ? biasMove : biasIdle);
+        const idleSwing  = (!isMoving && grounded)
+            ? Math.sin(t * 0.9) * 0.5 + Math.sin(t * 1.7) * 0.15
+            : 0;
+        strands.forEach((pts, si) => {
+            const a = anchors[si];
+            pts[0].x = a.ax; pts[0].y = a.ay; pts[0].px = a.ax; pts[0].py = a.ay;
+            for (let i = 1; i <= CAPE_SEGS; i++) {
+                const p   = pts[i];
+                const vvx = (p.x - p.px) * CAPE_DAMP + windX + lateralBias * (i / CAPE_SEGS) + idleSwing * (i / CAPE_SEGS);
+                const vvy = (p.y - p.py) * CAPE_DAMP + gravY * (0.5 + i * 0.1);
+                p.px = p.x; p.py = p.y;
+                p.x += vvx; p.y += vvy;
+            }
+            // Contrainte de longueur (2 passes)
+            for (let iter = 0; iter < 2; iter++) {
+                for (let i = 0; i < CAPE_SEGS; i++) {
+                    const a2 = pts[i], b = pts[i + 1];
+                    const dx = b.x - a2.x, dy = b.y - a2.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy) || 0.001;
+                    const err  = (dist - CAPE_LEN) / dist * CAPE_STIFF;
+                    if (i === 0) { b.x -= dx * err; b.y -= dy * err; }
+                    else         { const h = err * 0.5; a2.x += dx*h; a2.y += dy*h; b.x -= dx*h; b.y -= dy*h; }
+                }
+            }
+            // Anti-étirement global : si le dernier point est trop loin de l'ancre, on le ramène
+            const last = pts[CAPE_SEGS];
+            const ddx = last.x - a.ax, ddy = last.y - a.ay;
+            const totalDist = Math.sqrt(ddx*ddx + ddy*ddy);
+            if (totalDist > CAPE_MAX_REACH) {
+                const scale = CAPE_MAX_REACH / totalDist;
+                last.x = a.ax + ddx * scale;
+                last.y = a.ay + ddy * scale;
+            }
+        });
+    }
+
+    function drawCapeStrands(rCtx, skin, px, py, W, H, facingRight, vy, vx, grounded, isMoving) {
+        const capeColor = skin.cape;
+        const cx = px + W / 2;
+        const isMale = skin.gender !== 'F';
+        // Skins masculins : ancrage plus écarté latéralement pour sortir du corps plus large
+        const outOffset = isMale ? (facingRight ? -10 : 10) : (facingRight ? -5 : 5);
+        const shoulderY = py + H * 0.30;
+        const shoulderX = cx + outOffset;
+
+        // 3 brins ancrés sur la largeur des épaules
+        const anchors = [
+            { ax: shoulderX,                                    ay: shoulderY,     w: isMale ? 14 : 13 },
+            { ax: shoulderX - (facingRight ? 7 : -7),          ay: shoulderY + 1, w: isMale ? 9 : 8   },
+            { ax: shoulderX + (facingRight ? 4 : -4),          ay: shoulderY + 1, w: isMale ? 9 : 8   },
+        ];
+
+        const strands = getCapeState(skin.name + '_cape', anchors);
+        stepCape(strands, anchors, vx || 0, vy || 0, grounded !== false, isMoving || false, facingRight, isMale);
+
+        // Dessine de l'arrière vers l'avant (brin central en dernier)
+        const drawOrder = [1, 2, 0];
+        drawOrder.forEach(si => {
+            const pts  = strands[si];
+            const brin = anchors[si];
+
+            rCtx.save();
+            for (let i = 0; i < CAPE_SEGS; i++) {
+                const t2   = i / CAPE_SEGS;
+                const wTop = brin.w * (1 - t2 * 0.50);
+                const wBot = brin.w * (1 - (t2 + 1/CAPE_SEGS) * 0.50);
+                const p0   = pts[i], p1 = pts[i + 1];
+
+                const dx = p1.x - p0.x, dy = p1.y - p0.y;
+                const len = Math.sqrt(dx*dx + dy*dy) || 1;
+                const nx = -dy / len, ny = dx / len;
+
+                rCtx.fillStyle = capeColor;
+                rCtx.globalAlpha = 1 - t2 * 0.25;
+
+                rCtx.beginPath();
+                rCtx.moveTo(p0.x + nx * wTop,  p0.y + ny * wTop);
+                rCtx.lineTo(p0.x - nx * wTop,  p0.y - ny * wTop);
+                rCtx.lineTo(p1.x - nx * wBot,  p1.y - ny * wBot);
+                rCtx.lineTo(p1.x + nx * wBot,  p1.y + ny * wBot);
+                rCtx.closePath();
+                rCtx.fill();
+            }
+            rCtx.globalAlpha = 1;
+            rCtx.restore();
+        });
+    }
+
+    function getHairState(skinName, anchors) {
+        if (!hairPhysics.has(skinName)) {
+            hairPhysics.set(skinName, anchors.map(a => {
+                const pts = [];
+                for (let i = 0; i <= HAIR_SEGS; i++)
+                    pts.push({ x: a.ax - i * 1.5, y: a.ay + i * HAIR_LEN, px: a.ax - i * 1.5, py: a.ay + i * HAIR_LEN });
+                return pts;
+            }));
+        }
+        return hairPhysics.get(skinName);
+    }
+
+    function stepHair(strands, anchors, vx, vy, grounded, isMoving, facingRight) {
+        const windX       = -vx * 0.22;
+        const gravY       = grounded ? HAIR_GRAV : HAIR_GRAV + vy * 0.04;
+        const t           = Date.now() / 1000;
+        // Biais latéral permanent — les cheveux s'écoulent toujours légèrement derrière
+        const outDir      = facingRight ? -1 : 1;
+        const lateralBias = outDir * (isMoving ? 0.12 : 0.30);
+        const idleSwing   = (!isMoving && grounded) ? Math.sin(t * 1.4) * 0.25 : 0;
+        strands.forEach((pts, si) => {
+            const a = anchors[si];
+            pts[0].x = a.ax; pts[0].y = a.ay; pts[0].px = a.ax; pts[0].py = a.ay;
+            for (let i = 1; i <= HAIR_SEGS; i++) {
+                const p = pts[i];
+                const vvx = (p.x - p.px) * HAIR_DAMP + windX + lateralBias * (i / HAIR_SEGS) + idleSwing * (i / HAIR_SEGS);
+                const vvy = (p.y - p.py) * HAIR_DAMP + gravY * (0.6 + i * 0.08);
+                p.px = p.x; p.py = p.y;
+                p.x += vvx; p.y += vvy;
+            }
+            for (let iter = 0; iter < 2; iter++) {
+                for (let i = 0; i < HAIR_SEGS; i++) {
+                    const a2 = pts[i], b = pts[i + 1];
+                    const dx = b.x - a2.x, dy = b.y - a2.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy) || 0.001;
+                    const err = (dist - HAIR_LEN) / dist * HAIR_STIFF;
+                    if (i === 0) { b.x -= dx * err; b.y -= dy * err; }
+                    else { const h = err * 0.5; a2.x += dx*h; a2.y += dy*h; b.x -= dx*h; b.y -= dy*h; }
+                }
+            }
+        });
+    }
+
+    function drawHairStrands(rCtx, skin, px, py, W, H, facingRight, vy, vx, grounded, isMoving) {
+        const hair1 = skin.hair || '#6d3c1f';
+        const hair2 = skin.hairTip || '#9b5a2e';
+        const cx    = px + W / 2;
+        const headY = py + 18;
+
+        const anchors = facingRight ? [
+            { ax: cx - 6,  ay: headY, baseW: 7 },
+            { ax: cx - 10, ay: headY, baseW: 5 },
+            { ax: cx - 2,  ay: headY, baseW: 4 },
+            { ax: cx + 8,  ay: headY, baseW: 3 },
+        ] : [
+            { ax: cx + 6,  ay: headY, baseW: 7 },
+            { ax: cx + 10, ay: headY, baseW: 5 },
+            { ax: cx + 2,  ay: headY, baseW: 4 },
+            { ax: cx - 8,  ay: headY, baseW: 3 },
+        ];
+
+        const strands = getHairState(skin.name, anchors);
+        stepHair(strands, anchors, vx || 0, vy || 0, grounded !== false, isMoving || false, facingRight);
+
+        strands.forEach((pts, si) => {
+            const baseW = anchors[si].baseW;
+            const grad = rCtx.createLinearGradient(pts[0].x, pts[0].y, pts[HAIR_SEGS].x, pts[HAIR_SEGS].y);
+            grad.addColorStop(0, hair1); grad.addColorStop(0.5, hair1); grad.addColorStop(1, hair2);
+
+            for (let pass = 0; pass < 2; pass++) {
+                const lw = baseW - pass * 2;
+                if (lw <= 0) continue;
+                rCtx.save();
+                rCtx.strokeStyle = grad;
+                rCtx.lineWidth = lw;
+                rCtx.lineCap = 'round';
+                rCtx.lineJoin = 'round';
+                rCtx.globalAlpha = pass === 0 ? 0.95 : 0.45;
+                rCtx.beginPath();
+                rCtx.moveTo(pts[0].x, pts[0].y);
+                for (let i = 0; i < HAIR_SEGS - 1; i++) {
+                    const p0 = pts[Math.max(0, i-1)], p1 = pts[i], p2 = pts[i+1], p3 = pts[Math.min(HAIR_SEGS, i+2)];
+                    const cp1x = p1.x + (p2.x - p0.x) / 6, cp1y = p1.y + (p2.y - p0.y) / 6;
+                    const cp2x = p2.x - (p3.x - p1.x) / 6, cp2y = p2.y - (p3.y - p1.y) / 6;
+                    rCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+                }
+                rCtx.lineTo(pts[HAIR_SEGS].x, pts[HAIR_SEGS].y);
+                rCtx.stroke();
+                rCtx.restore();
+            }
+        });
+        rCtx.lineCap = 'butt';
+    }
+
+    // ─── DESSIN FÉMININ STANDALONE ─────────────────────────────────────────────
+    function drawFemaleChar(rCtx, skin, px, py, facingRight, vy, isPreview) {
+        const W = 46, H = 48;
+
+        // Cape (physique Verlet)
+        drawCapeStrands(rCtx, skin, px, py, W, H, facingRight, vy || 0, 0, true, isPreview ? false : false);
+
+        // Cheveux DERRIÈRE le corps (couche basse)
+        drawHairStrands(rCtx, skin, px, py, W, H, facingRight, vy, 0, true, false);
+
+        // Jambes (légèrement plus fines)
+        rCtx.fillStyle = '#3a404d';
+        rCtx.beginPath(); rCtx.roundRect(px + 9, py + H - 16, 12, 20, 4); rCtx.fill();
+        rCtx.beginPath(); rCtx.roundRect(px + 27, py + H - 16, 12, 20, 4); rCtx.fill();
+
+        // Corps féminin — silhouette avec taille marquée
+        let armorGrad = rCtx.createLinearGradient(px, py, px + W, py + H);
+        armorGrad.addColorStop(0, skin.armor[0]);
+        armorGrad.addColorStop(0.5, skin.armor[1]);
+        armorGrad.addColorStop(1, skin.armor[2]);
+        rCtx.fillStyle = armorGrad;
+        rCtx.beginPath();
+        rCtx.moveTo(px + 2, py);
+        rCtx.lineTo(px + W - 2, py);
+        rCtx.lineTo(px + W, py + H * 0.35);
+        rCtx.lineTo(px + W - 5, py + H * 0.45); // taille
+        rCtx.lineTo(px + W - 3, py + H);
+        rCtx.lineTo(px + 3, py + H);
+        rCtx.lineTo(px + 5, py + H * 0.45);     // taille
+        rCtx.lineTo(px, py + H * 0.35);
+        rCtx.closePath();
+        rCtx.fill();
+
+        // Tunique basse / jupe courte
+        rCtx.fillStyle = skin.tunic;
+        rCtx.beginPath();
+        rCtx.moveTo(px + 5, py + H * 0.44);
+        rCtx.lineTo(px + W - 5, py + H * 0.44);
+        rCtx.lineTo(px + W - 3, py + H);
+        rCtx.lineTo(px + 3, py + H);
+        rCtx.closePath();
+        rCtx.fill();
+        rCtx.fillStyle = skin.trim; rCtx.fillRect(px + 3, py + H - 4, W - 6, 4);
+
+        // Ceinture
+        rCtx.fillStyle = '#222'; rCtx.fillRect(px + 3, py + H * 0.43, W - 6, 5);
+        rCtx.fillStyle = skin.trim; rCtx.fillRect(px + W/2 - 4, py + H * 0.41, 8, 8);
+
+        // Casque
+        drawHelmet(rCtx, skin, px, py, W, facingRight, 0, false);
+
+        // Épée
+        rCtx.save();
+        rCtx.translate(facingRight ? px + W / 2 + 9 : px + W / 2 - 9, py + H * 0.52);
+        if (!facingRight) rCtx.scale(-1, 1);
+        rCtx.rotate(Math.PI / 8);
+        rCtx.fillStyle = '#B0C4DE'; rCtx.fillRect(-3, -28, 5, 28);
+        rCtx.fillStyle = '#DAA520'; rCtx.fillRect(-8, 0, 16, 3);
+        rCtx.fillStyle = '#222'; rCtx.fillRect(-2, 3, 5, 7);
+        rCtx.restore();
+    }
+
+
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const menuScreen = document.getElementById('menuScreen');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const endTitle = document.getElementById('endTitle');
+    const endMessage = document.getElementById('endMessage');
+    const touchControls = document.getElementById('touch-controls');
+
+    const hpFill = document.getElementById('hp-fill');
+    const xpFill = document.getElementById('xp-fill');
+    const lvlLabel = document.getElementById('lvl-label');
+    const livesDisplay = document.getElementById('livesDisplay');
+
+    if (window.innerWidth < 1024) {
+        touchControls.classList.remove('hidden');
+    }
+
+    // --- VARIABLES GLOBALES ---
+    let animationId;
+    let gameState = 'START';
+    let levelDeadZone = 1000; // calculée dynamiquement dans buildLevel()
+    let score = 0;
+    let lives = 3; 
+    let totalCoins = 0; 
+    let cameraX = 0;
+    let cameraY = 0; 
+
+    // --- CAMERA SHAKE ---
+    let shakeIntensity = 0;
+    let shakeDuration = 0;
+    let shakeOffsetX = 0;
+    let shakeOffsetY = 0;
+
+    function triggerShake(intensity, duration) {
+        // On garde le shake le plus fort en cours
+        if (intensity > shakeIntensity) {
+            shakeIntensity = intensity;
+            shakeDuration = duration;
+        }
+    }
+
+    function updateShake() {
+        if (shakeDuration > 0) {
+            shakeDuration--;
+            let decay = shakeDuration / (shakeDuration + 1);
+            shakeOffsetX = (Math.random() * 2 - 1) * shakeIntensity * decay;
+            shakeOffsetY = (Math.random() * 2 - 1) * shakeIntensity * decay;
+            shakeIntensity *= 0.82; // amortissement rapide = feeling sec
+            if (shakeDuration <= 0) {
+                shakeIntensity = 0;
+                shakeOffsetX = 0;
+                shakeOffsetY = 0;
+            }
+        } else {
+            shakeOffsetX = 0;
+            shakeOffsetY = 0;
+        }
+    }
+
+    let platforms = [];
+    let coins = [];
+    let clouds = [];
+    let enemies = [];
+    let items = []; 
+    
+    // Listes pour le système de sang (VFX)
+    let hitEffects = [];
+    let bloodDrops = [];
+    let floorBloods = [];
+
+    // Base de données des quêtes
+    let quests = [];
+
+    const defaultLevelData = {
+        platforms: [
+            {x: 0, y: 500, width: 600, height: 200}, {x: 750, y: 450, width: 200, height: 250},
+            {x: 1100, y: 350, width: 150, height: 30}, {x: 1400, y: 500, width: 300, height: 200},
+            {x: 1850, y: 400, width: 100, height: 30}, {x: 2100, y: 250, width: 100, height: 30},
+            {x: 2400, y: 500, width: 600, height: 200}, {x: 3200, y: 450, width: 150, height: 200},
+            {x: 3400, y: 350, width: 150, height: 300}, {x: 3600, y: 250, width: 150, height: 400},
+            {x: 3950, y: 350, width: 200, height: 30}, {x: 4300, y: 500, width: 1000, height: 200},
+            {x: 5500, y: 350, width: 100, height: 30}, {x: 5800, y: 250, width: 100, height: 30},
+            {x: 6100, y: 500, width: 800, height: 200}
+        ],
+        coins: [
+            {x: 835, y: 380}, {x: 1160, y: 280}, {x: 1535, y: 430}, {x: 1885, y: 330}, {x: 2135, y: 180},
+            {x: 2600, y: 430}, {x: 3250, y: 380}, {x: 3450, y: 280}, {x: 3650, y: 180}, {x: 4025, y: 280},
+            {x: 4500, y: 430}, {x: 4700, y: 430}, {x: 4900, y: 430}, {x: 5530, y: 280}, {x: 5830, y: 180}
+        ],
+        skeletons: [
+            {x: 900, y: 400}, {x: 1500, y: 450}, {x: 2600, y: 450}, {x: 2800, y: 450},
+            {x: 3620, y: 200}, {x: 4500, y: 450}, {x: 4900, y: 450}, {x: 6300, y: 450}
+        ],
+        goal: {x: 6700, y: 480, width: 150, height: 20},
+        deadZone: 1000
+    };
+
+    let currentLevelData = defaultLevelData;
+
+    document.getElementById('levelLoader').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                currentLevelData = JSON.parse(evt.target.result);
+                document.getElementById('levelInfo').style.display = 'block';
+                document.getElementById('levelLoader').value = ""; 
+            } catch (err) {
+                alert("Erreur: Le fichier JSON n'est pas valide.");
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false };
+
+    window.addEventListener('keydown', (e) => {
+        if (gameState === 'MENU' && e.code !== 'KeyI' && e.code !== 'KeyQ' && e.code !== 'Escape') return;
+
+        // Empêcher les actions de jeu si on écrit son pseudo
+        if (document.activeElement.tagName === 'INPUT') {
+            if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+                if (assetsLoaded && gameState === 'START') startGame();
+            }
+            return; 
+        }
+
+        if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); 
+        
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA' || e.code === 'KeyQ') keys.left = true;
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'KeyZ') keys.up = true;
+        if (e.code === 'Digit0' || e.code === 'Numpad0') keys.attack = true;
+        if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.dash = true;
+        if (e.code === 'KeyR') keys.ability = true;
+
+        if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+            if (assetsLoaded && (gameState === 'START' || gameState === 'GAMEOVER')) startGame();
+        }
+
+        if (e.code === 'KeyI') toggleMenu('inventory');
+        if (e.code === 'KeyQ') toggleMenu('quests');
+        if (e.code === 'Escape' && gameState === 'MENU') toggleMenu();
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA' || e.code === 'KeyQ') keys.left = false;
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'KeyZ') keys.up = false;
+        if (e.code === 'Digit0' || e.code === 'Numpad0') keys.attack = false;
+        if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.dash = false;
+        if (e.code === 'KeyR') keys.ability = false;
+    });
+
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const btnJump = document.getElementById('btn-jump');
+    const btnAttack = document.getElementById('btn-attack');
+    const btnDash = document.getElementById('btn-dash');
+    const btnAbility = document.getElementById('btn-ability');
+
+    const addTouch = (elem, key) => {
+        elem.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+        elem.addEventListener('touchend',   (e) => { e.preventDefault(); keys[key] = false; });
+        elem.addEventListener('touchcancel',(e) => { e.preventDefault(); keys[key] = false; });
+    };
+
+    if (btnLeft)    addTouch(btnLeft,    'left');
+    if (btnRight)   addTouch(btnRight,   'right');
+    if (btnJump)    addTouch(btnJump,    'up');
+    if (btnAttack)  addTouch(btnAttack,  'attack');
+    if (btnDash)    addTouch(btnDash,    'dash');
+    if (btnAbility) addTouch(btnAbility, 'ability');
+
+    // Sync icône ability sur le bouton touch
+    function syncAbilityBtn() {
+        if (!btnAbility || !player) return;
+        const icons = {
+            'Chevalier Classique':'⚔️','Rôdeur Sylvestre':'🏹','Chevalier Noir':'🩸',
+            'Paladin Doré':'✨','Valkyrie Écarlate':'🔱','Chasseresse des Bois':'🌿',
+            'Ombre Maudite':'👁','Séraphin Céleste':'🌟'
+        };
+        btnAbility.innerText = icons[player.skin.name] || '✨';
+    }
+
+    // ── DÉTECTION PORTRAIT / PAYSAGE ─────────────────────────────────────────
+    const rotateScreen = document.getElementById('rotate-screen');
+    function checkOrientation() {
+        const isMobile = window.innerWidth < 1024;
+        const isPortrait = window.innerHeight > window.innerWidth;
+        if (rotateScreen) rotateScreen.style.display = (isMobile && isPortrait) ? 'flex' : 'none';
+    }
+    window.addEventListener('resize',            checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    checkOrientation();
+
+
+    // --- SYSTÈME DE PARTICULES & SANG (VFX) ---
+
+    class HitEffect {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.life = 20; 
+            this.maxLife = 20;
+            this.scale = 0.2; // Commence petit et s'agrandit
+            this.rotation = Math.random() * Math.PI * 2; // Rotation aléatoire
+        }
+        update() {
+            this.life--;
+            this.scale += 0.08; // Effet d'expansion
+        }
+        draw() {
+            let img = assets.images['init_blood'];
+            let alpha = Math.max(0, this.life / this.maxLife); // Fading fluide
+            
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            ctx.scale(this.scale, this.scale);
+            
+            if (img && img.isLoaded) {
+                ctx.drawImage(img, -25, -25, 50, 50);
+            } else {
+                ctx.fillStyle = '#8B0000';
+                ctx.beginPath();
+                for(let i=0; i<8; i++) {
+                    ctx.lineTo(Math.cos(i*Math.PI/4)*25, Math.sin(i*Math.PI/4)*25);
+                    ctx.lineTo(Math.cos((i+0.5)*Math.PI/4)*10, Math.sin((i+0.5)*Math.PI/4)*10);
+                }
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+    }
+
+    class BloodDrop {
+        constructor(x, y, vx, vy) {
+            this.x = x;
+            this.y = y;
+            this.vx = vx;
+            this.vy = vy;
+            this.gravity = 0.6;
+            this.life = 120; // Sécurité si ça tombe dans le vide
+            this.scale = 0.5 + Math.random() * 0.7; // Tailles variées
+        }
+        update(platforms) {
+            let nextY = this.y + this.vy;
+            
+            for (let p of platforms) {
+                if (this.x > p.x && this.x < p.x + p.width) {
+                    if (this.y <= p.y && nextY >= p.y) { 
+                        this.life = 0; 
+                        floorBloods.push(new FloorBlood(this.x, p.y, this.scale));
+                        return;
+                    }
+                }
+            }
+            
+            this.vy += this.gravity;
+            this.x += this.vx;
+            this.y = nextY;
+            this.life--;
+        }
+        draw() {
+            let img = assets.images['drops_blood'];
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(Math.atan2(this.vy, this.vx));
+            ctx.scale(this.scale, this.scale);
+            
+            if (img && img.isLoaded) {
+                ctx.drawImage(img, -10, -5, 20, 10);
+            } else {
+                ctx.fillStyle = '#b30000';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 8, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+    }
+
+    class FloorBlood {
+        constructor(x, y, scale) {
+            this.x = x;
+            this.y = y;
+            this.life = 300;
+            this.maxLife = 300;
+            this.scale = scale;
+        }
+        update() {
+            this.life--;
+        }
+        draw() {
+            let img = assets.images['floor_blood'];
+            ctx.save();
+            
+            let alpha = Math.min(1, this.life / 60); 
+            ctx.globalAlpha = alpha;
+            ctx.translate(this.x, this.y);
+            
+            if (img && img.isLoaded) {
+                ctx.drawImage(img, -20 * this.scale, -2 * this.scale, 40 * this.scale, 10 * this.scale);
+            } else {
+                ctx.fillStyle = '#800000';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 15 * this.scale, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+    }
+
+
+    // --- SYSTEME DE MENU & NOTIFICATIONS ---
+
+    function showNotification(text, color = "white") {
+        const notif = document.createElement('div');
+        notif.style.background = 'rgba(0,0,0,0.85)';
+        notif.style.color = color;
+        notif.style.padding = '12px 24px';
+        notif.style.borderRadius = '8px';
+        notif.style.border = `2px solid ${color}`;
+        notif.style.fontWeight = 'bold';
+        notif.style.fontSize = '18px';
+        notif.style.boxShadow = '0 4px 10px rgba(0,0,0,0.5)';
+        notif.style.animation = 'fadeinout 3s forwards';
+        notif.innerText = text;
+        
+        document.getElementById('notificationArea').appendChild(notif);
+        setTimeout(() => notif.remove(), 3000);
+    }
+
+    function toggleMenu(tab = 'inventory') {
+        if (gameState === 'PLAYING') {
+            gameState = 'MENU';
+            menuScreen.style.display = 'flex';
+            menuScreen.classList.remove('hidden');
+            
+            keys.right = false; keys.left = false; keys.up = false; keys.attack = false;
+            
+            showTab(tab);
+        } else if (gameState === 'MENU') {
+            gameState = 'PLAYING';
+            menuScreen.classList.add('hidden');
+            setTimeout(() => { if (gameState === 'PLAYING') menuScreen.style.display = 'none'; }, 300);
+        }
+    }
+
+    function showTab(tab) {
+        document.getElementById('tab-inventory').classList.remove('active');
+        document.getElementById('tab-quests').classList.remove('active');
+        document.getElementById('content-inventory').style.display = 'none';
+        document.getElementById('content-quests').style.display = 'none';
+        
+        document.getElementById('tab-' + tab).classList.add('active');
+        document.getElementById('content-' + tab).style.display = 'block';
+
+        if (tab === 'inventory') renderInventory();
+        if (tab === 'quests') renderQuests();
+    }
+
+    function initQuests() {
+        quests = [
+            { id: 'kill_skel', title: 'Fléau des Squelettes', desc: 'Éliminez 3 squelettes errants pour sécuriser la zone.', target: 3, current: 0, completed: false, xpReward: 100 }
+        ];
+    }
+
+    function updateQuest(id, amount) {
+        let q = quests.find(q => q.id === id);
+        if (q && !q.completed) {
+            q.current += amount;
+            if (q.current >= q.target) {
+                q.completed = true;
+                player.gainXp(q.xpReward);
+                showNotification(`Quête accomplie : ${q.title} ! (+${q.xpReward} XP)`, "#FBD000");
+            }
+        }
+    }
+
+    function renderInventory() {
+        const grid = document.getElementById('content-inventory');
+        grid.innerHTML = '<div class="inv-grid"></div>';
+        const invGrid = grid.querySelector('.inv-grid');
+        
+        let hasItems = false;
+        for (let key in player.inventory) {
+            let invItem = player.inventory[key];
+            if (invItem.count > 0) {
+                hasItems = true;
+                let dbItem = itemDatabase[key] || { name: "Objet", iconPath: "", iconScale: 1 };
+                let fallbackIcon = key === 'potion' ? '🧪' : '📦';
+                
+                let iconHtml = `<img src="${dbItem.iconPath}" style="max-width: 60px; max-height: 60px; object-fit: contain;" onerror="this.onerror=null; this.outerHTML='${fallbackIcon}'">`;
+
+                invGrid.innerHTML += `
+                    <div class="inv-slot" onclick="useItem('${key}')" title="${dbItem.name} (Cliquez pour utiliser)">
+                        ${iconHtml}
+                        <span class="item-count">${invItem.count}</span>
+                    </div>
+                `;
+            }
+        }
+        if (!hasItems) {
+            grid.innerHTML = '<p style="text-align:center; color:#888; margin-top: 50px; font-size:18px;">Votre inventaire est vide.</p>';
+        } else {
+            grid.innerHTML += '<p style="font-size:15px; color:#aaa; margin-top:20px; text-align:center;"><i>Cliquez sur un objet pour l\'utiliser.</i></p>';
+        }
+    }
+
+    function useItem(key) {
+        if (player.inventory[key] && player.inventory[key].count > 0) {
+            let dbItem = itemDatabase[key];
+            if (!dbItem) return;
+
+            if (dbItem.type === 'heal') {
+                if (player.hp < player.maxHp) {
+                    player.hp = Math.min(player.maxHp, player.hp + dbItem.value);
+                    player.inventory[key].count--;
+                    player.updateUI();
+                    renderInventory();
+                    showNotification(`Vous avez utilisé ${dbItem.name} !`, "#4CAF50");
+                } else {
+                    showNotification("Votre santé est déjà au maximum.", "#FBD000");
+                }
+            } 
+            else if (dbItem.type === 'damage') {
+                player.bonusDamage += dbItem.value;
+                player.inventory[key].count--;
+                renderInventory();
+                showNotification(`Dégâts augmentés de ${dbItem.value} !`, "#E52521");
+            }
+        }
+    }
+
+
+    // --- CLASSES DU JEU ---
+
+    // ---------------------------------------------------------------
+    // drawHelmet — dessine le casque selon skin.helmet
+    // Appelé depuis Player.draw() et drawSkinPreview()
+    // ---------------------------------------------------------------
+    function drawHelmet(rc, skin, dx, by, W, facingRight, lookAround, blinking, eyesOnly = false) {
+        const cx = dx + W / 2;
+        const fr = facingRight;
+        const c0 = skin.armor[0], c1 = skin.armor[1], c2 = skin.armor[2];
+        const trim = skin.trim;
+
+        // Helpers communs
+        const eyeSlot = (slotX, slotY, slotW, slotH) => {
+            if (!eyesOnly) {
+                rc.fillStyle = '#111';
+                rc.fillRect(slotX, slotY, slotW, slotH);
+            }
+            if (!blinking) {
+                rc.fillStyle = skin.eyes;
+                rc.fillRect(slotX + (fr ? slotW*0.35 : slotW*0.05), slotY + slotH*0.15, slotW*0.55, slotH*0.65);
+                rc.fillStyle = '#fff';
+                rc.fillRect(slotX + (fr ? slotW*0.6 : slotW*0.1) + lookAround, slotY + slotH*0.15, slotW*0.2, slotH*0.4);
+            } else {
+                rc.fillStyle = '#000';
+                rc.fillRect(slotX + 1, slotY + slotH*0.5, slotW - 2, 1);
+            }
+        };
+
+        rc.save();
+
+        if (eyesOnly) {
+            // Redessine uniquement les yeux par-dessus les taches de sang
+            // Chaque casque expose ses yeux à un endroit précis
+            if (skin.helmet === 'bascinet') {
+                const nasalX = cx - 2 + (fr ? 4 : -4);
+                const vx2 = fr ? nasalX + 4 : nasalX - 16;
+                eyeSlot(vx2 + (fr ? 0 : 2), by + 4, 14, 7);
+            } else if (skin.helmet === 'ranger') {
+                const eyeX = fr ? dx + W * 0.4 : dx + W * 0.05;
+                eyeSlot(eyeX + lookAround, by + 6, 18, 8);
+            } else if (skin.helmet === 'greathelm') {
+                const slitX = cx - 2 + (fr ? 3 : -3);
+                rc.fillStyle = '#0a0a0a';
+                rc.fillRect(slitX, by - 2, 4, 20);
+                rc.fillRect(fr ? slitX - 10 : slitX, by + 4, 14, 5);
+                if (!blinking) {
+                    rc.fillStyle = skin.eyes; rc.globalAlpha = 0.85;
+                    rc.fillRect(fr ? slitX - 8 : slitX + 1, by + 5, 5, 3);
+                    rc.globalAlpha = 1;
+                }
+            } else if (skin.helmet === 'crown') {
+                const eyeX2 = fr ? cx - 2 : cx - 16;
+                eyeSlot(eyeX2 + lookAround, by + 5, 14, 8);
+            } else if (skin.helmet === 'valkyrie') {
+                const vxV = fr ? cx + 4 : cx - 18;
+                eyeSlot(vxV + lookAround, by + 4, 12, 7);
+            } else if (skin.helmet === 'hood') {
+                const eyeXH = fr ? cx - 2 : cx - 16;
+                eyeSlot(eyeXH + lookAround, by + 6, 14, 8);
+            } else if (skin.helmet === 'skull') {
+                const orb1X = fr ? cx + 2 : cx - 20;
+                rc.fillStyle = '#000';
+                rc.beginPath(); rc.ellipse(orb1X + 8, by + 7, 9, 7, 0, 0, Math.PI*2); rc.fill();
+                if (!blinking) {
+                    rc.fillStyle = skin.eyes; rc.globalAlpha = 0.9;
+                    rc.beginPath(); rc.ellipse(orb1X + 8 + (fr?2:0) + lookAround, by + 7, 5, 4, 0, 0, Math.PI*2); rc.fill();
+                    rc.globalAlpha = 0.4; rc.fillStyle = '#fff';
+                    rc.beginPath(); rc.ellipse(orb1X + 8 + (fr?3:1) + lookAround, by + 5, 2, 2, 0, 0, Math.PI*2); rc.fill();
+                    rc.globalAlpha = 1;
+                }
+            } else if (skin.helmet === 'seraph') {
+                const eyeXS = fr ? cx - 2 : cx - 16;
+                eyeSlot(eyeXS + lookAround, by + 6, 14, 8);
+            }
+            rc.restore();
+            return;
+        }
+
+        if (skin.helmet === 'bascinet') {
+            // ── Bascinet : calotte ronde, ventail bas, nasal fin, panache cimier ──
+            // Ombre portée
+            rc.fillStyle = c2;
+            rc.beginPath(); rc.roundRect(dx - 1, by - 2, W + 2, 28, 7); rc.fill();
+            // Calotte
+            rc.fillStyle = c1;
+            rc.beginPath(); rc.roundRect(dx - 2, by - 6, W + 4, 24, [10, 10, 4, 4]); rc.fill();
+            // Reflet diagonal
+            rc.fillStyle = c0;
+            rc.beginPath(); rc.roundRect(dx + 4, by - 4, W * 0.35, 8, 4); rc.fill();
+            // Ventail (partie basse du casque couvrant les joues)
+            rc.fillStyle = c2;
+            rc.fillRect(dx, by + 16, W, 8);
+            rc.fillStyle = c1;
+            rc.fillRect(dx + 1, by + 16, W - 2, 4);
+            // Nasal central
+            const nasalX = cx - 2 + (fr ? 4 : -4);
+            rc.fillStyle = c2;
+            rc.fillRect(nasalX, by - 2, 4, 16);
+            rc.fillStyle = c0;
+            rc.fillRect(nasalX + 1, by - 1, 1, 12);
+            // Visière (fente de chaque côté du nasal)
+            const vx = fr ? nasalX + 4 : nasalX - 16;
+            eyeSlot(vx + (fr ? 0 : 2), by + 4, 14, 7);
+            // Panache cimier sur le sommet
+            rc.fillStyle = skin.plume || trim;
+            rc.beginPath();
+            rc.moveTo(cx - 4, by - 6);
+            rc.bezierCurveTo(cx - 2, by - 22, cx + 10, by - 18, cx + 6, by - 4);
+            rc.closePath(); rc.fill();
+            // Rivets décoratifs
+            rc.fillStyle = trim;
+            rc.beginPath(); rc.arc(dx + 6, by + 2, 2, 0, Math.PI*2); rc.fill();
+            rc.beginPath(); rc.arc(dx + W - 6, by + 2, 2, 0, Math.PI*2); rc.fill();
+
+        } else if (skin.helmet === 'ranger') {
+            // ── Chapeau de chasseur : large bord, coiffe molle, visage ouvert ──
+            // Coiffe souple (forme organique)
+            rc.fillStyle = c2;
+            rc.beginPath();
+            rc.moveTo(dx + 4, by + 20);
+            rc.lineTo(dx - 2, by + 2);
+            rc.quadraticCurveTo(cx, by - 14, dx + W + 2, by + 2);
+            rc.lineTo(dx + W - 4, by + 20);
+            rc.closePath(); rc.fill();
+            rc.fillStyle = c1;
+            rc.beginPath();
+            rc.moveTo(dx + 6, by + 18);
+            rc.lineTo(dx + 2, by + 4);
+            rc.quadraticCurveTo(cx, by - 10, dx + W - 2, by + 4);
+            rc.lineTo(dx + W - 6, by + 18);
+            rc.closePath(); rc.fill();
+            // Bord asymétrique (rabattu côté face)
+            const brimFar = fr ? dx - 10 : dx + W + 10;
+            const brimNear = fr ? dx + W - 4 : dx + 4;
+            rc.fillStyle = c2;
+            rc.beginPath();
+            rc.moveTo(brimFar, by + 12);
+            rc.lineTo(brimFar - (fr ? -4 : 4), by + 20);
+            rc.lineTo(brimNear, by + 20);
+            rc.lineTo(brimNear + (fr ? -6 : 6), by + 12);
+            rc.closePath(); rc.fill();
+            rc.fillStyle = c0;
+            rc.fillRect(fr ? brimFar : brimNear - 2, by + 12, Math.abs(brimNear - brimFar) + 2, 3);
+            // Plume longue sur le côté
+            rc.fillStyle = skin.plume || trim;
+            const plumeBase = fr ? dx + W - 6 : dx + 6;
+            rc.beginPath();
+            rc.moveTo(plumeBase, by + 8);
+            rc.bezierCurveTo(plumeBase + (fr?-6:6), by - 10, plumeBase + (fr?10:-10), by - 25, plumeBase + (fr?-14:14), by - 30);
+            rc.bezierCurveTo(plumeBase + (fr?-10:10), by - 20, plumeBase + (fr?2:-2), by - 8, plumeBase, by + 8);
+            rc.fill();
+            // Visage ouvert — juste les yeux
+            const eyeX = fr ? dx + W * 0.4 : dx + W * 0.05;
+            eyeSlot(eyeX + lookAround, by + 6, 18, 8);
+            // Cordon décoratif
+            rc.strokeStyle = trim;
+            rc.lineWidth = 2;
+            rc.beginPath();
+            rc.moveTo(dx + 8, by + 16);
+            rc.lineTo(dx + W - 8, by + 16);
+            rc.stroke();
+
+        } else if (skin.helmet === 'greathelm') {
+            // ── Grand Heaume : cylindre massif, fente en T, cornes, très imposant ──
+            // Corps principal — plus large et plus haut
+            rc.fillStyle = c2;
+            rc.beginPath(); rc.roundRect(dx - 5, by - 8, W + 10, 34, [6, 6, 2, 2]); rc.fill();
+            rc.fillStyle = c1;
+            rc.beginPath(); rc.roundRect(dx - 3, by - 6, W + 6, 30, [5, 5, 2, 2]); rc.fill();
+            // Reflet côté
+            rc.fillStyle = c0;
+            rc.beginPath(); rc.roundRect(dx + 2, by - 4, 6, 20, 3); rc.fill();
+            // Bande horizontale (renfort médian)
+            rc.fillStyle = c2;
+            rc.fillRect(dx - 3, by + 8, W + 6, 5);
+            rc.fillStyle = trim;
+            rc.fillRect(dx - 2, by + 9, W + 4, 1);
+            // Fente en T — barre verticale
+            const slitX = cx - 2 + (fr ? 3 : -3);
+            rc.fillStyle = '#0a0a0a';
+            rc.fillRect(slitX, by - 2, 4, 20);
+            // Fente en T — barre horizontale
+            rc.fillRect(fr ? slitX - 10 : slitX, by + 4, 14, 5);
+            // Yeux dans la fente (lueur)
+            if (!blinking) {
+                rc.fillStyle = skin.eyes;
+                rc.globalAlpha = 0.85;
+                rc.fillRect(fr ? slitX - 8 : slitX + 1, by + 5, 5, 3);
+                rc.globalAlpha = 1;
+            }
+            // Cornes latérales
+            const hornDir = fr ? -1 : 1;
+            for (let side of [-1, 1]) {
+                rc.fillStyle = c2;
+                rc.beginPath();
+                rc.moveTo(cx + side * (W * 0.42), by - 2);
+                rc.lineTo(cx + side * (W * 0.52 + 6), by - 16);
+                rc.lineTo(cx + side * (W * 0.52 + 2), by - 18);
+                rc.lineTo(cx + side * (W * 0.38), by - 1);
+                rc.closePath(); rc.fill();
+                rc.fillStyle = trim;
+                rc.beginPath();
+                rc.moveTo(cx + side * (W * 0.44), by - 2);
+                rc.lineTo(cx + side * (W * 0.5 + 4), by - 14);
+                rc.lineTo(cx + side * (W * 0.5 + 3), by - 15);
+                rc.lineTo(cx + side * (W * 0.41), by - 2);
+                rc.closePath(); rc.fill();
+            }
+            // Rivets sur le pourtour
+            rc.fillStyle = trim;
+            for (let i = 0; i < 5; i++) {
+                rc.beginPath(); rc.arc(dx - 1 + i * (W + 2) / 4, by - 4, 2, 0, Math.PI*2); rc.fill();
+                rc.beginPath(); rc.arc(dx - 1 + i * (W + 2) / 4, by + 22, 2, 0, Math.PI*2); rc.fill();
+            }
+
+        } else if (skin.helmet === 'crown') {
+            // ── Barbute + Couronne : profil élancé, visage ouvert, diadème serti ──
+            // Calotte allongée (barbute)
+            rc.fillStyle = c2;
+            rc.beginPath(); rc.roundRect(dx - 1, by - 10, W + 2, 30, [12, 12, 4, 4]); rc.fill();
+            rc.fillStyle = c1;
+            rc.beginPath(); rc.roundRect(dx + 1, by - 8, W - 2, 26, [10, 10, 3, 3]); rc.fill();
+            // Découpe centrale du visage (ouverture en T inversé)
+            rc.fillStyle = 'rgba(0,0,0,0.5)';
+            rc.beginPath();
+            rc.moveTo(cx - 10, by + 18);
+            rc.lineTo(cx - 10, by + 4);
+            rc.quadraticCurveTo(cx, by - 2, cx + 10, by + 4);
+            rc.lineTo(cx + 10, by + 18);
+            rc.closePath(); rc.fill();
+            // Couronne sertie par-dessus
+            rc.fillStyle = trim;
+            rc.fillRect(dx + 2, by - 8, W - 4, 6);
+            // Pointes de couronne
+            const pts = 5;
+            for (let i = 0; i < pts; i++) {
+                const px2 = dx + 4 + i * (W - 8) / (pts - 1);
+                rc.beginPath();
+                rc.moveTo(px2 - 4, by - 8);
+                rc.lineTo(px2, by - 18 - (i%2)*4);
+                rc.lineTo(px2 + 4, by - 8);
+                rc.closePath(); rc.fill();
+            }
+            // Gemmes sur les pointes alternées
+            rc.fillStyle = skin.plume || '#fff';
+            for (let i = 1; i < pts; i += 2) {
+                const px2 = dx + 4 + i * (W - 8) / (pts - 1);
+                rc.beginPath(); rc.arc(px2, by - 21, 3, 0, Math.PI*2); rc.fill();
+            }
+            // Yeux (visage découvert)
+            const eyeX2 = fr ? cx - 2 : cx - 16;
+            eyeSlot(eyeX2 + lookAround, by + 5, 14, 8);
+            // Sous-bandeau de séparation
+            rc.fillStyle = c0;
+            rc.fillRect(dx + 2, by - 2, W - 4, 3);
+
+        } else if (skin.helmet === 'valkyrie') {
+            // ── Casque ailé : calotte ronde, ailettes dorées, nasal effilé, crête ──
+            // Calotte
+            rc.fillStyle = c2;
+            rc.beginPath(); rc.roundRect(dx - 2, by - 6, W + 4, 26, [10, 10, 3, 3]); rc.fill();
+            rc.fillStyle = c1;
+            rc.beginPath(); rc.roundRect(dx, by - 4, W, 22, [8, 8, 3, 3]); rc.fill();
+            rc.fillStyle = c0;
+            rc.beginPath(); rc.roundRect(dx + 6, by - 2, 10, 10, 4); rc.fill();
+            // Crête centrale
+            rc.fillStyle = trim;
+            rc.beginPath();
+            rc.moveTo(cx - 3, by - 6);
+            rc.lineTo(cx - 2, by - 18);
+            rc.lineTo(cx + 2, by - 18);
+            rc.lineTo(cx + 3, by - 6);
+            rc.closePath(); rc.fill();
+            // Ailettes latérales (ailes stylisées)
+            for (let side of [-1, 1]) {
+                rc.fillStyle = trim;
+                rc.beginPath();
+                rc.moveTo(cx + side * (W * 0.38), by + 4);
+                rc.bezierCurveTo(cx + side*(W*0.6), by - 12, cx + side*(W*0.8), by - 6, cx + side*(W*0.75), by + 6);
+                rc.bezierCurveTo(cx + side*(W*0.65), by + 10, cx + side*(W*0.5), by + 12, cx + side*(W*0.38), by + 4);
+                rc.fill();
+                // Plumes dans l'aile
+                rc.fillStyle = c0;
+                rc.beginPath();
+                rc.moveTo(cx + side*(W*0.42), by + 6);
+                rc.bezierCurveTo(cx + side*(W*0.6), by - 4, cx + side*(W*0.7), by - 2, cx + side*(W*0.65), by + 8);
+                rc.fill();
+            }
+            // Nasal effilé
+            rc.fillStyle = c2;
+            rc.beginPath();
+            rc.moveTo(cx - 3, by + 2);
+            rc.lineTo(cx + 3, by + 2);
+            rc.lineTo(cx + 1, by + 18);
+            rc.lineTo(cx - 1, by + 18);
+            rc.closePath(); rc.fill();
+            // Visière
+            const vxV = fr ? cx + 4 : cx - 18;
+            eyeSlot(vxV + lookAround, by + 4, 12, 7);
+
+        } else if (skin.helmet === 'hood') {
+            // ── Cagoule de cuir : contour organique, oreilles pointues, visage ouvert ──
+            // Ombre profonde
+            rc.fillStyle = c2;
+            rc.beginPath();
+            rc.moveTo(dx + 2, by + 22);
+            rc.lineTo(dx - 2, by + 6);
+            rc.quadraticCurveTo(cx - 4, by - 16, cx, by - 18);
+            rc.quadraticCurveTo(cx + 4, by - 16, dx + W + 2, by + 6);
+            rc.lineTo(dx + W - 2, by + 22);
+            rc.closePath(); rc.fill();
+            // Corps de la cagoule
+            rc.fillStyle = c1;
+            rc.beginPath();
+            rc.moveTo(dx + 4, by + 20);
+            rc.lineTo(dx, by + 6);
+            rc.quadraticCurveTo(cx - 4, by - 12, cx, by - 14);
+            rc.quadraticCurveTo(cx + 4, by - 12, dx + W, by + 6);
+            rc.lineTo(dx + W - 4, by + 20);
+            rc.closePath(); rc.fill();
+            // Oreilles pointues
+            for (let side of [-1, 1]) {
+                rc.fillStyle = c2;
+                rc.beginPath();
+                rc.moveTo(cx + side * (W * 0.36), by - 4);
+                rc.lineTo(cx + side * (W * 0.48), by - 22);
+                rc.lineTo(cx + side * (W * 0.28), by - 8);
+                rc.closePath(); rc.fill();
+                rc.fillStyle = c1;
+                rc.beginPath();
+                rc.moveTo(cx + side*(W*0.36), by - 6);
+                rc.lineTo(cx + side*(W*0.44), by - 18);
+                rc.lineTo(cx + side*(W*0.30), by - 8);
+                rc.closePath(); rc.fill();
+            }
+            // Bordure décorative (trim cousu)
+            rc.strokeStyle = trim;
+            rc.lineWidth = 2;
+            rc.setLineDash([3, 3]);
+            rc.beginPath();
+            rc.moveTo(dx + 8, by + 18);
+            rc.quadraticCurveTo(cx, by + 22, dx + W - 8, by + 18);
+            rc.stroke();
+            rc.setLineDash([]);
+            // Visage ouvert
+            const eyeXH = fr ? cx - 2 : cx - 16;
+            eyeSlot(eyeXH + lookAround, by + 6, 14, 8);
+            // Plume/ornement sur le côté
+            rc.fillStyle = skin.plume || trim;
+            rc.beginPath();
+            rc.moveTo(fr ? dx + W - 4 : dx + 4, by + 4);
+            rc.bezierCurveTo(fr ? dx + W + 8 : dx - 8, by - 8, fr ? dx + W + 4 : dx - 4, by - 18, fr ? dx + W - 2 : dx + 2, by - 22);
+            rc.bezierCurveTo(fr ? dx + W - 6 : dx + 6, by - 14, fr ? dx + W + 2 : dx - 2, by - 4, fr ? dx + W - 4 : dx + 4, by + 4);
+            rc.fill();
+
+        } else if (skin.helmet === 'skull') {
+            // ── Masque-crâne : orbites vides, dents gravées, très sombre ──
+            // Ombre externe
+            rc.fillStyle = '#060608';
+            rc.beginPath(); rc.roundRect(dx - 3, by - 6, W + 6, 32, 7); rc.fill();
+            // Calotte crânienne
+            rc.fillStyle = c1;
+            rc.beginPath(); rc.roundRect(dx - 1, by - 4, W + 2, 28, 6); rc.fill();
+            // Pommettes saillantes (surélévations)
+            rc.fillStyle = c0;
+            rc.beginPath(); rc.roundRect(dx + 2, by, 12, 8, 3); rc.fill();
+            rc.beginPath(); rc.roundRect(dx + W - 14, by, 12, 8, 3); rc.fill();
+            // Orbites vides (grandes, creuses)
+            const orb1X = fr ? cx + 2 : cx - 20;
+            const orb2X = fr ? cx - 14 : cx + 6;
+            rc.fillStyle = '#000';
+            rc.beginPath(); rc.ellipse(orb1X + 8, by + 7, 9, 7, 0, 0, Math.PI*2); rc.fill();
+            // Lueur dans l'orbite
+            if (!blinking) {
+                rc.fillStyle = skin.eyes;
+                rc.globalAlpha = 0.9;
+                rc.beginPath(); rc.ellipse(orb1X + 8 + (fr?2:0) + lookAround, by + 7, 5, 4, 0, 0, Math.PI*2); rc.fill();
+                rc.globalAlpha = 0.4;
+                rc.fillStyle = '#fff';
+                rc.beginPath(); rc.ellipse(orb1X + 8 + (fr?3:1) + lookAround, by + 5, 2, 2, 0, 0, Math.PI*2); rc.fill();
+                rc.globalAlpha = 1;
+            }
+            // Nez en creux
+            rc.fillStyle = '#000';
+            rc.beginPath(); rc.roundRect(cx - 2 + (fr?1:-1), by + 12, 5, 6, 2); rc.fill();
+            // Dents gravées en bas du masque
+            rc.fillStyle = c2;
+            rc.fillRect(dx, by + 20, W, 6);
+            rc.fillStyle = '#eee';
+            for (let i = 0; i < 6; i++) {
+                rc.fillRect(dx + 4 + i * 7, by + 20, 4, 5);
+                rc.fillStyle = c2;
+                rc.fillRect(dx + 8 + i * 7, by + 20, 3, 5);
+                rc.fillStyle = '#eee';
+            }
+            // Sutures crâniennes
+            rc.strokeStyle = c2;
+            rc.lineWidth = 1;
+            rc.beginPath();
+            rc.moveTo(cx, by - 4);
+            rc.lineTo(cx, by + 14);
+            rc.stroke();
+            rc.beginPath();
+            rc.moveTo(dx + 6, by + 2);
+            rc.lineTo(dx + W - 6, by + 2);
+            rc.stroke();
+            // Trim violet lumineux sur les bords
+            rc.strokeStyle = trim;
+            rc.lineWidth = 1.5;
+            rc.globalAlpha = 0.7;
+            rc.beginPath(); rc.roundRect(dx, by - 2, W, 26, 5); rc.stroke();
+            rc.globalAlpha = 1;
+
+        } else if (skin.helmet === 'seraph') {
+            // ── Tiare angélique : arcades dorées, ailes repliées, nimbe discret ──
+            // Bandeau de base (fin, élégant)
+            rc.fillStyle = c1;
+            rc.beginPath(); rc.roundRect(dx + 2, by - 2, W - 4, 20, [8, 8, 3, 3]); rc.fill();
+            rc.fillStyle = c0;
+            rc.beginPath(); rc.roundRect(dx + 4, by, W - 8, 14, [6, 6, 2, 2]); rc.fill();
+            // Arcades dorées (tiare)
+            rc.fillStyle = trim;
+            rc.fillRect(dx + 4, by - 2, W - 8, 5);
+            // Motif ajouré sur la tiare (arcades)
+            rc.fillStyle = c1;
+            for (let i = 0; i < 4; i++) {
+                rc.beginPath();
+                rc.arc(dx + 10 + i * 10, by, 3, Math.PI, 0);
+                rc.fill();
+            }
+            // Pic central (gemme en hauteur)
+            rc.fillStyle = trim;
+            rc.beginPath();
+            rc.moveTo(cx - 4, by - 2);
+            rc.lineTo(cx, by - 20);
+            rc.lineTo(cx + 4, by - 2);
+            rc.closePath(); rc.fill();
+            rc.fillStyle = skin.eyes;
+            rc.beginPath(); rc.arc(cx, by - 14, 4, 0, Math.PI*2); rc.fill();
+            rc.fillStyle = '#fff';
+            rc.globalAlpha = 0.6;
+            rc.beginPath(); rc.arc(cx - 1, by - 15, 2, 0, Math.PI*2); rc.fill();
+            rc.globalAlpha = 1;
+            // Ailes angéliques repliées (petites, de chaque côté)
+            for (let side of [-1, 1]) {
+                rc.fillStyle = c0;
+                rc.beginPath();
+                rc.moveTo(cx + side*(W*0.3), by + 2);
+                rc.bezierCurveTo(cx + side*(W*0.55), by - 14, cx + side*(W*0.7), by - 4, cx + side*(W*0.6), by + 8);
+                rc.bezierCurveTo(cx + side*(W*0.5), by + 14, cx + side*(W*0.38), by + 12, cx + side*(W*0.3), by + 2);
+                rc.fill();
+                // Plumes internes
+                rc.fillStyle = '#ffffff';
+                rc.globalAlpha = 0.5;
+                rc.beginPath();
+                rc.moveTo(cx + side*(W*0.32), by + 4);
+                rc.bezierCurveTo(cx + side*(W*0.5), by - 6, cx + side*(W*0.6), by - 1, cx + side*(W*0.55), by + 8);
+                rc.fill();
+                rc.globalAlpha = 1;
+            }
+            // Nimbe (halo) derrière la tête — discret
+            rc.strokeStyle = trim;
+            rc.lineWidth = 2;
+            rc.globalAlpha = 0.35;
+            rc.beginPath(); rc.arc(cx, by + 4, W * 0.55, -Math.PI, 0); rc.stroke();
+            rc.globalAlpha = 1;
+            // Visage découvert
+            const eyeXS = fr ? cx - 2 : cx - 16;
+            eyeSlot(eyeXS + lookAround, by + 6, 14, 8);
+        }
+
+        rc.restore();
+    }
+
+    class Player {
+        constructor() {
+            this.width = 50; 
+            this.height = 50;
+            this.facingRight = true;
+            this.lastAttackKey = false;
+            this.inventory = {};
+            this.pseudo = "Héros";
+            this.skin = SKINS[0];
+            this.reset();
+        }
+
+        resetInventory() {
+            this.inventory = {};
+            for (const key in itemDatabase) {
+                this.inventory[key] = { count: 0 };
+            }
+        }
+
+        reset() {
+            this.x = 100;
+            this.y = 0; 
+            this.vx = 0;
+            this.vy = 0;
+            this.speed = 7;
+            this.jumpStrength = -16;
+            this.gravity = 0.8;
+            this.grounded = false;
+            this.color = '#B0C4DE'; 
+            this.facingRight = true;
+            this.isAttacking = false;
+            this.attackTimer = 0;
+            this.comboStep = 0;
+            this.comboResetTimer = 0;
+            this.idleTime = 0;
+            
+            this.level = 1;
+            this.maxHp = 100;
+            this.hp = this.maxHp;
+            this.xp = 0;
+            this.maxXp = 50;
+            this.hurtTimer = 0;
+            this.attackHitbox = null;
+            this.hasHit = new Set(); // Set pour toucher plusieurs ennemis par swing
+            this.bonusDamage = 0;
+            this.bloodStains = []; // Taches de sang sur le joueur
+            
+            // --- DASH ---
+            this.dashCooldown = 0;
+            this.dashTimer = 0;
+            this.dashDir = 1;
+            this.lastDashKey = false;
+
+            // --- CAPACITÉ SPÉCIALE (R) ---
+            this.abilityCharge = 0;      // charges accumulées (hits sur ennemis)
+            this.abilityMaxCharge = 8;   // hits nécessaires pour une utilisation
+            this.abilityTimer = 0;       // frames d'effet actif
+            this.lastAbilityKey = false;
+            this.abilityVfx = [];        // particules VFX de capacité
+            // États spécifiques
+            this.warCryActive = false;   // Chevalier Classique
+            this.shieldActive = false;   // Séraphin
+            this.projectiles = [];       // Rôdeur
+            this.traps = [];             // Chasseresse
+            
+            this.respawn();
+        }
+
+        updateUI() {
+            if(hpFill) hpFill.style.width = Math.max(0, (this.hp / this.maxHp) * 100) + '%';
+            if(xpFill) xpFill.style.width = Math.min(100, (this.xp / this.maxXp) * 100) + '%';
+            if(lvlLabel) lvlLabel.innerText = `Niv. ${this.level}`;
+        }
+        
+        gainXp(amount) {
+            this.xp += amount;
+            if (this.xp >= this.maxXp) {
+                this.xp -= this.maxXp;
+                this.level++;
+                this.maxXp = Math.floor(this.maxXp * 1.5); 
+                this.maxHp += 20;
+                this.hp = this.maxHp; 
+                
+                lvlLabel.style.color = '#FBD000';
+                setTimeout(() => lvlLabel.style.color = 'white', 500);
+                showNotification(`Niveau Supérieur ! (Niv. ${this.level})`, "#9b59b6");
+            }
+            this.updateUI();
+        }
+        
+        takeDamage(amount, knockbackDir) {
+            if (this.hurtTimer > 0) return; 
+            
+            this.hp -= amount;
+            this.hurtTimer = 40; 
+            this.vy = -4; 
+            this.vx = knockbackDir * 4; 
+            triggerShake(5, 7); // Dégâts reçus — medium
+
+            // --- DÉCLENCHEMENT VFX (Sang sur le joueur) ---
+            let hitX = this.x + this.width / 2;
+            let hitY = this.y + this.height / 2;
+            
+            // 1. Splash initial
+            hitEffects.push(new HitEffect(hitX, hitY));
+            
+            // 2. Gouttes de sang projetées
+            let dropCount = 3 + Math.floor(Math.random() * 4); // 3 à 6 gouttes
+            for(let i=0; i<dropCount; i++) {
+                // On projette le sang un peu dans la direction du coup
+                let vx = (knockbackDir * 2) + (Math.random() * 6 - 3);
+                let vy = -2 - Math.random() * 6;
+                bloodDrops.push(new BloodDrop(hitX, hitY, vx, vy));
+            }
+
+            // 3. Tacher le joueur avec son propre sang (CUMULABLE)
+            let stainCount = 1 + Math.floor(Math.random() * 3);
+            for(let i=0; i<stainCount; i++) {
+                this.bloodStains.push({
+                    dx: Math.random() * this.width,
+                    dy: -20 + Math.random() * (this.height + 20), // -20 couvre le casque
+                    scale: 0.15 + Math.random() * 0.15,
+                    rotation: Math.random() * Math.PI * 2
+                });
+            }
+            // Limite optionnelle de 100 taches pour éviter de surcharger la mémoire
+            if (this.bloodStains.length > 100) this.bloodStains.shift();
+            
+            this.updateUI();
+            
+            if (this.hp <= 0) {
+                handlePlayerDeath(); 
+            }
+        }
+
+        useAbility() {
+            const name = this.skin.name;
+            const cx = this.x + this.width / 2;
+            const cy = this.y + this.height / 2;
+
+            if (name === 'Chevalier Classique') {
+                // Cri de Guerre : boost dégâts +20, vitesse +3 pendant 4s
+                this.abilityCharge = 0;
+                this.abilityTimer = 240;
+                this.warCryActive = true;
+                this.bonusDamage += 20;
+                this.speed += 3;
+                triggerShake(6, 10);
+                for (let i = 0; i < 16; i++) {
+                    const a = (i/16)*Math.PI*2;
+                    this.abilityVfx.push({ x: cx, y: cy, vx: Math.cos(a)*5, vy: Math.sin(a)*5, life: 30, maxLife: 30, color: '#FFD700', r: 6, grav: 0 });
+                }
+                showNotification('⚔️ Cri de Guerre !', '#FFD700');
+            }
+            else if (name === 'Rôdeur Sylvestre') {
+                // Tir de flèche : projectile rapide
+                this.abilityCharge = 0;
+                const dir = this.facingRight ? 1 : -1;
+                this.projectiles.push({ x: cx, y: cy - 5, vx: dir * 22, vy: 0, life: 60, dmg: 30, color: '#82b366' });
+                // VFX trait vert
+                for (let i = 0; i < 5; i++)
+                    this.abilityVfx.push({ x: cx + dir*i*4, y: cy - 5, vx: 0, vy: 0, life: 8, maxLife: 8, color: '#a5d6a7', r: 3, grav: 0 });
+            }
+            else if (name === 'Chevalier Noir') {
+                // Drain d'âme : vole 20 HP à chaque ennemi proche (<120px)
+                this.abilityCharge = 0;
+                let stolen = 0;
+                for (let e of enemies) {
+                    if (e.state !== 'DEAD' && Math.hypot((e.x+e.width/2)-cx, (e.y+e.height/2)-cy) < 120) {
+                        const drain = Math.min(20, e.hp);
+                        e.hp -= drain; stolen += drain;
+                        e.hurtTimer = 20;
+                        hitEffects.push(new HitEffect(e.x+e.width/2, e.y+e.height/2));
+                        for (let i = 0; i < 6; i++)
+                            this.abilityVfx.push({ x: e.x+e.width/2, y: e.y+e.height/2, vx: (cx-(e.x+e.width/2))/18 + (Math.random()-0.5)*2, vy: (cy-(e.y+e.height/2))/18 + (Math.random()-0.5)*2, life: 20, maxLife: 20, color: '#9c27b0', r: 4, grav: 0 });
+                        if (e.hp <= 0) { e.state='DEAD'; player.gainXp(20); updateQuest('kill_skel',1); triggerShake(11,14); }
+                    }
+                }
+                if (stolen > 0) {
+                    this.hp = Math.min(this.maxHp, this.hp + stolen);
+                    this.updateUI();
+                    triggerShake(5, 8);
+                    showNotification(`🩸 Drain : +${stolen} HP`, '#9c27b0');
+                } else {
+                    this.abilityCharge = 0; // pas d'ennemi = mini cooldown
+                    showNotification('Aucun ennemi à portée', '#888');
+                }
+            }
+            else if (name === 'Paladin Doré') {
+                // Soin sacré : +40 HP + halo
+                this.abilityCharge = 0;
+                const healed = Math.min(40, this.maxHp - this.hp);
+                this.hp = Math.min(this.maxHp, this.hp + 40);
+                this.abilityTimer = 60;
+                this.updateUI();
+                triggerShake(3, 6);
+                for (let i = 0; i < 20; i++) {
+                    const a = (i/20)*Math.PI*2, r = 30 + Math.random()*20;
+                    this.abilityVfx.push({ x: cx+Math.cos(a)*r, y: cy+Math.sin(a)*r, vx: Math.cos(a)*0.5, vy: -1.5-Math.random(), life: 50, maxLife: 50, color: '#ffe082', r: 4, grav: -0.02 });
+                }
+                showNotification(`✨ Soin Sacré ! +${healed} HP`, '#ffe082');
+            }
+            else if (name === 'Valkyrie Écarlate') {
+                // Frappe plongeante : saut forcé + slam
+                this.abilityCharge = 0;
+                this.abilityTimer = 60;
+                this.abilityLanded = false;
+                this.vy = -18;
+                this.grounded = false;
+                triggerShake(4, 6);
+                for (let i = 0; i < 8; i++)
+                    this.abilityVfx.push({ x: cx, y: cy, vx: (Math.random()-0.5)*6, vy: -3-Math.random()*4, life: 20, maxLife: 20, color: '#ff80ab', r: 5, grav: 0.2 });
+                showNotification('🔱 Frappe Plongeante !', '#ff80ab');
+            }
+            else if (name === 'Chasseresse des Bois') {
+                // Piège : pose un piège devant soi
+                this.abilityCharge = 0;
+                const trapX = this.x + (this.facingRight ? this.width + 20 : -40);
+                // Cherche le sol sous le point de pose
+                let trapY = this.y + this.height;
+                for (let p of platforms) {
+                    if (trapX > p.x && trapX < p.x + p.width && trapY <= p.y + 4) trapY = p.y;
+                }
+                this.traps.push({ x: trapX + 20, y: trapY, life: 600, triggered: false, triggerTimer: 0 });
+                // VFX vert de pose
+                for (let i = 0; i < 6; i++)
+                    this.abilityVfx.push({ x: trapX+20, y: trapY, vx: (Math.random()-0.5)*3, vy: -2-Math.random()*2, life: 15, maxLife: 15, color: '#69f0ae', r: 3, grav: 0.1 });
+                showNotification('🌿 Piège posé !', '#69f0ae');
+            }
+            else if (name === 'Ombre Maudite') {
+                // Téléportation derrière l'ennemi le plus proche
+                this.abilityCharge = 0;
+                let closest = null, minDist = Infinity;
+                for (let e of enemies) {
+                    if (e.state !== 'DEAD') {
+                        const d = Math.hypot((e.x+e.width/2)-cx, (e.y+e.height/2)-cy);
+                        if (d < minDist) { minDist = d; closest = e; }
+                    }
+                }
+                if (closest && minDist < 500) {
+                    // VFX départ
+                    for (let i = 0; i < 10; i++)
+                        this.abilityVfx.push({ x: cx, y: cy, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, life: 18, maxLife: 18, color: '#ea80fc', r: 4, grav: 0 });
+                    // Téléport derrière l'ennemi
+                    const behindDir = closest.facingRight ? -1 : 1;
+                    this.x = closest.x + closest.width/2 + behindDir * (this.width + 10) - this.width/2;
+                    this.y = closest.y;
+                    this.facingRight = behindDir < 0;
+                    triggerShake(6, 8);
+                    // VFX arrivée
+                    for (let i = 0; i < 10; i++)
+                        this.abilityVfx.push({ x: this.x+this.width/2, y: this.y+this.height/2, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, life: 18, maxLife: 18, color: '#ea80fc', r: 4, grav: 0 });
+                    showNotification('👁 Téléportation !', '#ea80fc');
+                } else {
+                    this.abilityCharge = 0;
+                    showNotification('Aucun ennemi à portée', '#888');
+                }
+            }
+            else if (name === 'Séraphin Céleste') {
+                // Bouclier Divin : invincibilité 3s + aura
+                this.abilityCharge = 0;
+                this.abilityTimer = 180;
+                this.shieldActive = true;
+                this.hurtTimer = 180; // invincibilité via hurtTimer mais sans clignoter
+                triggerShake(4, 8);
+                for (let i = 0; i < 24; i++) {
+                    const a = (i/24)*Math.PI*2;
+                    this.abilityVfx.push({ x: cx+Math.cos(a)*35, y: cy+Math.sin(a)*35, vx: Math.cos(a)*0.8, vy: Math.sin(a)*0.8-0.5, life: 60, maxLife: 60, color: '#ffe57f', r: 5, grav: -0.01 });
+                }
+                showNotification('🌟 Bouclier Divin !', '#ffe57f');
+            }
+        }
+
+        respawn() {
+            this.x = 100;
+            
+            let startY = 0;
+            if (typeof platforms !== 'undefined' && platforms.length > 0) startY = platforms[0].y - 100;
+            
+            this.y = startY;
+            this.vx = 0;
+            this.vy = 0;
+            this.hp = this.maxHp; 
+            this.hurtTimer = 60;  
+            this.isAttacking = false;
+            this.attackTimer = 0;
+            this.comboStep = 0;
+            this.abilityCharge = 0;
+            this.bloodStains = []; // Nettoie le sang à la réapparition
+
+            // Réinitialise la physique cape/cheveux pour éviter les artefacts de téléportation
+            if (this.skin) {
+                resetCapeState(this.skin.name + '_cape');
+                resetHairState(this.skin.name);
+            }
+            
+            cameraX = 0;
+            cameraY = this.y - canvas.height / 2;
+            
+            this.updateUI();
+        }
+
+        update(platforms) {
+            if (this.hurtTimer > 0) this.hurtTimer--;
+            if (this.dashCooldown > 0) this.dashCooldown--;
+            if (this.dashTimer > 0) this.dashTimer--;
+
+            // --- DASH ---
+            let justPressedDash = keys.dash && !this.lastDashKey;
+            this.lastDashKey = keys.dash;
+
+            if (justPressedDash && this.dashCooldown === 0 && !this.isAttacking) {
+                // Direction : input prioritaire, sinon facing
+                if (keys.right) this.dashDir = 1;
+                else if (keys.left) this.dashDir = -1;
+                else this.dashDir = this.facingRight ? 1 : -1;
+
+                this.dashTimer = 9;
+                this.dashCooldown = 38;
+                this.vy = 0;             // neutralise la chute en cours
+                this.facingRight = this.dashDir > 0;
+            }
+
+            // --- CAPACITÉ SPÉCIALE (R) ---
+            // --- CAPACITÉ SPÉCIALE (R) ---
+            if (this.abilityTimer > 0)    this.abilityTimer--;
+            if (this.abilityTimer === 0 && this.warCryActive) {
+                this.warCryActive = false;
+                this.bonusDamage = Math.max(0, this.bonusDamage - 20);
+                this.speed = 7;
+            }
+            if (this.abilityTimer === 0) { this.shieldActive = false; }
+            if (this.shieldActive && this.abilityTimer > 0) this.hurtTimer = Math.max(this.hurtTimer, 2);
+
+            const justPressedAbility = keys.ability && !this.lastAbilityKey;
+            this.lastAbilityKey = keys.ability;
+            if (justPressedAbility && this.abilityCharge >= this.abilityMaxCharge) this.useAbility();
+
+            // Mise à jour projectiles (Rôdeur)
+            this.projectiles = this.projectiles.filter(p => {
+                p.x += p.vx; p.life--;
+                // Collision ennemis
+                for (let e of enemies) {
+                    if (e.state !== 'DEAD' && Math.abs(p.x - (e.x+e.width/2)) < 20 && Math.abs(p.y - (e.y+e.height/2)) < 20) {
+                        e.hp -= p.dmg; e.hurtTimer = 20; e.vx = p.vx * 0.4;
+                        triggerShake(4, 6);
+                        hitEffects.push(new HitEffect(p.x, p.y));
+                        if (e.hp <= 0) { e.state = 'DEAD'; player.gainXp(20); updateQuest('kill_skel', 1); triggerShake(11, 14); }
+                        p.life = 0;
+                        break;
+                    }
+                }
+                return p.life > 0;
+            });
+
+            // Mise à jour pièges (Chasseresse)
+            this.traps = this.traps.filter(t => {
+                t.life--;
+                if (!t.triggered) {
+                    for (let e of enemies) {
+                        if (e.state !== 'DEAD' && Math.abs((e.x+e.width/2) - t.x) < 22 && Math.abs((e.y+e.height) - t.y) < 18) {
+                            t.triggered = true; t.triggerTimer = 120;
+                            e.hurtTimer = 120; e.vx = 0;
+                            e.hp -= 20;
+                            hitEffects.push(new HitEffect(t.x, t.y));
+                            triggerShake(5, 8);
+                            if (e.hp <= 0) { e.state='DEAD'; player.gainXp(20); updateQuest('kill_skel',1); triggerShake(11,14); }
+                        }
+                    }
+                }
+                if (t.triggered) { t.triggerTimer--; if (t.triggerTimer <= 0) t.life = 0; }
+                return t.life > 0;
+            });
+
+            // Mise à jour VFX capacité
+            this.abilityVfx = this.abilityVfx.filter(v => { v.life--; v.x += v.vx||0; v.y += v.vy||0; v.vy = (v.vy||0) + (v.grav||0); return v.life > 0; });
+
+            // Frappe plongeante Valkyrie — dégâts au sol
+            if (this.skin.name === 'Valkyrie Écarlate' && this.abilityTimer > 0 && this.abilityTimer < 30 && this.grounded && !this.abilityLanded) {
+                this.abilityLanded = true;
+                triggerShake(10, 14);
+                for (let e of enemies) {
+                    if (e.state !== 'DEAD' && Math.abs((e.x+e.width/2) - (this.x+this.width/2)) < 80) {
+                        e.hp -= 35; e.hurtTimer = 30; e.vy = -8; e.vx = (e.x > this.x ? 1 : -1) * 6;
+                        hitEffects.push(new HitEffect(e.x+e.width/2, e.y+e.height/2));
+                        if (e.hp <= 0) { e.state='DEAD'; player.gainXp(20); updateQuest('kill_skel',1); }
+                    }
+                }
+                // Shockwave VFX
+                for (let i = 0; i < 12; i++) {
+                    const a = (i/12)*Math.PI*2;
+                    this.abilityVfx.push({ x: this.x+this.width/2, y: this.y+this.height, vx: Math.cos(a)*4, vy: Math.sin(a)*2-2, life: 20, maxLife: 20, color: '#FFD700', r: 5, grav: 0.1 });
+                }
+            }
+
+            let justPressedAttack = keys.attack && !this.lastAttackKey;
+            this.lastAttackKey = keys.attack;
+
+            if (justPressedAttack && !this.isAttacking) {
+                this.isAttacking = true;
+                this.attackTimer = 10;
+                this.hasHit = new Set();
+                
+                if (this.comboResetTimer > 0) {
+                    this.comboStep = (this.comboStep + 1) % 4; 
+                } else {
+                    this.comboStep = 0; 
+                }
+                this.comboResetTimer = 25; 
+            }
+
+            if (this.isAttacking) {
+                this.attackTimer--;
+                if (this.attackTimer <= 0) {
+                    this.isAttacking = false;
+                }
+            } else {
+                if (this.comboResetTimer > 0) {
+                    this.comboResetTimer--;
+                } else {
+                    this.comboStep = 0; 
+                }
+            }
+
+            this.attackHitbox = null;
+            if (this.isAttacking && this.attackTimer < 8 && this.attackTimer > 2) {
+                let radius = this.comboStep === 3 ? 110 : (this.comboStep === 2 ? 95 : 75);
+                this.attackHitbox = {
+                    x: this.facingRight ? this.x + this.width/2 : this.x + this.width/2 - radius,
+                    y: this.y - 20,
+                    width: radius,
+                    height: this.height + 40
+                };
+            }
+
+            if (this.hurtTimer < 20) {
+                if (this.dashTimer > 0) {
+                    // Pendant le dash : vélocité fixe, ignore l'input directionnel
+                    this.vx = this.dashDir * 18;
+                } else if (keys.right) { this.vx = this.speed; this.facingRight = true; }
+                else if (keys.left) { this.vx = -this.speed; this.facingRight = false; }
+                else this.vx = 0;
+            }
+
+            this.x += this.vx;
+            this.checkCollisions(platforms, 'x');
+
+            // Pendant le dash : gravité annulée, trajectoire droite
+            if (this.dashTimer > 0) {
+                this.vy = 0;
+            } else {
+                this.vy += this.gravity;
+                if (this.vy > 15) this.vy = 15;
+            }
+
+            if (keys.up && this.grounded) {
+                this.vy = this.jumpStrength;
+                this.grounded = false;
+            }
+
+            this.y += this.vy;
+            this.grounded = false;
+            this.checkCollisions(platforms, 'y');
+
+            if (this.grounded && Math.abs(this.vx) < 0.1 && !this.isAttacking) {
+                this.idleTime++;
+            } else {
+                this.idleTime = 0;
+            }
+
+            let deathY = levelDeadZone;
+            if (this.y > deathY) {
+                handlePlayerDeath(); 
+            }
+        }
+
+        checkCollisions(platforms, axis) {
+            for (let p of platforms) {
+                if (this.x < p.x + p.width &&
+                    this.x + this.width > p.x &&
+                    this.y < p.y + p.height &&
+                    this.y + this.height > p.y) {
+                    
+                    if (axis === 'x') {
+                        if (this.vx > 0) this.x = p.x - this.width;
+                        else if (this.vx < 0) this.x = p.x + p.width;
+                        this.vx = 0;
+                    } else if (axis === 'y') {
+                        if (this.vy > 0) { 
+                            this.y = p.y - this.height;
+                            this.grounded = true;
+                        } else if (this.vy < 0) { 
+                            this.y = p.y + p.height;
+                        }
+                        this.vy = 0;
+                    }
+                }
+            }
+        }
+
+        // Permet d'injecter un contexte pour dessiner dans la miniature de création
+        draw(renderCtx = ctx) {
+            if (this.hurtTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
+
+            const isMoving = Math.abs(this.vx) > 0.1;
+            const walkAnim = (this.grounded && isMoving) ? Math.sin(Date.now() / 40) * 12 : 0;
+            const jumpAnim = !this.grounded ? -10 : 0;
+            const bodyBob = (this.grounded && isMoving) ? Math.abs(Math.cos(Date.now() / 80)) * 2 : 0;
+            const breathAnim = (this.idleTime > 0) ? Math.sin(Date.now() / 300) * 1.5 : 0;
+
+            let attackOffsetX = 0, attackOffsetY = 0;
+            if (this.isAttacking) {
+                let progress = 1 - (this.attackTimer / 10);
+                let pCurve = Math.sin(progress * Math.PI);
+                if (this.comboStep === 0)      { attackOffsetX = (this.facingRight?1:-1)*pCurve*6;  attackOffsetY = pCurve*4; }
+                else if (this.comboStep === 1) { attackOffsetX = (this.facingRight?1:-1)*pCurve*14; attackOffsetY = pCurve*2; }
+                else if (this.comboStep === 2) { attackOffsetX = (this.facingRight?1:-1)*pCurve*2;  attackOffsetY = -pCurve*12; }
+                else                           { attackOffsetX = (this.facingRight?1:-1)*pCurve*18; attackOffsetY = pCurve*4; }
+            }
+
+            const drawX = this.x + attackOffsetX;
+            const bodyY = this.y - bodyBob + breathAnim + attackOffsetY;
+            const isFemale = this.skin.gender === 'F';
+
+            // Pseudo
+            if (this.pseudo !== "") {
+                renderCtx.fillStyle = 'white';
+                renderCtx.font = 'bold 16px "Segoe UI", sans-serif';
+                renderCtx.textAlign = 'center';
+                renderCtx.lineWidth = 3;
+                renderCtx.strokeStyle = 'black';
+                renderCtx.strokeText(this.pseudo, drawX + this.width/2, bodyY - 15);
+                renderCtx.fillText(this.pseudo,   drawX + this.width/2, bodyY - 15);
+            }
+
+            // ── CAPE (physique Verlet — même système que les cheveux) ────────
+            drawCapeStrands(renderCtx, this.skin, drawX, bodyY, this.width, this.height, this.facingRight, this.vy, this.vx, this.grounded, isMoving);
+
+            // ── CHEVEUX (féminin, derrière le corps) ──────────────────────────
+            if (isFemale) {
+                drawHairStrands(renderCtx, this.skin, drawX, bodyY, this.width, this.height, this.facingRight, this.vy, this.vx, this.grounded, isMoving);
+            }
+
+            // ── JAMBES ────────────────────────────────────────────────────────
+            const legWalk      = (this.grounded && isMoving) ? walkAnim : 0;
+            const legAirOffset = this.grounded ? 0 : 6;
+            const legW = isFemale ? 12 : 14;
+            renderCtx.fillStyle = '#3a404d';
+            renderCtx.beginPath();
+            renderCtx.roundRect(this.x + 8  + legWalk, this.y + this.height - 25 + jumpAnim + legAirOffset, legW, 29, 4);
+            renderCtx.fill();
+            renderCtx.beginPath();
+            renderCtx.roundRect(this.x + 28 - legWalk, this.y + this.height - 25 + jumpAnim + legAirOffset, legW, 29, 4);
+            renderCtx.fill();
+
+            // ── CORPS ─────────────────────────────────────────────────────────
+            if (isFemale) {
+                // Silhouette féminine avec taille marquée
+                let ag = renderCtx.createLinearGradient(drawX, bodyY, drawX + this.width, bodyY + this.height);
+                ag.addColorStop(0,   this.skin.armor[0]);
+                ag.addColorStop(0.5, this.skin.armor[1]);
+                ag.addColorStop(1,   this.skin.armor[2]);
+                renderCtx.fillStyle = ag;
+                renderCtx.beginPath();
+                renderCtx.moveTo(drawX + 2,              bodyY);
+                renderCtx.lineTo(drawX + this.width - 2, bodyY);
+                renderCtx.lineTo(drawX + this.width,     bodyY + this.height * 0.35);
+                renderCtx.lineTo(drawX + this.width - 5, bodyY + this.height * 0.45); // taille
+                renderCtx.lineTo(drawX + this.width - 3, bodyY + this.height);
+                renderCtx.lineTo(drawX + 3,              bodyY + this.height);
+                renderCtx.lineTo(drawX + 5,              bodyY + this.height * 0.45); // taille
+                renderCtx.lineTo(drawX,                  bodyY + this.height * 0.35);
+                renderCtx.closePath();
+                renderCtx.fill();
+                // Tunique basse
+                renderCtx.fillStyle = this.skin.tunic;
+                renderCtx.beginPath();
+                renderCtx.moveTo(drawX + 5,              bodyY + this.height * 0.44);
+                renderCtx.lineTo(drawX + this.width - 5, bodyY + this.height * 0.44);
+                renderCtx.lineTo(drawX + this.width - 3, bodyY + this.height);
+                renderCtx.lineTo(drawX + 3,              bodyY + this.height);
+                renderCtx.closePath();
+                renderCtx.fill();
+                renderCtx.fillStyle = this.skin.trim;
+                renderCtx.fillRect(drawX + 3, bodyY + this.height - 4, this.width - 6, 4);
+                // Ceinture
+                renderCtx.fillStyle = '#222';
+                renderCtx.fillRect(drawX + 3, bodyY + this.height * 0.43, this.width - 6, 5);
+                renderCtx.fillStyle = this.skin.trim;
+                renderCtx.fillRect(drawX + this.width/2 - 4, bodyY + this.height * 0.41, 8, 8);
+                // Casque féminin via drawHelmet (même gabarit que le preview)
+                drawHelmet(renderCtx, this.skin, drawX, bodyY, this.width, this.facingRight, 0, false);
+            } else {
+                let ag = renderCtx.createLinearGradient(drawX, bodyY, drawX + this.width, bodyY + this.height);
+                ag.addColorStop(0,   this.skin.armor[0]);
+                ag.addColorStop(0.5, this.skin.armor[1]);
+                ag.addColorStop(1,   this.skin.armor[2]);
+                renderCtx.fillStyle = ag;
+                renderCtx.beginPath();
+                renderCtx.roundRect(drawX, bodyY, this.width, this.height, 8);
+                renderCtx.fill();
+                renderCtx.fillStyle = this.skin.tunic;
+                renderCtx.beginPath();
+                renderCtx.roundRect(drawX, bodyY + this.height*0.4, this.width, this.height*0.6, {bottomLeft:8,bottomRight:8});
+                renderCtx.fill();
+                renderCtx.fillStyle = this.skin.trim;
+                renderCtx.fillRect(drawX, bodyY + this.height - 4, this.width, 4);
+                renderCtx.fillStyle = '#222';
+                renderCtx.fillRect(drawX, bodyY + this.height*0.4, this.width, 6);
+                renderCtx.fillStyle = this.skin.trim;
+                renderCtx.fillRect(drawX + this.width/2 - 5, bodyY + this.height*0.38, 10, 10);
+                renderCtx.fillStyle = '#222';
+                renderCtx.fillRect(drawX + this.width/2 - 2, bodyY + this.height*0.41, 4, 4);
+                renderCtx.fillStyle = this.skin.trim;
+                renderCtx.fillRect(drawX + this.width/2 - 3, bodyY + this.height*0.55, 6, 14);
+                renderCtx.fillRect(drawX + this.width/2 - 8, bodyY + this.height*0.6,  16, 4);
+                // Casque masculin + panache
+                drawHelmet(renderCtx, this.skin, drawX, bodyY, this.width, this.facingRight, 0, false);
+            }
+
+            // ── TACHES DE SANG ────────────────────────────────────────────────
+            if (this.bloodStains) {
+                this.bloodStains.forEach(stain => {
+                    const img = assets.images['init_blood'];
+                    renderCtx.save();
+                    renderCtx.globalAlpha = 0.85;
+                    renderCtx.translate(drawX + stain.dx, bodyY + stain.dy);
+                    renderCtx.rotate(stain.rotation);
+                    renderCtx.scale(stain.scale, stain.scale);
+                    if (img && img.isLoaded) renderCtx.drawImage(img, -15, -15, 30, 30);
+                    else { renderCtx.fillStyle='#800000'; renderCtx.beginPath(); renderCtx.arc(0,0,8,0,Math.PI*2); renderCtx.fill(); }
+                    renderCtx.restore();
+                });
+            }
+
+            // ── YEUX (idle blinking/look-around) — passés à drawHelmet via redraw ─
+            let lookAroundOffset = 0, isBlinking = false;
+            if (this.idleTime > 120) {
+                const cycle = (this.idleTime - 120) % 350;
+                if (cycle > 50  && cycle < 100) lookAroundOffset = this.facingRight ? -5 : 5;
+                if (cycle > 150 && cycle < 200) lookAroundOffset = this.facingRight ? 3  : -3;
+                if (cycle > 280 && cycle < 290) isBlinking = true;
+                if (cycle > 310 && cycle < 315) isBlinking = true;
+            }
+            // Redessine uniquement les yeux animés par-dessus le sang
+            drawHelmet(renderCtx, this.skin, drawX, bodyY, this.width, this.facingRight, lookAroundOffset, isBlinking, true);
+
+            // ── ÉPÉE + TRAIL DE COMBO ─────────────────────────────────────────
+            renderCtx.save();
+            const handX = this.facingRight ? drawX + this.width/2 + 10 : drawX + this.width/2 - 10;
+            const handY = bodyY + this.height * 0.55;
+            renderCtx.translate(handX, handY);
+            if (!this.facingRight) renderCtx.scale(-1, 1);
+
+            if (this.isAttacking) {
+                let progress = 1 - (this.attackTimer / 10);
+                let alpha    = Math.sin(progress * Math.PI);
+                let startAngle, endAngle, radius, scaleY;
+                if      (this.comboStep === 0) { startAngle=-Math.PI*0.7; endAngle=Math.PI*0.4;   radius=75;  scaleY=1; }
+                else if (this.comboStep === 1) { startAngle=-Math.PI*0.8; endAngle=Math.PI*0.3;   radius=95;  scaleY=0.3; }
+                else if (this.comboStep === 2) { startAngle= Math.PI*0.6; endAngle=-Math.PI*0.5;  radius=85;  scaleY=1; }
+                else                           { startAngle=-Math.PI;     endAngle=Math.PI*1.2;   radius=110; scaleY=0.4; }
+                let currentAngle = startAngle + progress * (endAngle - startAngle);
+                renderCtx.scale(1, scaleY);
+                let r2 = this.comboStep===3?255:0, g2=this.comboStep===3?215:255, b2=this.comboStep===3?0:255;
+                let gr;
+                if (this.comboStep === 3) {
+                    gr = renderCtx.createRadialGradient(0,0,radius*0.3,0,0,radius);
+                    gr.addColorStop(0, `rgba(${r2},${g2},${b2},0)`);
+                    gr.addColorStop(1, `rgba(${r2},${g2},${b2},${alpha*0.8})`);
+                } else {
+                    gr = renderCtx.createLinearGradient(Math.cos(startAngle)*radius,Math.sin(startAngle)*radius,Math.cos(currentAngle)*radius,Math.sin(currentAngle)*radius);
+                    gr.addColorStop(0, `rgba(${r2},${g2},${b2},0)`);
+                    gr.addColorStop(1, `rgba(${r2},${g2},${b2},${alpha*0.9})`);
+                }
+                renderCtx.fillStyle = gr;
+                renderCtx.beginPath();
+                renderCtx.moveTo(0, 0);
+                renderCtx.arc(0, 0, radius, startAngle, currentAngle, endAngle < startAngle);
+                renderCtx.closePath();
+                renderCtx.fill();
+                if (this.comboStep === 3) {
+                    renderCtx.fillStyle = `rgba(255,255,255,${alpha*0.4})`;
+                    renderCtx.beginPath(); renderCtx.arc(0,0,radius*1.05,0,Math.PI*2); renderCtx.fill();
+                }
+                renderCtx.rotate(currentAngle);
+            } else {
+                renderCtx.rotate(-Math.PI / 6);
+            }
+
+            renderCtx.fillStyle = '#B0C4DE'; renderCtx.fillRect(-3, -35, 6, 35);
+            renderCtx.fillStyle = '#DAA520'; renderCtx.fillRect(-10, 0, 20, 4);
+            renderCtx.fillStyle = '#222';    renderCtx.fillRect(-3, 4, 6, 8);
+            renderCtx.fillStyle = '#DAA520'; renderCtx.beginPath(); renderCtx.arc(0, 14, 4, 0, Math.PI*2); renderCtx.fill();
+
+            renderCtx.restore();
+
+            // Barre de vie
+            if (this.hp < this.maxHp) {
+                renderCtx.fillStyle = '#000';
+                renderCtx.fillRect(this.x, this.y - 12, this.width, 6);
+                renderCtx.fillStyle = '#ff0000';
+                renderCtx.fillRect(this.x + 1, this.y - 11, ((this.width-2)*this.hp)/this.maxHp, 4);
+            }
+
+            // ── AURA BOUCLIER SÉRAPHIN ────────────────────────────────────────
+            if (this.shieldActive && this.abilityTimer > 0) {
+                const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 80);
+                renderCtx.save();
+                renderCtx.globalAlpha = 0.25 + pulse * 0.2;
+                renderCtx.strokeStyle = '#ffe57f';
+                renderCtx.lineWidth = 3;
+                renderCtx.beginPath();
+                renderCtx.arc(this.x + this.width/2, this.y + this.height/2, 36 + pulse*4, 0, Math.PI*2);
+                renderCtx.stroke();
+                renderCtx.globalAlpha = 0.08 + pulse * 0.06;
+                renderCtx.fillStyle = '#ffe57f';
+                renderCtx.fill();
+                renderCtx.restore();
+            }
+
+            // ── AURA CRI DE GUERRE ────────────────────────────────────────────
+            if (this.warCryActive && this.abilityTimer > 0) {
+                const p = 0.5 + 0.5 * Math.sin(Date.now() / 60);
+                renderCtx.save();
+                renderCtx.globalAlpha = 0.15 + p * 0.1;
+                renderCtx.fillStyle = '#FFD700';
+                renderCtx.beginPath();
+                renderCtx.arc(this.x+this.width/2, this.y+this.height/2, 30+p*5, 0, Math.PI*2);
+                renderCtx.fill();
+                renderCtx.restore();
+            }
+
+            // ── VFX PARTICULES CAPACITÉ ───────────────────────────────────────
+            this.abilityVfx.forEach(v => {
+                renderCtx.save();
+                renderCtx.globalAlpha = v.life / v.maxLife;
+                renderCtx.fillStyle = v.color;
+                renderCtx.beginPath();
+                renderCtx.arc(v.x, v.y, v.r * (v.life / v.maxLife), 0, Math.PI*2);
+                renderCtx.fill();
+                renderCtx.restore();
+            });
+
+            // ── PROJECTILES (Rôdeur) ──────────────────────────────────────────
+            this.projectiles.forEach(p => {
+                renderCtx.save();
+                renderCtx.fillStyle = '#82b366';
+                renderCtx.translate(p.x, p.y);
+                renderCtx.rotate(p.vx > 0 ? 0 : Math.PI);
+                renderCtx.fillRect(-14, -1, 14, 2);   // hampe
+                renderCtx.fillStyle = '#d5e8d4';
+                renderCtx.beginPath();
+                renderCtx.moveTo(0, 0); renderCtx.lineTo(-5, -3); renderCtx.lineTo(-5, 3);
+                renderCtx.closePath(); renderCtx.fill();  // pointe
+                renderCtx.restore();
+            });
+
+            // ── PIÈGES (Chasseresse) ──────────────────────────────────────────
+            this.traps.forEach(t => {
+                renderCtx.save();
+                renderCtx.translate(t.x, t.y);
+                if (t.triggered) {
+                    renderCtx.strokeStyle = '#69f0ae';
+                    renderCtx.lineWidth = 2;
+                    renderCtx.globalAlpha = t.triggerTimer / 120;
+                    // Étoile de piège déclenché
+                    for (let i = 0; i < 4; i++) {
+                        renderCtx.beginPath();
+                        renderCtx.moveTo(0, -12); renderCtx.lineTo(0, 12);
+                        renderCtx.stroke();
+                        renderCtx.rotate(Math.PI/4);
+                    }
+                } else {
+                    const blink = Math.floor(Date.now() / 400) % 2;
+                    renderCtx.fillStyle = blink ? '#69f0ae' : '#3d6b38';
+                    // Triangle piège
+                    renderCtx.beginPath();
+                    renderCtx.moveTo(0, -7); renderCtx.lineTo(-10, 3); renderCtx.lineTo(10, 3);
+                    renderCtx.closePath(); renderCtx.fill();
+                    renderCtx.fillStyle = '#a5d6a7';
+                    renderCtx.beginPath(); renderCtx.arc(0, -2, 2, 0, Math.PI*2); renderCtx.fill();
+                }
+                renderCtx.restore();
+            });
+        }
+    }
+
+    class Skeleton {
+        constructor(x, y, minX, maxX) {
+            this.width = 50;  
+            this.height = 50; 
+            this.x = x;
+            this.y = y;
+            this.vx = 0;
+            this.vy = 0;
+            this.speed = 1.5 + Math.random(); 
+            this.gravity = 0.8;
+            this.grounded = false;
+            this.facingRight = false;
+            
+            this.minX = minX || x - 150;
+            this.maxX = maxX || x + 150;
+            
+            this.maxHp = 40;
+            this.hp = this.maxHp;
+            this.hurtTimer = 0;
+            this.attackTimer = 0;
+            this.state = 'PATROL'; 
+            this.currentPlatform = null; 
+        }
+
+        update(platforms, player) {
+            if (this.state === 'DEAD') return;
+            
+            if (this.hurtTimer > 0) this.hurtTimer--;
+            if (this.attackTimer > 0) this.attackTimer--;
+
+            this.vy += this.gravity;
+            if (this.vy > 15) this.vy = 15;
+            this.y += this.vy;
+            this.grounded = false;
+            
+            let deathY = levelDeadZone;
+            if (this.y > deathY) {
+                this.state = 'DEAD';
+                return;
+            }
+            
+            this.currentPlatform = null;
+            for (let p of platforms) {
+                if (this.x < p.x + p.width && this.x + this.width > p.x &&
+                    this.y < p.y + p.height && this.y + this.height > p.y) {
+                    if (this.vy > 0) {
+                        this.y = p.y - this.height;
+                        this.grounded = true;
+                        this.vy = 0;
+                        this.currentPlatform = p; 
+                    }
+                }
+            }
+
+            let distToPlayer = Math.abs((player.x + player.width/2) - (this.x + this.width/2));
+            let playerIsAlive = player.hp > 0;
+            let intendedVx = 0;
+            
+            if (this.hurtTimer > 20) {
+                intendedVx = this.vx;
+            } else if (distToPlayer < 70 && Math.abs(player.y - this.y) < 50 && playerIsAlive) {
+                this.state = 'ATTACK';
+                this.facingRight = player.x > this.x;
+                intendedVx = 0; 
+                
+                if (this.attackTimer === 0) {
+                    this.attackTimer = 60; 
+                    player.takeDamage(15, this.facingRight ? 1 : -1);
+                }
+            } else if (distToPlayer < 350 && Math.abs(player.y - this.y) < 100 && playerIsAlive) {
+                this.state = 'CHASE';
+                this.facingRight = player.x > this.x;
+                intendedVx = this.facingRight ? this.speed * 1.5 : -this.speed * 1.5;
+            } else {
+                this.state = 'PATROL';
+                if (this.x < this.minX) this.facingRight = true;
+                if (this.x > this.maxX) this.facingRight = false;
+                intendedVx = this.facingRight ? this.speed : -this.speed;
+            }
+
+            if (this.grounded && this.currentPlatform && this.hurtTimer <= 20) {
+                let nextX = this.x + intendedVx;
+                let platformLeft = this.currentPlatform.x;
+                let platformRight = this.currentPlatform.x + this.currentPlatform.width;
+
+                if (nextX < platformLeft) {
+                    intendedVx = 0;
+                    this.x = platformLeft; 
+                    if (this.state === 'PATROL') this.facingRight = true; 
+                } else if (nextX + this.width > platformRight) {
+                    intendedVx = 0;
+                    this.x = platformRight - this.width; 
+                    if (this.state === 'PATROL') this.facingRight = false; 
+                }
+            }
+
+            this.vx = intendedVx;
+            this.x += this.vx;
+            
+            // --- GESTION DES DEGÂTS ET GENERATION DU SANG ---
+            if (player.attackHitbox && !player.hasHit.has(this)) {
+                if (this.x < player.attackHitbox.x + player.attackHitbox.width &&
+                    this.x + this.width > player.attackHitbox.x &&
+                    this.y < player.attackHitbox.y + player.attackHitbox.height &&
+                    this.y + this.height > player.attackHitbox.y) {
+                    
+                    let damage = (player.comboStep === 3 ? 25 : 15) + (player.bonusDamage || 0); 
+                    this.hp -= damage;
+                    this.hurtTimer = 30; 
+                    this.vx = player.facingRight ? 8 : -8; 
+                    this.vy = -4; 
+                    player.hasHit.add(this);
+                    triggerShake(4, 6); // Hit léger — sec et bref
+                    // Accumulation de charge pour la capacité spéciale
+                    player.abilityCharge = Math.min(player.abilityMaxCharge, player.abilityCharge + 1);
+                    
+                    // --- DÉCLENCHEMENT VFX ---
+                    let hitX = this.x + this.width / 2;
+                    let hitY = this.y + this.height / 2;
+                    
+                    // 1. Splash initial
+                    hitEffects.push(new HitEffect(hitX, hitY));
+                    
+                    // 2. Gouttes de sang projetées
+                    let dropCount = 3 + Math.floor(Math.random() * 4); // 3 à 6 gouttes
+                    for(let i=0; i<dropCount; i++) {
+                        let vx = (player.facingRight ? 2 : -2) + (Math.random() * 6 - 3);
+                        let vy = -2 - Math.random() * 6;
+                        bloodDrops.push(new BloodDrop(hitX, hitY, vx, vy));
+                    }
+                    
+                    // 3. Tacher le joueur avec du sang de l'ennemi (CUMULABLE)
+                    let stainCount = 1 + Math.floor(Math.random() * 3); // 1 à 3 taches
+                    for(let i=0; i<stainCount; i++) {
+                        player.bloodStains.push({
+                            dx: Math.random() * player.width,
+                            dy: -20 + Math.random() * (player.height + 20), // -20 couvre le casque
+                            scale: 0.15 + Math.random() * 0.15,
+                            rotation: Math.random() * Math.PI * 2
+                        });
+                    }
+                    // Limite optionnelle de 100 taches pour éviter de surcharger la mémoire
+                    if (player.bloodStains.length > 100) player.bloodStains.shift();
+                    
+                    if (this.hp <= 0) {
+                        this.state = 'DEAD';
+                        triggerShake(11, 14); // Mort ennemi — impact brutal
+                        player.gainXp(20);
+                        updateQuest('kill_skel', 1);
+
+                        let dropRoll = Math.random();
+                        if (dropRoll > 0.85) {
+                            items.push(new ItemDrop(this.x, this.y, 'force'));
+                        } else if (dropRoll > 0.7) {
+                            items.push(new ItemDrop(this.x, this.y, 'potion')); 
+                        } else if (dropRoll > 0.3) {
+                            coins.push(new Coin(this.x, this.y)); 
+                        }
+                    }
+                }
+            }
+        }
+
+        draw() {
+            if (this.state === 'DEAD') return;
+            if (this.hurtTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
+
+            const isMoving = Math.abs(this.vx) > 0.1 && this.state !== 'ATTACK';
+            const walkAnim = (this.grounded && isMoving) ? Math.sin(Date.now() / 60) * 12 : 0;
+            const bodyBob = (this.grounded && isMoving) ? Math.abs(Math.cos(Date.now() / 120)) * 2 : 0;
+            
+            let attackOffsetX = 0;
+            let attackOffsetY = 0;
+            
+            if (this.state === 'ATTACK') {
+                let progress = 1 - (this.attackTimer / 60);
+                let pCurve = Math.sin(progress * Math.PI); 
+                attackOffsetX = (this.facingRight ? 1 : -1) * pCurve * 8;
+                attackOffsetY = pCurve * 4; 
+            }
+
+            let drawX = this.x + attackOffsetX;
+            let bodyY = this.y - bodyBob + attackOffsetY;
+
+            ctx.save();
+
+            const capeFlap = (isMoving) ? Math.sin(Date.now() / 60) * 10 : (Math.sin(Date.now() / 200) * 3); 
+            ctx.fillStyle = '#2c3e50'; 
+            ctx.beginPath();
+            let capeEndX = this.facingRight ? drawX - 10 - capeFlap : drawX + this.width + 10 + capeFlap;
+            ctx.moveTo(drawX + this.width / 2, bodyY + 10);
+            ctx.lineTo(capeEndX, bodyY + this.height - 10);
+            ctx.lineTo(capeEndX + (this.facingRight ? 5 : -5), bodyY + this.height);
+            ctx.lineTo(capeEndX + (this.facingRight ? 10 : -10), bodyY + this.height - 5);
+            ctx.lineTo(capeEndX + (this.facingRight ? 15 : -15), bodyY + this.height + 5);
+            ctx.fill();
+
+            ctx.fillStyle = '#4a3d31'; 
+            ctx.beginPath();
+            ctx.roundRect(this.x + 8 + walkAnim, this.y + this.height - 25, 14, 29, 4);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.roundRect(this.x + 28 - walkAnim, this.y + this.height - 25, 14, 29, 4);
+            ctx.fill();
+
+            let armorGrad = ctx.createLinearGradient(drawX, bodyY, drawX + this.width, bodyY + this.height);
+            armorGrad.addColorStop(0, '#786657'); 
+            armorGrad.addColorStop(0.5, '#4a3d31'); 
+            armorGrad.addColorStop(1, '#2c231a'); 
+            ctx.fillStyle = armorGrad;
+            ctx.beginPath();
+            ctx.roundRect(drawX, bodyY, this.width, this.height, 8);
+            ctx.fill();
+
+            ctx.fillStyle = '#111'; 
+            ctx.fillRect(drawX + 10, bodyY + 18, 30, 20);
+            ctx.fillStyle = '#d3cbb8'; 
+            ctx.fillRect(drawX + 12, bodyY + 20, 26, 3);
+            ctx.fillRect(drawX + 14, bodyY + 26, 22, 3);
+            ctx.fillRect(drawX + 18, bodyY + 32, 14, 3);
+
+            ctx.fillStyle = '#3d342b'; 
+            ctx.beginPath();
+            ctx.roundRect(drawX - 2, bodyY - 4, this.width + 4, 26, 6);
+            ctx.fill();
+            
+            ctx.fillStyle = '#111';
+            let visorOffsetX = this.facingRight ? 16 : 4;
+            ctx.fillRect(drawX + visorOffsetX, bodyY + 6, 30, 10);
+            
+            ctx.fillStyle = '#ff0000';
+            let pupilOffsetX = this.facingRight ? 26 : 16;
+            ctx.fillRect(drawX + pupilOffsetX, bodyY + 8, 8, 4);
+            ctx.fillStyle = '#ffa0a0'; 
+            ctx.fillRect(drawX + pupilOffsetX + (this.facingRight?4:2), bodyY + 8, 2, 2);
+
+            ctx.save();
+            let handX = this.facingRight ? drawX + this.width / 2 + 10 : drawX + this.width / 2 - 10;
+            let handY = bodyY + this.height * 0.55;
+
+            ctx.translate(handX, handY);
+            if (!this.facingRight) ctx.scale(-1, 1); 
+
+            ctx.fillStyle = '#5c4033'; 
+            ctx.beginPath();
+            ctx.roundRect(-25, -15, 12, 35, 4);
+            ctx.fill();
+            ctx.strokeStyle = '#3d2b22'; 
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-25, -15, 12, 35);
+            ctx.fillStyle = '#786657';
+            ctx.fillRect(-22, -10, 3, 3);
+            ctx.fillRect(-22, 12, 3, 3);
+
+            if (this.state === 'ATTACK') {
+                let attackProgress = this.attackTimer / 60;
+                if (attackProgress > 0.8) ctx.rotate(-Math.PI/2); 
+                else if (attackProgress > 0.5) ctx.rotate(Math.PI/4); 
+                else ctx.rotate(Math.PI/6); 
+            } else {
+                ctx.rotate(Math.PI / 8); 
+            }
+            
+            ctx.fillStyle = '#708090'; 
+            ctx.fillRect(-3, -30, 6, 30); 
+            ctx.fillStyle = '#111'; 
+            ctx.fillRect(-3, -20, 3, 3);
+            
+            ctx.fillStyle = '#4a3d31'; 
+            ctx.fillRect(-10, 0, 20, 4);
+            ctx.fillStyle = '#2c231a'; 
+            ctx.fillRect(-3, 4, 6, 8);
+
+            ctx.restore();
+            ctx.restore();
+
+            if (this.hp < this.maxHp) {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(this.x, this.y - 12, this.width, 6);
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(this.x + 1, this.y - 11, ((this.width - 2) * this.hp) / this.maxHp, 4);
+            }
+        }
+    }
+
+    class Platform {
+        constructor(x, y, width, height, type = 'normal') {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.type = type; 
+        }
+        draw() {
+            if (this.type === 'goal') {
+                ctx.fillStyle = '#444';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.fillStyle = '#666';
+                ctx.fillRect(this.x, this.y, this.width, 15);
+                return;
+            }
+
+            ctx.fillStyle = '#3a404d'; 
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            
+            const brickW = 40;
+            const brickH = 20;
+            for (let row = 1; row * brickH < this.height; row++) { 
+                let offsetX = (row % 2 === 0) ? 0 : -brickW / 2;
+                for (let col = 0; offsetX + col * brickW < this.width; col++) {
+                    let bx = this.x + offsetX + col * brickW;
+                    let by = this.y + row * brickH;
+                    
+                    let drawX = Math.max(this.x, bx);
+                    let drawW = Math.min(this.x + this.width - drawX, bx + brickW - drawX);
+                    
+                    if (drawW > 0) {
+                        if ((row+col) % 3 === 0) ctx.fillStyle = '#474c53';
+                        else if ((row+col) % 5 === 0) ctx.fillStyle = '#3e4249';
+                        else ctx.fillStyle = '#4f545c';
+
+                        ctx.fillRect(drawX, by, drawW - 2, brickH - 2); 
+                    }
+                }
+            }
+
+            ctx.fillStyle = '#6a7382'; 
+            ctx.fillRect(this.x, this.y, this.width, 20);
+            
+            ctx.fillStyle = '#9199a6';
+            ctx.fillRect(this.x, this.y, this.width, 4);
+
+            ctx.fillStyle = '#2d4c35';
+            for(let i = 15; i < this.width - 20; i += 35) {
+                ctx.beginPath();
+                ctx.roundRect(this.x + i, this.y + 18, 15 + (i%15), 10 + (i%20), 5);
+                ctx.fill();
+            }
+        }
+    }
+
+    class Coin {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.width = 30;
+            this.height = 30;
+            this.collected = false;
+            this.bobOffset = 0;
+            this.time = Math.random() * 100;
+        }
+        update() {
+            this.time += 0.1;
+            this.bobOffset = Math.sin(this.time) * 8;
+            
+            if (!this.collected && 
+                player.x < this.x + this.width + 10 && player.x + player.width > this.x - 10 &&
+                player.y < this.y + this.height + 10 && player.y + player.height > this.y - 10) {
+                
+                this.collected = true;
+                score++;
+                scoreDisplay.innerText = `🪙 ${score}`;
+                
+                scoreDisplay.style.color = '#FBD000';
+                scoreDisplay.style.transform = 'scale(1.3)';
+                setTimeout(() => {
+                    scoreDisplay.style.color = 'white';
+                    scoreDisplay.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+        draw() {
+            if (this.collected) return;
+            
+            const drawX = this.x + this.width/2;
+            const drawY = this.y + this.height/2 + this.bobOffset;
+
+            const spin = Math.cos(this.time * 1.5);
+            const scaleX = Math.abs(spin) || 0.05;
+
+            ctx.save();
+            ctx.translate(drawX, drawY);
+            ctx.scale(scaleX, 1);
+
+            ctx.fillStyle = '#FBD000';
+            ctx.beginPath();
+            ctx.arc(0, 0, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#DAA520';
+            ctx.beginPath();
+            ctx.arc(0, 0, 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#FFF2B2';
+            ctx.fillRect(-2, -6, 4, 12);
+
+            ctx.restore();
+        }
+    }
+
+    // NOUVELLE CLASSE : ItemDrop (Générique basé sur JSON)
+    class ItemDrop {
+        constructor(x, y, itemId) {
+            this.x = x;
+            this.y = y;
+            this.itemId = itemId;
+            let scale = itemDatabase[itemId]?.iconScale || 1;
+            this.width = 30 * scale;
+            this.height = 30 * scale;
+            this.collected = false;
+            this.bobOffset = 0;
+            this.time = Math.random() * 100;
+        }
+        update() {
+            this.time += 0.1;
+            this.bobOffset = Math.sin(this.time) * 5;
+            
+            if (!this.collected && 
+                player.x < this.x + this.width + 10 && player.x + player.width > this.x - 10 &&
+                player.y < this.y + this.height + 10 && player.y + player.height > this.y - 10) {
+                
+                this.collected = true;
+                if (!player.inventory[this.itemId]) player.inventory[this.itemId] = {count: 0};
+                player.inventory[this.itemId].count++;
+                
+                let itemName = itemDatabase[this.itemId]?.name || "Objet mystère";
+                showNotification(`${itemName} ramassé(e) !`, "#E52521");
+            }
+        }
+        draw() {
+            if (this.collected) return;
+            const drawX = this.x + this.width/2;
+            const drawY = this.y + this.height/2 + this.bobOffset;
+
+            ctx.save();
+            ctx.translate(drawX, drawY);
+
+            let img = assets.images[this.itemId];
+            if (img && img.isLoaded) {
+                let scale = itemDatabase[this.itemId]?.iconScale || 1;
+                ctx.drawImage(img, -15 * scale, -15 * scale, 30 * scale, 30 * scale);
+            } else {
+                let type = itemDatabase[this.itemId]?.type;
+                if (type === 'heal') {
+                    ctx.fillStyle = '#E52521';
+                    ctx.beginPath(); ctx.arc(0, 5, 10, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#ff8888';
+                    ctx.beginPath(); ctx.arc(-3, 3, 3, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#ccc'; ctx.fillRect(-4, -10, 8, 10);
+                    ctx.fillStyle = '#8B4513'; ctx.fillRect(-5, -12, 10, 4);
+                } else {
+                    ctx.fillStyle = '#DAA520'; ctx.fillRect(-10, -10, 20, 20);
+                    ctx.fillStyle = '#fff'; ctx.fillText("?", -4, 4);
+                }
+            }
+
+            ctx.restore();
+        }
+    }
+
+    class Cloud {
+        constructor(x, y, scale) {
+            this.x = x;
+            this.y = y;
+            this.scale = scale;
+            this.speed = 0.5 + Math.random() * 0.5;
+        }
+        update() {
+            this.x -= this.speed;
+        }
+        draw() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 25 * this.scale, 0, Math.PI * 2);
+            ctx.arc(this.x + 25 * this.scale, this.y - 10 * this.scale, 30 * this.scale, 0, Math.PI * 2);
+            ctx.arc(this.x + 50 * this.scale, this.y, 20 * this.scale, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // --- INSTANCIATION DES DONNÉES DE JEU ---
+    const player = new Player();
+
+    function buildLevel() {
+        platforms = [];
+        enemies = [];
+        coins = [];
+        clouds = [];
+        items = []; 
+        hitEffects = [];
+        bloodDrops = [];
+        floorBloods = [];
+
+        if(currentLevelData.platforms) {
+            currentLevelData.platforms.forEach(p => {
+                platforms.push(new Platform(p.x, p.y, p.width, p.height));
+            });
+        }
+        
+        if(currentLevelData.goal) {
+            platforms.push(new Platform(currentLevelData.goal.x, currentLevelData.goal.y, currentLevelData.goal.width, currentLevelData.goal.height, 'goal'));
+        }
+
+        if(currentLevelData.skeletons) {
+            currentLevelData.skeletons.forEach(s => {
+                enemies.push(new Skeleton(s.x, s.y, s.x - 100, s.x + 150));
+            });
+        }
+
+        if(currentLevelData.coins) {
+            currentLevelData.coins.forEach(c => {
+                coins.push(new Coin(c.x, c.y));
+            });
+        }
+
+        totalCoins = coins.length;
+
+        // Dead zone = Y le plus bas des plateformes + 500px de marge, ou valeur JSON explicite
+        const lowestPlat = platforms.reduce((max, p) => Math.max(max, p.y + p.height), 0);
+        levelDeadZone = currentLevelData.deadZone !== undefined
+            ? currentLevelData.deadZone
+            : lowestPlat + 500;
+
+        let maxLevelX = 2000;
+        if(currentLevelData.goal) maxLevelX = currentLevelData.goal.x + 1000;
+        
+        for(let i=0; i<40; i++) {
+            clouds.push(new Cloud(Math.random() * maxLevelX, -500 + Math.random() * 1500, 0.5 + Math.random()));
+        }
+    }
+
+    // --- BOUCLE PRINCIPALE ---
+    function gameLoop() {
+        if (gameState !== 'PLAYING' && gameState !== 'MENU') return;
+
+        if (gameState === 'PLAYING') {
+            clouds.forEach(cloud => {
+                cloud.update();
+                if (cloud.x < cameraX - 200) cloud.x = cameraX + canvas.width + 200;
+            });
+
+            player.update(platforms);
+
+            // Mise à jour HUD capacité spéciale (charge par hits)
+            const abilityIcons = {
+                'Chevalier Classique':'⚔️','Rôdeur Sylvestre':'🏹','Chevalier Noir':'🩸',
+                'Paladin Doré':'✨','Valkyrie Écarlate':'🔱','Chasseresse des Bois':'🌿',
+                'Ombre Maudite':'👁','Séraphin Céleste':'🌟'
+            };
+            const cdBar = document.getElementById('abilityCooldownBar');
+            const cdIcon = document.getElementById('abilityIcon');
+            if (cdBar && cdIcon) {
+                const pct = player.abilityCharge / player.abilityMaxCharge;
+                cdBar.style.width = (pct * 100) + '%';
+                const ready = pct >= 1;
+                cdBar.style.background = ready ? '#00e5ff' : '#2a5566';
+                cdBar.style.boxShadow = ready ? '0 0 6px #00e5ff' : 'none';
+                cdIcon.innerText = abilityIcons[player.skin.name] || '✨';
+                cdIcon.style.opacity = ready ? '1' : '0.45';
+            }
+            
+            enemies = enemies.filter(enemy => enemy.state !== 'DEAD'); 
+            enemies.forEach(enemy => enemy.update(platforms, player));
+
+            coins.forEach(c => c.update());
+            items.forEach(i => i.update());
+            
+            // Mise à jour des effets de sang
+            floorBloods.forEach(fb => fb.update());
+            floorBloods = floorBloods.filter(fb => fb.life > 0);
+            
+            bloodDrops.forEach(bd => bd.update(platforms));
+            bloodDrops = bloodDrops.filter(bd => bd.life > 0);
+            
+            hitEffects.forEach(he => he.update());
+            hitEffects = hitEffects.filter(he => he.life > 0);
+
+            let targetCameraX = player.x - canvas.width / 3;
+            let targetCameraY = player.y - canvas.height / 1.5; 
+            if (targetCameraX < 0) targetCameraX = 0;
+            
+            cameraX += (targetCameraX - cameraX) * 0.1;
+            cameraY += (targetCameraY - cameraY) * 0.1;
+            updateShake();
+        }
+
+        ctx.fillStyle = '#2C3E50';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(-cameraX + shakeOffsetX, -cameraY + shakeOffsetY);
+
+        clouds.forEach(cloud => cloud.draw());
+        
+        // On dessine le sang au sol en premier, AVANT les plateformes pour un bel effet d'intégration (ou juste au dessus)
+        platforms.forEach(p => p.draw());
+        floorBloods.forEach(fb => fb.draw()); 
+        
+        enemies.forEach(enemy => enemy.draw());
+        coins.forEach(c => c.draw());
+        items.forEach(i => i.draw());
+
+        if (currentLevelData.goal) {
+            drawFlag(currentLevelData.goal.x + 50, currentLevelData.goal.y - 100);
+            if (player.x > currentLevelData.goal.x && player.grounded && gameState === 'PLAYING') {
+                endGame(true);
+            }
+        }
+
+        player.draw();
+        
+        // On dessine les particules de sang au-dessus du reste
+        bloodDrops.forEach(bd => bd.draw());
+        hitEffects.forEach(he => he.draw());
+
+        ctx.restore();
+
+        animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function drawFlag(x, y) {
+        ctx.fillStyle = '#3E2723';
+        ctx.fillRect(x, y - 250, 12, 250);
+        
+        ctx.fillStyle = '#C0C0C0';
+        ctx.beginPath();
+        ctx.moveTo(x - 4, y - 250);
+        ctx.lineTo(x + 6, y - 270);
+        ctx.lineTo(x + 16, y - 250);
+        ctx.fill();
+        
+        const time = Date.now() / 200;
+        ctx.fillStyle = '#000080'; 
+        ctx.beginPath();
+        ctx.moveTo(x + 12, y - 240);
+        ctx.lineTo(x + 80 + Math.sin(time)*15, y - 240); 
+        ctx.lineTo(x + 60 + Math.sin(time)*10, y - 200); 
+        ctx.lineTo(x + 80 + Math.sin(time)*15, y - 160); 
+        ctx.lineTo(x + 12, y - 160);
+        ctx.fill();
+        
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(x + 35 + Math.sin(time)*5, y - 200, 10, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function handlePlayerDeath() {
+        lives--;
+        if (livesDisplay) livesDisplay.innerText = `❤️ ${lives}`;
+        
+        if (lives > 0) {
+            player.respawn();
+        } else {
+            endGame(false);
+        }
+    }
+
+    function startGame() {
+        if (document.activeElement) document.activeElement.blur();
+        cancelAnimationFrame(animationId);
+        
+        keys.right = false; keys.left = false; keys.up = false; keys.attack = false;
+
+        startScreen.classList.add('hidden');
+        gameOverScreen.classList.add('hidden');
+        menuScreen.classList.add('hidden');
+        
+        score = 0;
+        lives = 3; 
+        
+        initQuests();
+        buildLevel(); 
+        
+        // Appliquer la configuration choisie
+        player.reset(); 
+        player.pseudo = document.getElementById('pseudoInput').value || "Héros";
+        player.skin = SKINS[currentSkinIndex];
+        syncAbilityBtn();
+        
+        scoreDisplay.innerText = `🪙 ${score}`; 
+        scoreDisplay.style.color = 'white';
+        if (livesDisplay) livesDisplay.innerText = `❤️ ${lives}`;
+        
+        gameState = 'PLAYING';
+        gameLoop();
+    }
+
+    function endGame(win) {
+        gameState = 'GAMEOVER';
+        cancelAnimationFrame(animationId);
+        gameOverScreen.classList.remove('hidden');
+        
+        if (win) {
+            endTitle.innerText = "NIVEAU TERMINÉ !";
+            endTitle.style.color = "#4CAF50";
+            endMessage.innerText = `Bravo ! Vous avez récolté ${score} pièces.`;
+        } else {
+            endTitle.innerText = "FIN DE PARTIE";
+            endTitle.style.color = "#E52521";
+            endMessage.innerText = "Game Over ! Vous n'avez plus de vies.";
+        }
+    }
+
+    // Initialisation affichage de fond en attendant le clic
+    // (loadGameAssets() est appelé après auth réussie dans onAuthSuccess)
+    resizeCanvas();
+    initQuests();
+    buildLevel();
+    player.reset();
+    
+    cameraX = 0;
+    cameraY = player.y - canvas.height / 1.5;
+    
+    ctx.fillStyle = '#2C3E50';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(-cameraX, -cameraY);
+    platforms.forEach(p => p.draw());
+    player.draw();
+    ctx.restore();
+
+</script>
+</body>
+</html>

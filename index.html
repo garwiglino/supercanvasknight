@@ -633,7 +633,7 @@
         .pcard-stats { display:flex; gap:14px; }
         .pcard-stat { font-size:11px; color:rgba(255,255,255,0.75); font-weight:bold; text-shadow:0 1px 3px rgba(0,0,0,0.8); }
         /* Éditeur de carte */
-        .card-editor-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+        .card-editor-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); pointer-events:auto; }
         .card-editor-overlay.hidden { display:none; }
         .card-editor { background:#0e1a2e; border:2px solid #2980b9; border-radius:18px; padding:28px; display:flex; gap:28px; max-width:900px; width:95%; max-height:90vh; overflow-y:auto; }
         .card-editor-left { display:flex; flex-direction:column; align-items:center; gap:16px; flex-shrink:0; }

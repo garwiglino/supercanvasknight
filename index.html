@@ -617,6 +617,44 @@
             .hub-tab { padding:16px; }
             .hub-cards-grid { grid-template-columns:1fr; max-width:300px; }
         }
+        /* ── CARTE DE PROFIL ──────────────────────────────────────── */
+        .pcard { position:relative; width:320px; height:180px; border-radius:14px; overflow:hidden; cursor:pointer; flex-shrink:0; box-shadow:0 8px 32px rgba(0,0,0,0.6); transition:transform 0.2s; }
+        .pcard:hover { transform:scale(1.03); }
+        .pcard-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+        .pcard-overlay { position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.55) 100%); }
+        .pcard-content { position:absolute; inset:0; padding:14px 16px; display:flex; flex-direction:column; justify-content:space-between; }
+        .pcard-top { display:flex; align-items:center; gap:12px; }
+        .pcard-avatar { width:52px; height:52px; border-radius:50%; border:2px solid rgba(255,255,255,0.6); background:#1a1a2a; flex-shrink:0; overflow:hidden; }
+        .pcard-avatar img { width:100%; height:100%; object-fit:cover; }
+        .pcard-info { flex:1; }
+        .pcard-pseudo { font-size:18px; font-weight:900; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.8); line-height:1.1; }
+        .pcard-lvl { font-size:11px; color:#FBD000; font-weight:bold; margin-top:2px; }
+        .pcard-bio { font-size:12px; color:rgba(255,255,255,0.8); font-style:italic; max-height:32px; overflow:hidden; text-shadow:0 1px 3px rgba(0,0,0,0.8); line-height:1.3; }
+        .pcard-stats { display:flex; gap:14px; }
+        .pcard-stat { font-size:11px; color:rgba(255,255,255,0.75); font-weight:bold; text-shadow:0 1px 3px rgba(0,0,0,0.8); }
+        /* Éditeur de carte */
+        .card-editor-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+        .card-editor-overlay.hidden { display:none; }
+        .card-editor { background:#0e1a2e; border:2px solid #2980b9; border-radius:18px; padding:28px; display:flex; gap:28px; max-width:900px; width:95%; max-height:90vh; overflow-y:auto; }
+        .card-editor-left { display:flex; flex-direction:column; align-items:center; gap:16px; flex-shrink:0; }
+        .card-editor-right { flex:1; display:flex; flex-direction:column; gap:18px; overflow-y:auto; }
+        .editor-section-title { font-size:13px; font-weight:900; color:#FBD000; margin-bottom:8px; letter-spacing:1px; }
+        .avatar-picker { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+        .avatar-opt { width:54px; height:54px; border-radius:50%; border:2px solid #34495e; cursor:pointer; overflow:hidden; transition:all 0.15s; background:#1a252f; }
+        .avatar-opt img { width:100%; height:100%; object-fit:cover; }
+        .avatar-opt:hover { border-color:#2980b9; transform:scale(1.08); }
+        .avatar-opt.selected { border-color:#FBD000; box-shadow:0 0 10px rgba(251,208,0,0.5); }
+        .bg-picker { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+        .bg-opt { width:100%; aspect-ratio:16/9; border-radius:6px; border:2px solid #34495e; cursor:pointer; overflow:hidden; transition:all 0.15s; background:#1a252f; }
+        .bg-opt img { width:100%; height:100%; object-fit:cover; }
+        .bg-opt:hover { border-color:#2980b9; transform:scale(1.05); }
+        .bg-opt.selected { border-color:#FBD000; box-shadow:0 0 8px rgba(251,208,0,0.5); }
+        .bio-input { width:100%; box-sizing:border-box; padding:10px 12px; background:#111; border:2px solid #34495e; border-radius:8px; color:#fff; font-size:13px; font-family:inherit; resize:none; height:60px; }
+        .bio-input:focus { outline:none; border-color:#2980b9; }
+        /* Mini carte dans friends list */
+        .friend-card-preview { margin-bottom:12px; }
+        /* Carte dans panneau social droit */
+        .social-friend-card { display:flex; flex-direction:column; gap:10px; margin-bottom:10px; }
         @media (max-width:1023px) {
             .social-layout { flex-direction:column; height:auto; }
             .social-panel { height:200px; }
@@ -661,6 +699,32 @@
             </div>
         </div>
         
+        <!-- ── ÉDITEUR CARTE DE PROFIL (overlay) ─────────────────────── -->
+        <div id="cardEditorOverlay" class="card-editor-overlay hidden">
+            <div class="card-editor">
+                <div class="card-editor-left">
+                    <div class="editor-section-title">APERÇU</div>
+                    <div id="editorCardPreview"></div>
+                    <button onclick="saveCard()" style="width:320px;margin-top:4px;">💾 SAUVEGARDER</button>
+                    <button class="btn-sec" onclick="closeCardEditor()" style="width:320px;">✕ FERMER</button>
+                </div>
+                <div class="card-editor-right">
+                    <div>
+                        <div class="editor-section-title">AVATAR</div>
+                        <div class="avatar-picker" id="avatarPicker"></div>
+                    </div>
+                    <div>
+                        <div class="editor-section-title">FOND DE CARTE</div>
+                        <div class="bg-picker" id="bgPicker"></div>
+                    </div>
+                    <div>
+                        <div class="editor-section-title">DESCRIPTION</div>
+                        <textarea class="bio-input" id="bioInput" maxlength="120" placeholder="Décris-toi en quelques mots..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ── ÉCRAN AUTH (login / inscription) ──────────────────────── -->
         <div id="authScreen" class="screen">
             <h1>⚔️ Super Canvas Knight</h1>
@@ -686,7 +750,9 @@
                 <div class="hub-sidebar">
                     <div class="hub-logo">⚔️ SCK</div>
                     <div class="hub-player-card">
-                        <div class="hub-avatar" id="hubAvatar">⚔️</div>
+                        <div class="hub-avatar" id="hubAvatar" onclick="openCardEditor()" style="cursor:pointer;padding:0;overflow:hidden;" title="Modifier ma carte">
+                            <img id="hubAvatarImg" src="/avatars/avatar_01.svg" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">
+                        </div>
                         <div class="hub-pseudo-name" id="hubPseudo">—</div>
                         <div class="hub-level-lbl">Niveau <span id="hubLevel">1</span></div>
                         <div class="hub-xpbar"><div id="hubXpFill" class="hub-xpbar-fill" style="width:0%"></div></div>
@@ -748,6 +814,14 @@
                                 <div class="hub-card-desc">Salle commune</div>
                             </div>
                         </div>
+                        <!-- Carte de profil -->
+                        <div style="margin-top:28px;">
+                            <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+                                <div style="font-size:16px;font-weight:900;color:#FBD000;">🃏 Ma Carte</div>
+                                <button onclick="openCardEditor()" style="font-size:12px;padding:6px 14px;">✏️ Modifier</button>
+                            </div>
+                            <div id="myCardPreview"></div>
+                        </div>
                     </div>
                     <!-- Jouer -->
                     <div id="hubPlay" class="hub-tab hidden">
@@ -788,6 +862,7 @@
                                 </div>
                             </div>
                             <div class="social-panel">
+                                <div id="friendCardArea" class="social-friend-card" style="display:none"></div>
                                 <div class="social-panel-title" id="chatTitle">💬 Sélectionne un ami</div>
                                 <div id="chatMessages" class="chat-messages"><div class="chat-empty">Clique sur un ami<br>pour lui parler</div></div>
                                 <div id="chatInputRow" class="chat-input-row" style="display:none">
@@ -1277,7 +1352,133 @@
         document.getElementById('hubGames').textContent      = p.gamesPlayed;
         document.getElementById('hubHomeKills').textContent  = p.totalKills;
         document.getElementById('hubHomeGames').textContent  = p.gamesPlayed;
+        renderMyCard();
     }
+
+    // ── Carte de profil ─────────────────────────────────────────────
+    let _editorAvatarId = 1;
+    let _editorBgId     = 1;
+    let _editorBio      = '';
+
+    function buildProfileCardHTML(pseudo, level, totalKills, gamesPlayed, avatarId, bgId, bio, size) {
+        const w = size === 'small' ? 200 : 320;
+        const h = size === 'small' ? 113 : 180;
+        const pad = size === 'small' ? 10 : 14;
+        const avatarSize = size === 'small' ? 36 : 52;
+        const pseudoSize = size === 'small' ? 13 : 18;
+        return `<div class="pcard" style="width:${w}px;height:${h}px;">
+            <img class="pcard-bg" src="/cards/card_bg_${String(bgId).padStart(2,'0')}.svg" alt="">
+            <div class="pcard-overlay"></div>
+            <div class="pcard-content" style="padding:${pad}px;">
+                <div class="pcard-top">
+                    <div class="pcard-avatar" style="width:${avatarSize}px;height:${avatarSize}px;">
+                        <img src="/avatars/avatar_${String(avatarId).padStart(2,'0')}.svg" alt="">
+                    </div>
+                    <div class="pcard-info">
+                        <div class="pcard-pseudo" style="font-size:${pseudoSize}px">${pseudo}</div>
+                        <div class="pcard-lvl">⭐ Niveau ${level}</div>
+                    </div>
+                </div>
+                ${bio ? `<div class="pcard-bio">${bio}</div>` : ''}
+                <div class="pcard-stats">
+                    <span class="pcard-stat">⚔️ ${totalKills} kills</span>
+                    <span class="pcard-stat">🎮 ${gamesPlayed} parties</span>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function renderMyCard() {
+        const p = _profile;
+        const pseudo = localStorage.getItem('sckt_pseudo') || '?';
+        const html = buildProfileCardHTML(pseudo, p.level, p.totalKills, p.gamesPlayed, p.avatarId || 1, p.bgId || 1, p.bio || '', 'normal');
+        const el = document.getElementById('myCardPreview');
+        if (el) el.innerHTML = html;
+        // Update sidebar avatar
+        const img = document.getElementById('hubAvatarImg');
+        if (img) img.src = `/avatars/avatar_${String(p.avatarId || 1).padStart(2,'0')}.svg`;
+    }
+
+    function openCardEditor() {
+        _editorAvatarId = _profile.avatarId || 1;
+        _editorBgId     = _profile.bgId || 1;
+        _editorBio      = _profile.bio || '';
+        document.getElementById('bioInput').value = _editorBio;
+        // Build avatar picker
+        const ap = document.getElementById('avatarPicker');
+        ap.innerHTML = Array.from({length:12},(_,i)=>{
+            const id = i+1;
+            return `<div class="avatar-opt${id===_editorAvatarId?' selected':''}" onclick="selectEditorAvatar(${id})" title="Avatar ${id}">
+                <img src="/avatars/avatar_${String(id).padStart(2,'0')}.svg" alt="">
+            </div>`;
+        }).join('');
+        // Build bg picker
+        const bp = document.getElementById('bgPicker');
+        bp.innerHTML = Array.from({length:10},(_,i)=>{
+            const id = i+1;
+            return `<div class="bg-opt${id===_editorBgId?' selected':''}" onclick="selectEditorBg(${id})" title="Fond ${id}">
+                <img src="/cards/card_bg_${String(id).padStart(2,'0')}.svg" alt="">
+            </div>`;
+        }).join('');
+        updateEditorPreview();
+        document.getElementById('cardEditorOverlay').classList.remove('hidden');
+    }
+
+    function closeCardEditor() {
+        document.getElementById('cardEditorOverlay').classList.add('hidden');
+    }
+
+    function selectEditorAvatar(id) {
+        _editorAvatarId = id;
+        document.querySelectorAll('.avatar-opt').forEach(el => el.classList.remove('selected'));
+        document.querySelectorAll('.avatar-opt')[id-1]?.classList.add('selected');
+        updateEditorPreview();
+    }
+
+    function selectEditorBg(id) {
+        _editorBgId = id;
+        document.querySelectorAll('.bg-opt').forEach(el => el.classList.remove('selected'));
+        document.querySelectorAll('.bg-opt')[id-1]?.classList.add('selected');
+        updateEditorPreview();
+    }
+
+    function updateEditorPreview() {
+        const pseudo = localStorage.getItem('sckt_pseudo') || '?';
+        const bio = document.getElementById('bioInput')?.value || '';
+        const html = buildProfileCardHTML(pseudo, _profile.level || 1, _profile.totalKills || 0, _profile.gamesPlayed || 0, _editorAvatarId, _editorBgId, bio, 'normal');
+        document.getElementById('editorCardPreview').innerHTML = html;
+    }
+
+    async function saveCard() {
+        _profile.avatarId = _editorAvatarId;
+        _profile.bgId     = _editorBgId;
+        _profile.bio      = document.getElementById('bioInput')?.value || '';
+        await saveProfile();
+        renderMyCard();
+        closeCardEditor();
+        showNotification('✅ Carte sauvegardée !', '#4CAF50');
+    }
+
+    async function loadFriendCard(pseudo) {
+        const area = document.getElementById('friendCardArea');
+        if (!area) return;
+        area.style.display = 'block';
+        area.innerHTML = '<div style="color:#888;font-size:12px;padding:8px">Chargement...</div>';
+        try {
+            const res = await fetch(`/api/profile-public?pseudo=${encodeURIComponent(pseudo)}`);
+            if (!res.ok) { area.style.display = 'none'; return; }
+            const data = await res.json();
+            area.innerHTML = buildProfileCardHTML(data.pseudo, data.level, data.totalKills, data.gamesPlayed, data.avatarId || 1, data.bgId || 1, data.bio || '', 'small');
+        } catch(e) { area.style.display = 'none'; }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('bioInput')?.addEventListener('input', updateEditorPreview);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target.id === 'cardEditorOverlay') closeCardEditor();
+    });
 
     function updateSocialBadge() {
         const b1 = document.getElementById('socialBadge');
@@ -1472,6 +1673,7 @@
         document.getElementById('socialActions').style.display = isFriend ? 'flex' : 'none';
         renderFriendsList();
         renderChat();
+        loadFriendCard(pseudo);
     }
 
     function renderChat() {

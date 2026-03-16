@@ -850,9 +850,17 @@
                 if (e && e.state !== 'DEAD') {
                     e.state = 'DEAD';
                     triggerShake(11, 14);
-                    if (event.dropType === 'force') items.push(new ItemDrop(event.x, event.y, 'force'));
-                    else if (event.dropType === 'potion') items.push(new ItemDrop(event.x, event.y, 'potion'));
-                    else if (event.dropType === 'coin') coins.push(new Coin(event.x, event.y));
+                    if (event.dropType === 'force') {
+                        const it = new ItemDrop(event.x, event.y, 'force');
+                        if (event.dropNetId != null) it.netId = event.dropNetId;
+                        items.push(it);
+                    } else if (event.dropType === 'potion') {
+                        const it = new ItemDrop(event.x, event.y, 'potion');
+                        if (event.dropNetId != null) it.netId = event.dropNetId;
+                        items.push(it);
+                    } else if (event.dropType === 'coin') {
+                        coins.push(new Coin(event.x, event.y));
+                    }
                 }
             }
 
@@ -892,6 +900,12 @@
                 const c = coins[event.index];
                 if (c) c.collected = true;
             }
+
+            // ── Item collecté par le partenaire ──────────────────────────
+            if (event.type === 'item-collected') {
+                const it = items.find(i => i.netId === event.netId);
+                if (it) it.collected = true;
+            }
         });
 
         // Sync ennemis depuis le host (lookup par id stable)
@@ -918,6 +932,21 @@
             data.forEach(({ i, x, y, alive }) => {
                 if (!coins[i]) return;
                 if (!alive) coins[i].collected = true;
+            });
+        });
+
+        // Sync items depuis le host (crée si absent, marque collecté si besoin)
+        socket.on('item-sync', (data) => {
+            if (gameMode !== 'guest') return;
+            data.forEach(({ netId, x, y, itemId, collected }) => {
+                let existing = items.find(it => it.netId === netId);
+                if (!existing) {
+                    const it = new ItemDrop(x, y, itemId);
+                    it.netId = netId; // écraser l'ID auto-incrémenté
+                    items.push(it);
+                    existing = it;
+                }
+                if (collected) existing.collected = true;
             });
         });
     }
@@ -3492,9 +3521,15 @@
 
             // ── Mode guest : pas d'IA locale, on suit l'état reçu du host ──
             if (gameMode === 'guest') {
+                // Dead reckoning : appliquer la vélocité chaque frame pour lisser entre syncs
+                this.x += this.vx;
+                this.vy += this.gravity;
+                if (this.vy > 15) this.vy = 15;
+                this.y += this.vy;
+                // Correction vers position autoritaire du host
                 if (this.targetX !== undefined) {
-                    this.x += (this.targetX - this.x) * 0.3;
-                    this.y += (this.targetY - this.y) * 0.3;
+                    this.x += (this.targetX - this.x) * 0.5;
+                    this.y += (this.targetY - this.y) * 0.5;
                 }
                 if (this.hurtTimer > 0) this.hurtTimer--;
                 if (this.attackTimer > 0) this.attackTimer--;
@@ -3679,7 +3714,11 @@
 
                         // Notifier le guest de la mort + drop (via id stable)
                         if (socket && socket.connected && roomCode && gameMode === 'host') {
-                            socket.emit('game-event', { type: 'enemy-death', id: this.id, x: this.x, y: this.y, dropType });
+                            const spawnedItem = items[items.length - 1];
+                            socket.emit('game-event', {
+                                type: 'enemy-death', id: this.id, x: this.x, y: this.y, dropType,
+                                dropNetId: spawnedItem ? spawnedItem.netId : null
+                            });
                         }
                     }
                 }
@@ -3930,8 +3969,11 @@
     }
 
     // NOUVELLE CLASSE : ItemDrop (Générique basé sur JSON)
+    let _itemNetId = 0;
+
     class ItemDrop {
         constructor(x, y, itemId) {
+            this.netId = _itemNetId++;
             this.x = x;
             this.y = y;
             this.itemId = itemId;
@@ -3945,17 +3987,22 @@
         update() {
             this.time += 0.1;
             this.bobOffset = Math.sin(this.time) * 5;
-            
-            if (!this.collected && 
+
+            if (!this.collected &&
                 player.x < this.x + this.width + 10 && player.x + player.width > this.x - 10 &&
                 player.y < this.y + this.height + 10 && player.y + player.height > this.y - 10) {
-                
+
                 this.collected = true;
                 if (!player.inventory[this.itemId]) player.inventory[this.itemId] = {count: 0};
                 player.inventory[this.itemId].count++;
-                
+
                 let itemName = itemDatabase[this.itemId]?.name || "Objet mystère";
                 showNotification(`${itemName} ramassé(e) !`, "#E52521");
+
+                // Notifier le partenaire
+                if (socket && socket.connected && roomCode) {
+                    socket.emit('game-event', { type: 'item-collected', netId: this.netId });
+                }
             }
         }
         draw() {
@@ -4023,6 +4070,7 @@
         bloodDrops = [];
         floorBloods = [];
         _enemyIdCounter = 0; // reset pour cohérence host/guest (même niveau = mêmes IDs)
+        _itemNetId = 0;
 
         if(currentLevelData.platforms) {
             currentLevelData.platforms.forEach(p => {
@@ -4141,6 +4189,7 @@
                     hurtTimer: e.hurtTimer, attackTimer: e.attackTimer
                 })));
                 socket.emit('coin-sync', coins.map((c, i) => ({ i, x: c.x, y: c.y, alive: !c.collected })));
+                socket.emit('item-sync', items.map(it => ({ netId: it.netId, x: it.x, y: it.y, itemId: it.itemId, collected: it.collected })));
             }
         }
 

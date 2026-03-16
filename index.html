@@ -1143,14 +1143,22 @@
             renderFriendsList();
         });
         socket.on('dm-received', ({ from, message }) => {
+            const token = localStorage.getItem('sckt_token');
+            const ts    = Date.now();
             if (!_dmHistory[from]) _dmHistory[from] = [];
-            _dmHistory[from].push({ from, message });
+            _dmHistory[from].push({ from, message, ts });
             if (_selectedUser === from) renderChat();
             else {
                 showNotification(`💬 ${from} : ${message.substring(0,30)}`, '#2980b9');
                 const socialTab = document.getElementById('hubSocial');
                 if (socialTab?.classList.contains('hidden')) { _socialBadge++; updateSocialBadge(); }
             }
+            // Persistance Redis (fire & forget)
+            fetch('/api/dm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, to: from, message })
+            }).catch(() => {});
         });
         socket.on('invite-received', ({ from, roomCode, type }) => {
             showInviteNotif(from, roomCode, type);
@@ -1583,7 +1591,8 @@
 
     // ── SOCIAL ──────────────────────────────────────────────────────
     let _onlineUsers   = [];
-    let _dmHistory     = {};
+    let _dmHistory        = {};
+    let _dmHistoryLoaded  = {}; // pseudos dont l'historique a été chargé depuis Redis
     let _selectedUser  = null;
     let _friends       = [];   // [{pseudo}] from API
     let _friendReqs    = [];   // [{from}] pending incoming
@@ -1674,6 +1683,26 @@
         renderFriendsList();
         renderChat();
         loadFriendCard(pseudo);
+        // Charger l'historique depuis Redis si pas encore fait
+        if (!_dmHistoryLoaded[pseudo]) loadDMHistory(pseudo);
+    }
+
+    async function loadDMHistory(pseudo) {
+        const token = localStorage.getItem('sckt_token');
+        _dmHistoryLoaded[pseudo] = true; // marquer pour éviter les doubles appels
+        try {
+            const res = await fetch(`/api/dm?token=${encodeURIComponent(token)}&with=${encodeURIComponent(pseudo)}`);
+            if (!res.ok) return;
+            const { messages } = await res.json();
+            if (!messages?.length) return;
+            // Fusionner avec les messages déjà en mémoire (éviter doublons par ts)
+            const existing = _dmHistory[pseudo] || [];
+            const existingTs = new Set(existing.map(m => m.ts));
+            const merged = [...messages.filter(m => !existingTs.has(m.ts)), ...existing];
+            merged.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+            _dmHistory[pseudo] = merged;
+            if (_selectedUser === pseudo) renderChat();
+        } catch(e) {}
     }
 
     function renderChat() {
@@ -1698,11 +1727,19 @@
         const msg   = input?.value?.trim();
         if (!msg || !_selectedUser || !socket?.connected) return;
         const myPseudo = localStorage.getItem('sckt_pseudo');
+        const token    = localStorage.getItem('sckt_token');
+        const ts       = Date.now();
         socket.emit('send-dm', { to: _selectedUser, message: msg });
         if (!_dmHistory[_selectedUser]) _dmHistory[_selectedUser] = [];
-        _dmHistory[_selectedUser].push({ from: myPseudo, message: msg });
+        _dmHistory[_selectedUser].push({ from: myPseudo, message: msg, ts });
         renderChat();
         input.value = '';
+        // Persistance Redis (fire & forget)
+        fetch('/api/dm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, to: _selectedUser, message: msg })
+        }).catch(() => {});
     }
 
     async function sendFriendRequest() {

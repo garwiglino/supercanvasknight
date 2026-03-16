@@ -933,7 +933,7 @@
         // Sync ennemis depuis le host (lookup par id stable)
         socket.on('enemy-sync', (data) => {
             if (gameMode !== 'guest') return;
-            data.forEach(({ id, x, y, hp, state, facingRight, vx, vy, hurtTimer, attackTimer }) => {
+            data.forEach(({ id, x, y, hp, state, facingRight, vx, vy, hurtTimer, attackTimer, grounded }) => {
                 const e = enemies.find(en => en.id === id);
                 if (!e || e.state === 'DEAD') return;
                 e.targetX      = x;

@@ -966,6 +966,15 @@
         // Connexion au serveur de jeu temps réel
         initSocket();
 
+        // Les deux rejoignent la room socket dès la connexion établie
+        // (sans attendre startGame) pour que game-start soit bien reçu
+        const pseudo = localStorage.getItem('sckt_pseudo') || 'Joueur';
+        const doJoin = () => {
+            socket.emit('join-game', { roomCode, pseudo, role: gameMode, skinIndex: currentSkinIndex });
+        };
+        if (socket.connected) doJoin();
+        else socket.once('connect', doJoin);
+
         // Guest : bouton JOUER désactivé — c'est l'hôte qui déclenche
         if (gameMode === 'guest') {
             const btn = document.getElementById('startBtn');

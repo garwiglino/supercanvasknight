@@ -1,5 +1,10 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import crypto from 'crypto';
+
+const redis = new Redis({
+    url:   process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -11,13 +16,14 @@ export default async function handler(req, res) {
     }
 
     const key = `user:${pseudo.trim().toLowerCase()}`;
-    const user = await kv.get(key);
+    const raw = await redis.get(key);
 
-    if (!user) {
+    if (!raw) {
         return res.status(401).json({ error: 'Pseudo ou mot de passe incorrect' });
     }
 
-    // Vérification du hash
+    const user = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
     const salt = process.env.AUTH_SALT ?? 'sckt_default_salt_change_me';
     const hash = crypto.createHash('sha256').update(password + salt).digest('hex');
 
@@ -25,9 +31,8 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Pseudo ou mot de passe incorrect' });
     }
 
-    // Nouveau token de session (7 jours)
     const token = crypto.randomBytes(32).toString('hex');
-    await kv.set(`token:${token}`, user.pseudo, { ex: 604800 });
+    await redis.set(`token:${token}`, user.pseudo, { ex: 604800 });
 
     return res.status(200).json({ token, pseudo: user.pseudo });
 }

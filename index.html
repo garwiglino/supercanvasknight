@@ -3544,25 +3544,22 @@
             this.hp = this.maxHp;
             this.hurtTimer = 0;
             this.attackTimer = 0;
-            this.state = 'PATROL'; 
-            this.currentPlatform = null; 
+            this.state = 'PATROL';
+            this.currentPlatform = null;
+            // Cibles réseau initialisées à la position de spawn (évite chute avant 1er sync)
+            this.targetX = x;
+            this.targetY = y;
         }
 
         update(platforms, player) {
             if (this.state === 'DEAD') return;
 
-            // ── Mode guest : pas d'IA locale, on suit l'état reçu du host ──
+            // ── Mode guest : pas de physique locale, lerp pur vers position host ──
             if (gameMode === 'guest') {
-                // Dead reckoning : appliquer la vélocité chaque frame pour lisser entre syncs
-                this.x += this.vx;
-                this.vy += this.gravity;
-                if (this.vy > 15) this.vy = 15;
-                this.y += this.vy;
-                // Correction vers position autoritaire du host
-                if (this.targetX !== undefined) {
-                    this.x += (this.targetX - this.x) * 0.5;
-                    this.y += (this.targetY - this.y) * 0.5;
-                }
+                // Pas de gravité locale : le host est seul juge de la position Y
+                // Lerp fluide vers la dernière position reçue (pas de chute parasite)
+                this.x += (this.targetX - this.x) * 0.45;
+                this.y += (this.targetY - this.y) * 0.45;
                 if (this.hurtTimer > 0) this.hurtTimer--;
                 if (this.attackTimer > 0) this.attackTimer--;
 

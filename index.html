@@ -6,13 +6,31 @@
     <title>Super Canvas Knight</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap');
+
+:root {
+    --bg-dark: #080c14;
+    --bg-mid: #0d1526;
+    --bg-panel: rgba(13,21,38,0.92);
+    --border: rgba(41,128,185,0.45);
+    --border-bright: #2980b9;
+    --accent: #2980b9;
+    --accent2: #e056fd;
+    --gold: #FBD000;
+    --red: #E52521;
+    --green: #2ecc71;
+    --text: #e8ecf4;
+    --text-muted: #7a8ba0;
+    --radius: 12px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.7);
+}
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
             background-color: #111;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Rajdhani', 'Segoe UI', sans-serif;
             overflow: hidden;
             touch-action: none; /* Empêche le scroll sur mobile */
         }
@@ -83,7 +101,7 @@
         .screen {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: linear-gradient(135deg, rgba(8,12,20,0.97) 0%, rgba(13,21,38,0.97) 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -92,20 +110,21 @@
             pointer-events: auto;
             transition: opacity 0.3s ease;
             text-align: center;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(12px);
         }
         .hidden { 
             opacity: 0; 
             pointer-events: none; 
             display: none !important;
         }
-        h1 { 
-            font-size: 64px; 
-            margin-bottom: 10px; 
-            text-shadow: 4px 4px 0 #E52521; 
-            color: #FBD000; 
-            letter-spacing: 2px;
+        h1 {
+            font-size: 64px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(251,208,0,0.5), 4px 4px 0 #8b1c1c;
+            color: #FBD000;
+            letter-spacing: 4px;
             text-transform: uppercase;
+            font-family: 'Cinzel', serif;
         }
         p { 
             font-size: 20px; 
@@ -171,32 +190,35 @@
         }
 
         button {
-            padding: 15px 40px;
-            font-size: 28px;
-            font-family: inherit;
-            font-weight: bold;
+            padding: 14px 36px;
+            font-size: 18px;
+            font-family: 'Rajdhani', inherit;
+            font-weight: 700;
             color: white;
-            background-color: #E52521;
-            border: 4px solid #fff;
-            border-radius: 12px;
+            background: linear-gradient(135deg, #c0392b, #E52521);
+            border: 2px solid rgba(255,255,255,0.25);
+            border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 6px 0 #8b0000;
+            box-shadow: 0 4px 20px rgba(229,37,33,0.4), 0 2px 0 rgba(0,0,0,0.5);
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
-        button:hover:not(:disabled) { 
-            background-color: #ff4742; 
+        button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #E52521, #ff6b6b);
             transform: translateY(-2px);
-            box-shadow: 0 8px 0 #8b0000;
+            box-shadow: 0 6px 24px rgba(229,37,33,0.6), 0 2px 0 rgba(0,0,0,0.5);
         }
-        button:active:not(:disabled) { 
-            transform: translateY(4px); 
-            box-shadow: 0 2px 0 #8b0000;
+        button:active:not(:disabled) {
+            transform: translateY(1px);
+            box-shadow: 0 2px 10px rgba(229,37,33,0.3);
         }
         button:disabled {
-            background-color: #555;
-            box-shadow: 0 6px 0 #222;
+            background: linear-gradient(135deg, #333, #444);
+            box-shadow: none;
             cursor: not-allowed;
-            color: #aaa;
+            color: #666;
+            border-color: #444;
         }
 
         /* Menu RPG (Inventaire & Quêtes) */
@@ -387,30 +409,34 @@
         /* ── ÉCRAN AUTH ────────────────────────────────────────────── */
         .auth-window {
             width: 90%;
-            max-width: 420px;
-            background: #2C3E50;
-            border: 4px solid #B0C4DE;
-            border-radius: 12px;
+            max-width: 440px;
+            background: linear-gradient(180deg, rgba(13,21,38,0.98) 0%, rgba(8,12,20,0.98) 100%);
+            border: 1px solid rgba(41,128,185,0.5);
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+            box-shadow: 0 0 60px rgba(41,128,185,0.15), 0 20px 60px rgba(0,0,0,0.9);
         }
         .auth-tabs {
             display: flex;
-            background: #1a252f;
+            background: rgba(0,0,0,0.4);
+            border-bottom: 1px solid rgba(41,128,185,0.3);
         }
         .auth-tab {
             flex: 1;
             text-align: center;
             padding: 16px;
-            font-weight: bold;
+            font-weight: 700;
             cursor: pointer;
-            color: #ccc;
-            font-size: 18px;
+            color: #5a7a9a;
+            font-size: 14px;
             border-bottom: 3px solid transparent;
             transition: 0.2s;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-family: 'Rajdhani', sans-serif;
         }
-        .auth-tab:hover { background: rgba(255,255,255,0.08); color: #fff; }
-        .auth-tab.active { background: #2C3E50; color: #FBD000; border-bottom: 3px solid #FBD000; }
+        .auth-tab:hover { background: rgba(41,128,185,0.08); color: #aac; }
+        .auth-tab.active { background: transparent; color: #FBD000; border-bottom: 3px solid #FBD000; }
         .auth-body {
             padding: 28px 24px;
             display: flex;
@@ -418,19 +444,21 @@
             gap: 14px;
         }
         .auth-input {
-            padding: 12px;
-            font-size: 18px;
-            border-radius: 8px;
-            border: 3px solid #fff;
-            background: #111;
-            color: #FBD000;
-            text-align: center;
-            font-family: inherit;
-            font-weight: bold;
+            padding: 14px 16px;
+            font-size: 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(41,128,185,0.35);
+            background: rgba(255,255,255,0.04);
+            color: #e8ecf4;
+            text-align: left;
+            font-family: 'Rajdhani', inherit;
+            font-weight: 600;
             width: 100%;
             box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            letter-spacing: 0.5px;
         }
-        .auth-input:focus { outline: none; border-color: #FBD000; }
+        .auth-input:focus { outline: none; border-color: #2980b9; box-shadow: 0 0 0 3px rgba(41,128,185,0.15); }
         .auth-error {
             color: #E52521;
             font-size: 15px;
@@ -523,7 +551,7 @@
 
         /* ── SOCIAL SCREEN ─────────────────────────────────────────── */
         .social-layout { display:flex; gap:18px; width:100%; max-width:900px; height:400px; }
-        .social-panel { flex:1; background:rgba(44,62,80,0.9); border:3px solid #B0C4DE; border-radius:14px; padding:16px; display:flex; flex-direction:column; overflow:hidden; }
+        .social-panel { flex:1; background:linear-gradient(180deg,rgba(10,16,28,0.97),rgba(7,11,20,0.97)); border:1px solid rgba(41,128,185,0.3); border-radius:14px; padding:16px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.5); }
         .social-panel-title { font-size:16px; font-weight:900; color:#FBD000; margin-bottom:10px; flex-shrink:0; }
         .social-search { width:100%; box-sizing:border-box; padding:8px 10px; border-radius:6px; border:2px solid #555; background:#111; color:#fff; font-size:14px; margin-bottom:8px; flex-shrink:0; font-family:inherit; }
         .social-search:focus { outline:none; border-color:#FBD000; }
@@ -534,9 +562,9 @@
         .online-dot { width:10px; height:10px; border-radius:50%; background:#4CAF50; flex-shrink:0; }
         .online-name { font-size:15px; font-weight:bold; }
         .chat-messages { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding:2px 0; }
-        .chat-msg { padding:7px 11px; border-radius:10px; font-size:14px; max-width:85%; word-break:break-word; line-height:1.4; }
-        .chat-msg.from-me { align-self:flex-end; background:#2980b9; }
-        .chat-msg.from-them { align-self:flex-start; background:#34495e; }
+        .chat-msg { padding:8px 13px; border-radius:12px; font-size:14px; max-width:82%; word-break:break-word; line-height:1.5; }
+        .chat-msg.from-me { align-self:flex-end; background:linear-gradient(135deg,#1a4a7a,#2980b9); border-bottom-right-radius:4px; }
+        .chat-msg.from-them { align-self:flex-start; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.08); border-bottom-left-radius:4px; }
         .chat-msg-name { font-size:11px; color:#aaa; margin-bottom:3px; }
         .chat-empty { color:#666; font-size:14px; text-align:center; margin:auto; }
         .chat-input-row { display:flex; gap:8px; margin-top:8px; flex-shrink:0; }
@@ -553,16 +581,16 @@
         .invite-notif-btns button { font-size:14px !important; padding:8px 14px !important; }
         /* Tabs social */
         .social-tabs { display:flex; gap:4px; margin-bottom:10px; flex-shrink:0; }
-        .social-tab { flex:1; padding:7px 4px; font-size:12px; font-weight:bold; background:#2c3e50; border:2px solid #555; border-radius:8px; color:#aaa; cursor:pointer; font-family:inherit; transition:all 0.15s; white-space:nowrap; }
-        .social-tab.active { background:#2980b9; border-color:#2980b9; color:#fff; }
-        .social-tab:hover:not(.active) { background:#34495e; color:#fff; }
+        .social-tab { flex:1; padding:8px 4px; font-size:12px; font-weight:700; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:#5a7a9a; cursor:pointer; font-family:'Rajdhani',inherit; transition:all 0.15s; white-space:nowrap; text-transform:uppercase; letter-spacing:0.5px; }
+        .social-tab.active { background:rgba(41,128,185,0.25); border-color:rgba(41,128,185,0.5); color:#fff; }
+        .social-tab:hover:not(.active) { background:rgba(255,255,255,0.06); color:#aac; }
         .tab-content { flex:1; display:flex; flex-direction:column; overflow:hidden; }
         .tab-content.hidden { display:none; }
         .req-badge { display:inline-block; background:#E52521; color:#fff; border-radius:10px; font-size:11px; padding:1px 6px; margin-left:4px; }
         .req-badge.hidden { display:none; }
-        .friend-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; background:#34495e; cursor:pointer; transition:background 0.15s; flex-shrink:0; }
-        .friend-item:hover { background:#2c5f82; }
-        .friend-item.selected { background:#2980b9; }
+        .friend-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid transparent; cursor:pointer; transition:all 0.15s; flex-shrink:0; }
+        .friend-item:hover { background:rgba(41,128,185,0.15); border-color:rgba(41,128,185,0.3); }
+        .friend-item.selected { background:rgba(41,128,185,0.25); border-color:rgba(41,128,185,0.5); }
         .friend-dot-on { width:10px; height:10px; border-radius:50%; background:#4CAF50; flex-shrink:0; }
         .friend-dot-off { width:10px; height:10px; border-radius:50%; background:#666; flex-shrink:0; }
         .friend-name { flex:1; font-size:15px; font-weight:bold; }
@@ -572,9 +600,9 @@
         .req-item-btns button { font-size:13px !important; padding:6px 12px !important; }
         /* ── HUB ─────────────────────────────────────────────────── */
         .hub-layout { display:flex; width:100%; height:100%; overflow:hidden; }
-        .hub-sidebar { width:220px; min-width:220px; background:rgba(10,15,25,0.98); border-right:3px solid #2980b9; display:flex; flex-direction:column; padding:18px 14px; gap:0; overflow-y:auto; }
+        .hub-sidebar { width:220px; min-width:220px; background:linear-gradient(180deg,rgba(8,12,20,0.99) 0%,rgba(5,8,16,0.99) 100%); border-right:1px solid rgba(41,128,185,0.3); display:flex; flex-direction:column; padding:20px 14px; gap:0; overflow-y:auto; }
         .hub-logo { font-size:20px; font-weight:900; color:#FBD000; text-align:center; margin-bottom:18px; letter-spacing:2px; text-shadow:0 0 12px rgba(251,208,0,0.4); }
-        .hub-player-card { background:rgba(41,128,185,0.12); border:2px solid #2980b9; border-radius:14px; padding:14px 12px; margin-bottom:18px; }
+        .hub-player-card { background:linear-gradient(135deg,rgba(41,128,185,0.1),rgba(142,68,173,0.08)); border:1px solid rgba(41,128,185,0.35); border-radius:14px; padding:14px 12px; margin-bottom:18px; }
         .hub-avatar { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#2980b9,#8e44ad); display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 8px; border:3px solid #FBD000; box-shadow:0 0 16px rgba(251,208,0,0.3); }
         .hub-pseudo-name { font-size:16px; font-weight:900; color:#fff; text-align:center; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .hub-level-lbl { font-size:11px; color:#FBD000; text-align:center; margin-bottom:7px; font-weight:bold; }
@@ -586,25 +614,26 @@
         .hub-mini-val { font-size:16px; font-weight:900; color:#FBD000; }
         .hub-mini-lbl { font-size:9px; color:#888; }
         .hub-nav { display:flex; flex-direction:column; gap:5px; flex:1; margin-bottom:10px; }
-        .hub-nav-btn { width:100%; padding:11px 14px; background:transparent; border:2px solid transparent; border-radius:10px; color:#888; font-size:13px; font-weight:bold; cursor:pointer; text-align:left; font-family:inherit; transition:all 0.15s; display:flex; align-items:center; gap:8px; }
-        .hub-nav-btn:hover { background:rgba(41,128,185,0.18); color:#ddd; border-color:#2c5f82; }
-        .hub-nav-btn.active { background:rgba(41,128,185,0.32); color:#fff; border-color:#2980b9; }
+        .hub-nav-btn { width:100%; padding:12px 14px; background:transparent; border:1px solid transparent; border-radius:10px; color:#5a7a9a; font-size:14px; font-weight:700; cursor:pointer; text-align:left; font-family:'Rajdhani',inherit; transition:all 0.15s; display:flex; align-items:center; gap:10px; letter-spacing:0.5px; text-transform:uppercase; }
+        .hub-nav-btn:hover { background:rgba(41,128,185,0.12); color:#b0c8e0; border-color:rgba(41,128,185,0.25); }
+        .hub-nav-btn.active { background:rgba(41,128,185,0.2); color:#fff; border-color:rgba(41,128,185,0.5); box-shadow:0 0 12px rgba(41,128,185,0.15) inset; }
         .hub-badge { background:#E52521; color:#fff; border-radius:10px; font-size:11px; padding:1px 7px; margin-left:auto; }
         .hub-badge.hidden { display:none; }
         .hub-logout-btn { width:100%; padding:9px; background:transparent; border:2px solid #c0392b; border-radius:10px; color:#c0392b; font-size:12px; font-weight:bold; cursor:pointer; font-family:inherit; transition:all 0.15s; }
         .hub-logout-btn:hover { background:#c0392b; color:#fff; }
-        .hub-main { flex:1; display:flex; flex-direction:column; overflow:hidden; background:rgba(15,20,35,0.7); }
+        .hub-main { flex:1; display:flex; flex-direction:column; overflow:hidden; background:linear-gradient(135deg,rgba(8,12,20,0.6) 0%,rgba(5,8,16,0.8) 100%); }
         .hub-tab { flex:1; padding:30px 36px; overflow-y:auto; display:flex; flex-direction:column; }
         .hub-tab.hidden { display:none; }
         .hub-tab-title { font-size:26px; font-weight:900; color:#fff; margin-bottom:6px; }
         .hub-tab-sub { font-size:14px; color:#888; margin-bottom:24px; }
         .hub-home-stats { display:flex; gap:14px; margin-bottom:28px; flex-wrap:wrap; }
-        .hub-home-stat-box { background:rgba(41,128,185,0.14); border:2px solid #2980b9; border-radius:12px; padding:14px 22px; text-align:center; min-width:90px; }
+        .hub-home-stat-box { background:linear-gradient(135deg,rgba(41,128,185,0.1),rgba(142,68,173,0.06)); border:1px solid rgba(41,128,185,0.3); border-radius:14px; padding:16px 24px; text-align:center; min-width:90px; transition:border-color 0.2s; }
+        .hub-home-stat-box:hover { border-color:rgba(41,128,185,0.6); }
         .hub-home-stat-val { font-size:30px; font-weight:900; color:#FBD000; }
         .hub-home-stat-lbl { font-size:11px; color:#aaa; margin-top:3px; }
         .hub-cards-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; max-width:520px; }
-        .hub-card { background:rgba(44,62,80,0.75); border:2px solid #34495e; border-radius:16px; padding:28px 18px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; }
-        .hub-card:hover { border-color:#2980b9; background:rgba(41,128,185,0.18); transform:translateY(-4px); box-shadow:0 8px 24px rgba(41,128,185,0.25); }
+        .hub-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:28px 18px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; }
+        .hub-card:hover { border-color:rgba(41,128,185,0.5); background:rgba(41,128,185,0.12); transform:translateY(-4px); box-shadow:0 12px 30px rgba(41,128,185,0.2); }
         .hub-card-icon { font-size:38px; margin-bottom:10px; }
         .hub-card-title { font-size:17px; font-weight:900; color:#fff; margin-bottom:5px; }
         .hub-card-desc { font-size:12px; color:#aaa; }
@@ -659,6 +688,35 @@
             .social-layout { flex-direction:column; height:auto; }
             .social-panel { height:200px; }
         }
+/* ── NOUVELLES FEATURES SOCIALES ──────────────────────── */
+.chat-timestamp { font-size:10px; color:#3a5570; text-align:center; margin:6px 0; letter-spacing:0.5px; }
+.typing-indicator { display:none; align-items:center; gap:6px; padding:4px 10px; color:#5a7a9a; font-size:12px; font-style:italic; flex-shrink:0; }
+.typing-indicator.visible { display:flex; }
+.typing-dot { width:5px; height:5px; border-radius:50%; background:#2980b9; animation:tdot 1.2s ease-in-out infinite; }
+.typing-dot:nth-child(2) { animation-delay:0.2s; }
+.typing-dot:nth-child(3) { animation-delay:0.4s; }
+@keyframes tdot { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.2)} }
+.dm-unread { display:inline-block; background:#E52521; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:auto; font-weight:bold; }
+.friend-status { font-size:10px; font-weight:600; letter-spacing:0.3px; }
+.friend-status.online { color:#2ecc71; }
+.friend-status.playing { color:#f39c12; }
+.friend-status.offline { color:#3a5570; }
+.unfriend-btn { background:transparent !important; border:1px solid rgba(229,37,33,0.4) !important; color:#c0392b !important; font-size:12px !important; padding:5px 10px !important; box-shadow:none !important; margin-left:auto; flex-shrink:0; }
+.unfriend-btn:hover:not(:disabled) { background:rgba(229,37,33,0.15) !important; transform:none !important; }
+.chat-input { flex:1; padding:10px 14px; border-radius:10px; border:1px solid rgba(41,128,185,0.3); background:rgba(255,255,255,0.04); color:#e8ecf4; font-size:14px; font-family:'Rajdhani',inherit; transition:border-color 0.2s; }
+.chat-input:focus { outline:none; border-color:#2980b9; box-shadow:0 0 0 3px rgba(41,128,185,0.1); }
+.social-search { width:100%; box-sizing:border-box; padding:10px 12px; border-radius:10px; border:1px solid rgba(41,128,185,0.3); background:rgba(255,255,255,0.04); color:#e8ecf4; font-size:14px; margin-bottom:10px; flex-shrink:0; font-family:'Rajdhani',inherit; transition:border-color 0.2s; }
+.social-search:focus { outline:none; border-color:#2980b9; }
+.hub-logout-btn { width:100%; padding:10px; background:transparent; border:1px solid rgba(192,57,43,0.4); border-radius:10px; color:#c0392b; font-size:12px; font-weight:700; cursor:pointer; font-family:'Rajdhani',inherit; transition:all 0.15s; letter-spacing:0.5px; text-transform:uppercase; }
+.hub-logout-btn:hover { background:rgba(192,57,43,0.15); border-color:#c0392b; color:#e74c3c; }
+/* Moderniser .btn-sec */
+.btn-sec {
+    background:rgba(255,255,255,0.06) !important;
+    box-shadow:none !important;
+    border:1px solid rgba(255,255,255,0.15) !important;
+    color:#b0c8e0 !important;
+}
+.btn-sec:hover:not(:disabled) { background:rgba(255,255,255,0.1) !important; border-color:rgba(255,255,255,0.25) !important; }
     </style>
 </head>
 <body>
@@ -865,13 +923,18 @@
                                 <div id="friendCardArea" class="social-friend-card" style="display:none"></div>
                                 <div class="social-panel-title" id="chatTitle">💬 Sélectionne un ami</div>
                                 <div id="chatMessages" class="chat-messages"><div class="chat-empty">Clique sur un ami<br>pour lui parler</div></div>
+                                <div id="typingIndicator" class="typing-indicator">
+                                    <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+                                    <span id="typingName"></span> écrit...
+                                </div>
                                 <div id="chatInputRow" class="chat-input-row" style="display:none">
-                                    <input type="text" id="chatInput" class="chat-input" placeholder="Message..." maxlength="200" onkeydown="if(event.key==='Enter')sendDM()">
-                                    <button onclick="sendDM()">➤</button>
+                                    <input type="text" id="chatInput" class="chat-input" placeholder="Message..." maxlength="200" onkeydown="if(event.key==='Enter')sendDM()" oninput="onChatTyping()">
+                                    <button onclick="sendDM()" style="padding:10px 16px !important;font-size:16px !important;">➤</button>
                                 </div>
                                 <div id="socialActions" class="social-actions" style="display:none">
                                     <button onclick="inviteSelected()">⚔️ Inviter en partie</button>
-                                    <button class="btn-sec" onclick="inviteToSalon()">🏰 Inviter au salon</button>
+                                    <button class="btn-sec" onclick="inviteToSalon()">🏰 Salon</button>
+                                    <button class="unfriend-btn" onclick="unfriendSelected()">🚫 Retirer</button>
                                 </div>
                             </div>
                         </div>
@@ -1142,16 +1205,23 @@
             else { _onlineUsers = _onlineUsers.filter(u => u !== pseudo); }
             renderFriendsList();
         });
-        socket.on('dm-received', ({ from, message }) => {
+        socket.on('dm-received', ({ from, message, ts }) => {
             const token = localStorage.getItem('sckt_token');
-            const ts    = Date.now();
+            const msgTs = ts || Date.now();
             if (!_dmHistory[from]) _dmHistory[from] = [];
-            _dmHistory[from].push({ from, message, ts });
-            if (_selectedUser === from) renderChat();
-            else {
+            _dmHistory[from].push({ from, message, ts: msgTs });
+            if (_selectedUser === from) {
+                renderChat();
+                // Cacher l'indicateur de frappe
+                const ind = document.getElementById('typingIndicator');
+                if (ind) ind.classList.remove('visible');
+            } else {
+                _dmUnread[from] = (_dmUnread[from] || 0) + 1;
+                renderFriendsList();
                 showNotification(`💬 ${from} : ${message.substring(0,30)}`, '#2980b9');
-                const socialTab = document.getElementById('hubSocial');
-                if (socialTab?.classList.contains('hidden')) { _socialBadge++; updateSocialBadge(); }
+                // Badge global
+                _socialBadge++;
+                updateSocialBadge();
             }
             // Persistance Redis (fire & forget)
             fetch('/api/dm', {
@@ -1159,6 +1229,17 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token, to: from, message })
             }).catch(() => {});
+        });
+        socket.on('typing', ({ from }) => {
+            const ind = document.getElementById('typingIndicator');
+            const nm  = document.getElementById('typingName');
+            if (!ind || !nm) return;
+            if (_selectedUser === from) {
+                nm.textContent = from;
+                ind.classList.add('visible');
+                clearTimeout(_typingTimers[from]);
+                _typingTimers[from] = setTimeout(() => ind.classList.remove('visible'), 2500);
+            }
         });
         socket.on('invite-received', ({ from, roomCode, type }) => {
             showInviteNotif(from, roomCode, type);
@@ -1597,6 +1678,9 @@
     let _friends       = [];   // [{pseudo}] from API
     let _friendReqs    = [];   // [{from}] pending incoming
     let _currentSocialTab = 'friends';
+    let _dmUnread = {};   // { pseudo: count }
+    let _typingTimers = {};
+    let _playerStatuses = {}; // { pseudo: 'online'|'playing'|'salon' }
 
     function selectSocial() {
         showHubTab('social');
@@ -1639,16 +1723,22 @@
         const el = document.getElementById('friendsList');
         if (!el) return;
         if (_friends.length === 0) {
-            el.innerHTML = `<div class="chat-empty">Aucun ami pour l'instant<br><small style="color:#555">Utilise l'onglet Chercher</small></div>`;
+            el.innerHTML = `<div class="chat-empty">Aucun ami pour l'instant<br><small style="color:#3a5570">Utilise l'onglet Chercher</small></div>`;
             return;
         }
         el.innerHTML = _friends.map(pseudo => {
             const online = _onlineUsers.includes(pseudo);
+            const status = _playerStatuses[pseudo] || (online ? 'online' : 'offline');
+            const statusLabel = status === 'playing' ? '⚔️ En partie' : status === 'salon' ? '🏰 Salon' : online ? 'En ligne' : 'Hors ligne';
             const sel = _selectedUser === pseudo ? ' selected' : '';
+            const unread = _dmUnread[pseudo] ? `<span class="dm-unread">${_dmUnread[pseudo]}</span>` : '';
             return `<div class="friend-item${sel}" onclick="selectOnlineUser('${pseudo.replace(/'/g,"\\'")}')">
                 <div class="${online ? 'friend-dot-on' : 'friend-dot-off'}"></div>
-                <span class="friend-name">${pseudo}</span>
-                <span style="font-size:11px;color:${online?'#4CAF50':'#666'}">${online?'En ligne':'Hors ligne'}</span>
+                <div style="flex:1;min-width:0">
+                    <div class="friend-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pseudo}</div>
+                    <div class="friend-status ${status === 'offline' ? 'offline' : status === 'playing' ? 'playing' : 'online'}">${statusLabel}</div>
+                </div>
+                ${unread}
             </div>`;
         }).join('');
     }
@@ -1676,6 +1766,7 @@
 
     function selectOnlineUser(pseudo) {
         _selectedUser = pseudo;
+        _dmUnread[pseudo] = 0;
         document.getElementById('chatTitle').textContent = `💬 ${pseudo}`;
         document.getElementById('chatInputRow').style.display = 'flex';
         const isFriend = _friends.some(f => f.toLowerCase() === pseudo.toLowerCase());
@@ -1683,7 +1774,6 @@
         renderFriendsList();
         renderChat();
         loadFriendCard(pseudo);
-        // Charger l'historique depuis Redis si pas encore fait
         if (!_dmHistoryLoaded[pseudo]) loadDMHistory(pseudo);
     }
 
@@ -1714,11 +1804,22 @@
             el.innerHTML = `<div class="chat-empty">Aucun message</div>`;
             return;
         }
-        el.innerHTML = history.map(m => `
-            <div class="chat-msg ${m.from === myPseudo ? 'from-me' : 'from-them'}">
+        let lastDate = null;
+        el.innerHTML = history.map(m => {
+            const ts = m.ts ? new Date(m.ts) : null;
+            const timeStr = ts ? ts.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+            const dateStr = ts ? ts.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '';
+            let dateSep = '';
+            if (dateStr && dateStr !== lastDate) {
+                lastDate = dateStr;
+                dateSep = `<div class="chat-timestamp">── ${dateStr} ──</div>`;
+            }
+            return `${dateSep}<div class="chat-msg ${m.from === myPseudo ? 'from-me' : 'from-them'}" title="${timeStr}">
                 ${m.from !== myPseudo ? `<div class="chat-msg-name">${m.from}</div>` : ''}
-                ${m.message}
-            </div>`).join('');
+                <div>${m.message}</div>
+                ${timeStr ? `<div style="font-size:10px;opacity:0.45;text-align:${m.from===myPseudo?'right':'left'};margin-top:2px">${timeStr}</div>` : ''}
+            </div>`;
+        }).join('');
         el.scrollTop = el.scrollHeight;
     }
 
@@ -1841,6 +1942,34 @@
         if (!_selectedUser || !socket?.connected) return;
         socket.emit('send-invite', { to: _selectedUser, roomCode: 'SALON', type: 'salon' });
         showNotification(`Invitation salon envoyée à ${_selectedUser}`, '#4CAF50');
+    }
+
+    function onChatTyping() {
+        if (!_selectedUser || !socket?.connected) return;
+        socket.emit('typing', { to: _selectedUser });
+    }
+
+    async function unfriendSelected() {
+        if (!_selectedUser) return;
+        if (!confirm(`Retirer ${_selectedUser} de ta liste d'amis ?`)) return;
+        const token = localStorage.getItem('sckt_token');
+        const removedUser = _selectedUser;
+        try {
+            await fetch('/api/unfriend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, target: removedUser })
+            });
+            _friends = _friends.filter(f => f !== removedUser);
+            _selectedUser = null;
+            document.getElementById('chatTitle').textContent = '💬 Sélectionne un ami';
+            document.getElementById('chatInputRow').style.display = 'none';
+            document.getElementById('socialActions').style.display = 'none';
+            document.getElementById('chatMessages').innerHTML = `<div class="chat-empty">Clique sur un ami<br>pour lui parler</div>`;
+            document.getElementById('friendCardArea').style.display = 'none';
+            renderFriendsList();
+            showNotification(`${removedUser} retiré de ta liste`, '#888');
+        } catch(e) {}
     }
 
     function showInviteNotif(from, roomCode, type) {

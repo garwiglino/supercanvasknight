@@ -1019,6 +1019,10 @@
                     <button class="skin-btn" id="nextSkin">▶</button>
                 </div>
                 <div class="skin-name" id="skinNameDisplay">Chevalier Classique</div>
+                <div id="weaponInfoDisplay" style="margin-top:10px;text-align:center;max-width:280px;">
+                    <div id="weaponBadge" style="display:inline-flex;align-items:center;gap:6px;background:rgba(41,128,185,0.2);border:1px solid rgba(41,128,185,0.5);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:700;color:#e8ecf4;letter-spacing:0.5px;margin-bottom:6px;"></div>
+                    <div id="weaponDesc" style="font-size:12px;color:#7a8ba0;line-height:1.5;font-style:italic;min-height:40px;"></div>
+                </div>
             </div>
 
             <p id="keyboard-hint" style="margin-bottom: 15px;"><b>Flèches/ZSQD</b> : Bouger | <b>Espace</b> : Sauter | <b>0</b> : Attaquer | <b>Shift</b> : Dash | <b>R</b> : Capacité | <b>I/Q</b> : Menu</p>
@@ -2260,17 +2264,35 @@
     ];
     let currentSkinIndex = 0;
 
-    const WEAPON_CONFIG = {
-        //                                  swing  | fenêtre | gravité | dégâts par coup (combo 4 hits)
-        // Épée  : faible/coup mais très enchaînable → pression constante
+    // Valeurs de fallback — écrasées par weapons.json dès le chargement
+    let WEAPON_CONFIG = {
         sword:  { speed: 7,   jumpStrength: -16, attackDuration: 7,  comboWindow: 16,  gravity: 0.80, hitRadii: [70, 88, 80, 102], dmg: [10, 12, 10, 22] },
-        // Arc   : dégâts moyens, range = avantage, enchaîne assez vite
         bow:    { speed: 6.5, jumpStrength: -15, attackDuration: 7,  comboWindow: 20,  gravity: 0.80, hitRadii: [0,  0,  0,  0  ], dmg: [16, 16, 16, 34] },
-        // Marteau : très lent, lourd, tombe vite — double saut compense le saut faible
         hammer: { speed: 4.2, jumpStrength: -11, attackDuration: 14, comboWindow: 95,  gravity: 1.10, hitRadii: [88, 100,112,135], dmg: [28, 30, 35, 62] },
-        // Bâton : faible/orbe mais nova AoE multi-cibles compense
         staff:  { speed: 6,   jumpStrength: -15, attackDuration: 7,  comboWindow: 26,  gravity: 0.80, hitRadii: [0,  0,  0,  90 ], dmg: [13, 13, 13, 12] },
     };
+    // Données d'affichage (nom, description, icône) — remplies depuis weapons.json
+    let WEAPON_DATA = {};
+
+    // Chargement asynchrone de weapons.json
+    fetch('/weapons.json').then(r => r.json()).then(data => {
+        WEAPON_DATA = data.weapons || {};
+        // Fusionner les stats JSON dans WEAPON_CONFIG (permet de modifier via JSON sans toucher le code)
+        for (const [id, wep] of Object.entries(WEAPON_DATA)) {
+            WEAPON_CONFIG[id] = {
+                ...(WEAPON_CONFIG[id] || {}),
+                speed:           wep.speed           ?? WEAPON_CONFIG[id]?.speed,
+                jumpStrength:    wep.jumpStrength     ?? WEAPON_CONFIG[id]?.jumpStrength,
+                attackDuration:  wep.attackDuration   ?? WEAPON_CONFIG[id]?.attackDuration,
+                comboWindow:     wep.comboWindow      ?? WEAPON_CONFIG[id]?.comboWindow,
+                gravity:         wep.gravity          ?? WEAPON_CONFIG[id]?.gravity,
+                hitRadii:        wep.hitRadii         ?? WEAPON_CONFIG[id]?.hitRadii,
+                dmg:             wep.dmg              ?? WEAPON_CONFIG[id]?.dmg,
+            };
+        }
+        // Rafraîchir l'aperçu si la sélection est déjà visible
+        if (document.getElementById('weaponBadge')) drawSkinPreview();
+    }).catch(() => { /* fallback silencieux sur les valeurs hardcodées */ });
 
     // --- GESTIONNAIRE D'ASSETS DYNAMIQUE ---
     const itemDatabase = {
@@ -2363,6 +2385,17 @@
             drawMaleChar(previewCtx, skin, previewCanvas.width / 2 - 25, previewCanvas.height / 2 - 25 + 5, true, 0, true);
         }
         document.getElementById('skinNameDisplay').innerText = skin.name;
+        // Afficher l'arme de départ du personnage
+        const wid  = skin.weapon || 'sword';
+        const wdat = WEAPON_DATA[wid] || {};
+        const icon  = wdat.icon  || { sword:'⚔️', bow:'🏹', hammer:'🔨', staff:'🪄' }[wid] || '⚔️';
+        const wname = wdat.name  || { sword:'Épée Classique', bow:'Arc Long', hammer:'Marteau de Guerre', staff:'Bâton Arcanique' }[wid] || wid;
+        const wcls  = wdat.class || { sword:'Mêlée Légère', bow:'Distance', hammer:'Mêlée Lourde', staff:'Magie' }[wid] || '';
+        const wdesc = wdat.description || '';
+        const badge = document.getElementById('weaponBadge');
+        const desc  = document.getElementById('weaponDesc');
+        if (badge) badge.innerHTML = `${icon} <span style="color:#FBD000">${wname}</span>&nbsp;<span style="opacity:.55;font-weight:400">— ${wcls}</span>`;
+        if (desc)  desc.textContent = wdesc;
         syncAbilityBtn();
     }
 

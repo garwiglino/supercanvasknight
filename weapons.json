@@ -1,0 +1,68 @@
+{
+  "weapons": {
+    "sword": {
+      "id": "sword",
+      "name": "Épée Classique",
+      "class": "Mêlée Légère",
+      "icon": "⚔️",
+      "description": "Lame légère et rapide. Faibles dégâts par coup mais l'enchaînement est fluide — idéale pour maintenir une pression constante sur l'ennemi.",
+      "drawId": "sword",
+      "speed": 7,
+      "jumpStrength": -16,
+      "attackDuration": 7,
+      "comboWindow": 16,
+      "gravity": 0.80,
+      "hitRadii": [70, 88, 80, 102],
+      "dmg": [10, 12, 10, 22],
+      "mobility": { "dash": true, "doubleJump": false }
+    },
+    "bow": {
+      "id": "bow",
+      "name": "Arc Long",
+      "class": "Distance",
+      "icon": "🏹",
+      "description": "Tir de flèches à distance. Dégâts moyens mais portée totale — ne nécessite pas de s'approcher de l'ennemi. Le 4e tir est chargé et fait deux fois plus de dégâts.",
+      "drawId": "bow",
+      "speed": 6.5,
+      "jumpStrength": -15,
+      "attackDuration": 7,
+      "comboWindow": 20,
+      "gravity": 0.80,
+      "hitRadii": [0, 0, 0, 0],
+      "dmg": [16, 16, 16, 34],
+      "mobility": { "dash": true, "doubleJump": false }
+    },
+    "hammer": {
+      "id": "hammer",
+      "name": "Marteau de Guerre",
+      "class": "Mêlée Lourde",
+      "icon": "🔨",
+      "description": "Arme dévastatrice mais lente. Chaque coup est lourd et punitif. La longue pause entre les frappes est une vulnérabilité — mais le 4e coup peut tuer un ennemi d'un seul swing. Le double saut compense le manque de mobilité.",
+      "drawId": "hammer",
+      "speed": 4.2,
+      "jumpStrength": -11,
+      "attackDuration": 14,
+      "comboWindow": 95,
+      "gravity": 1.10,
+      "hitRadii": [88, 100, 112, 135],
+      "dmg": [28, 30, 35, 62],
+      "mobility": { "dash": false, "doubleJump": true }
+    },
+    "staff": {
+      "id": "staff",
+      "name": "Bâton Arcanique",
+      "class": "Magie",
+      "icon": "🪄",
+      "description": "Lance des orbes magiques à courte portée. Faibles dégâts individuels mais le 4e sort déclenche une nova qui frappe tous les ennemis proches simultanément. Excellente option contre les groupes.",
+      "drawId": "staff",
+      "speed": 6,
+      "jumpStrength": -15,
+      "attackDuration": 7,
+      "comboWindow": 26,
+      "gravity": 0.80,
+      "hitRadii": [0, 0, 0, 90],
+      "dmg": [13, 13, 13, 12],
+      "mobility": { "dash": true, "doubleJump": false }
+    }
+  }
+}

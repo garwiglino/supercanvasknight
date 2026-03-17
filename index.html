@@ -221,6 +221,48 @@
             border-color: #444;
         }
 
+        /* ── SYSTÈME D'ARMES ──────────────────────────────────────── */
+        .weapon-slot-card {
+            background: rgba(20,30,50,0.9);
+            border: 2px solid #34495e;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .weapon-slot-card.equipped { border-color: #FBD000; background: rgba(40,35,0,0.5); }
+        .weapon-slot-card.backpack { border-color: #2980b9; }
+        .weapon-slot-icon { font-size: 36px; flex-shrink: 0; width: 46px; text-align: center; }
+        .weapon-slot-info { flex: 1; }
+        .weapon-slot-name { font-size: 17px; font-weight: 900; color: #fff; }
+        .weapon-slot-class { font-size: 11px; color: #888; margin-top: 1px; letter-spacing: 0.5px; }
+        .weapon-slot-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; display: inline-block; margin-top: 4px; }
+        .weapon-slot-badge.equipped-badge { background: rgba(251,208,0,0.2); color: #FBD000; border: 1px solid rgba(251,208,0,0.4); }
+        .weapon-slot-badge.back-badge { background: rgba(41,128,185,0.2); color: #2980b9; border: 1px solid rgba(41,128,185,0.4); }
+        .weapon-slot-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+        .weapon-slot-actions button { font-size: 12px !important; padding: 6px 12px !important; min-width: 90px; }
+        .weapon-hint { font-size: 13px; color: #5a7a9a; text-align: center; margin-top: 14px; line-height: 1.6; }
+        .weapon-hint kbd { background: #1a252f; border: 1px solid #2980b9; padding: 2px 6px; border-radius: 4px; color: #aac; font-family: monospace; }
+        /* Prompt ramassage arme au sol */
+        #weaponPickupHint {
+            position: absolute;
+            bottom: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #FBD000;
+            border-radius: 10px;
+            padding: 8px 20px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: bold;
+            pointer-events: none;
+            display: none;
+            z-index: 90;
+            white-space: nowrap;
+        }
         /* Menu RPG (Inventaire & Quêtes) */
         #menuScreen {
             display: none;
@@ -1043,12 +1085,13 @@
             <button class="btn-sec" onclick="backToMode()" style="margin-top:10px;">◀ MENU PRINCIPAL</button>
         </div>
 
-        <!-- Menu Inventaire / Quêtes -->
+        <!-- Menu Inventaire / Quêtes / Armes -->
         <div id="menuScreen" class="screen hidden">
             <div class="menu-window">
                 <div class="menu-tabs">
                     <div id="tab-inventory" class="menu-tab active" onclick="showTab('inventory')">INVENTAIRE (I)</div>
                     <div id="tab-quests" class="menu-tab" onclick="showTab('quests')">QUÊTES (Q)</div>
+                    <div id="tab-weapons" class="menu-tab" onclick="showTab('weapons')">⚔️ ARMES (P)</div>
                     <div class="menu-tab close-tab" onclick="toggleMenu()">❌</div>
                 </div>
                 <div id="content-inventory" class="menu-content">
@@ -1057,8 +1100,13 @@
                 <div id="content-quests" class="menu-content" style="display: none;">
                     <!-- Rempli en JS -->
                 </div>
+                <div id="content-weapons" class="menu-content" style="display: none;">
+                    <!-- Rempli en JS -->
+                </div>
             </div>
         </div>
+        <!-- Indicateur de ramassage d'arme -->
+        <div id="weaponPickupHint"></div>
         
         <div id="touch-controls" class="hidden">
             <div class="touch-btn-group">
@@ -2851,10 +2899,10 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false };
+    const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, interact: false };
 
     window.addEventListener('keydown', (e) => {
-        if (gameState === 'MENU' && e.code !== 'KeyI' && e.code !== 'KeyQ' && e.code !== 'Escape') return;
+        if (gameState === 'MENU' && e.code !== 'KeyI' && e.code !== 'KeyQ' && e.code !== 'KeyP' && e.code !== 'Escape') return;
 
         // Empêcher les actions de jeu si on écrit son pseudo
         if (document.activeElement.tagName === 'INPUT') {
@@ -2872,6 +2920,8 @@
         if (e.code === 'Digit0' || e.code === 'Numpad0') keys.attack = true;
         if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.dash = true;
         if (e.code === 'KeyR') keys.ability = true;
+        if (e.code === 'Numpad8' || e.code === 'Digit8') { keys.weaponWheel = true; e.preventDefault(); }
+        if (e.code === 'KeyE') keys.interact = true;
 
         if (e.code === 'Enter' || e.code === 'NumpadEnter') {
             if (assetsLoaded && (gameState === 'START' || gameState === 'GAMEOVER')) startGame();
@@ -2879,6 +2929,7 @@
 
         if (e.code === 'KeyI') toggleMenu('inventory');
         if (e.code === 'KeyQ') toggleMenu('quests');
+        if (e.code === 'KeyP') toggleMenu('weapons');
         if (e.code === 'Escape' && gameState === 'MENU') toggleMenu();
     });
 
@@ -2889,6 +2940,8 @@
         if (e.code === 'Digit0' || e.code === 'Numpad0') keys.attack = false;
         if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.dash = false;
         if (e.code === 'KeyR') keys.ability = false;
+        if (e.code === 'Numpad8' || e.code === 'Digit8') keys.weaponWheel = false;
+        if (e.code === 'KeyE') keys.interact = false;
     });
 
     const btnLeft = document.getElementById('btn-left');
@@ -3078,8 +3131,9 @@
             menuScreen.style.display = 'flex';
             menuScreen.classList.remove('hidden');
             
-            keys.right = false; keys.left = false; keys.up = false; keys.attack = false;
-            
+            keys.right = false; keys.left = false; keys.up = false; keys.attack = false; keys.weaponWheel = false;
+            if (player._wheelOpen) { player._wheelOpen = false; player._wheelHeld = false; }
+
             showTab(tab);
         } else if (gameState === 'MENU') {
             gameState = 'PLAYING';
@@ -3089,16 +3143,16 @@
     }
 
     function showTab(tab) {
-        document.getElementById('tab-inventory').classList.remove('active');
-        document.getElementById('tab-quests').classList.remove('active');
-        document.getElementById('content-inventory').style.display = 'none';
-        document.getElementById('content-quests').style.display = 'none';
-        
+        ['inventory','quests','weapons'].forEach(t => {
+            document.getElementById('tab-' + t).classList.remove('active');
+            document.getElementById('content-' + t).style.display = 'none';
+        });
         document.getElementById('tab-' + tab).classList.add('active');
         document.getElementById('content-' + tab).style.display = 'block';
 
         if (tab === 'inventory') renderInventory();
         if (tab === 'quests') renderQuests();
+        if (tab === 'weapons') renderWeapons();
     }
 
     function initQuests() {
@@ -3147,6 +3201,67 @@
         } else {
             grid.innerHTML += '<p style="font-size:15px; color:#aaa; margin-top:20px; text-align:center;"><i>Cliquez sur un objet pour l\'utiliser.</i></p>';
         }
+    }
+
+    function renderWeapons() {
+        const container = document.getElementById('content-weapons');
+        if (!container) return;
+
+        const weapons = player.weapons || [];
+        const equippedSlot = player.equippedSlot || 0;
+
+        let html = '';
+        if (weapons.length === 0) {
+            html = '<p style="text-align:center;color:#888;margin-top:40px;">Aucune arme en possession.</p>';
+        } else {
+            weapons.forEach((wid, i) => {
+                const isEquipped = (i === equippedSlot);
+                const wdat = WEAPON_DATA[wid] || {};
+                const icon  = wdat.icon  || { sword:'⚔️', bow:'🏹', hammer:'🔨', staff:'🪄' }[wid] || '⚔️';
+                const wname = wdat.name  || wid;
+                const wcls  = wdat.class || '';
+                const badge = isEquipped
+                    ? `<span class="weapon-slot-badge equipped-badge">✓ Équipée</span>`
+                    : `<span class="weapon-slot-badge back-badge">🎒 Dans le dos</span>`;
+                const equipBtn = !isEquipped
+                    ? `<button onclick="menuEquipWeapon(${i})">🗡️ Équiper</button>` : '';
+                const dropBtn = `<button class="btn-sec" onclick="menuDropWeapon(${i})" style="font-size:11px!important;padding:5px 10px!important;">🗑️ Lâcher</button>`;
+                html += `
+                <div class="weapon-slot-card ${isEquipped ? 'equipped' : 'backpack'}">
+                    <div class="weapon-slot-icon">${icon}</div>
+                    <div class="weapon-slot-info">
+                        <div class="weapon-slot-name">${wname}</div>
+                        <div class="weapon-slot-class">${wcls}</div>
+                        ${badge}
+                    </div>
+                    <div class="weapon-slot-actions">
+                        ${equipBtn}
+                        ${dropBtn}
+                    </div>
+                </div>`;
+            });
+            if (weapons.length < 2) {
+                html += `<p style="text-align:center;color:#5a7a9a;font-size:13px;margin-top:10px;">Slot libre — ramasse une arme au sol pour la porter.</p>`;
+            } else {
+                const penalty = Math.round((1 - 0.85) * 100);
+                html += `<p style="text-align:center;color:#5a7a9a;font-size:13px;margin-top:4px;">⚖️ Pénalité de poids : −${penalty}% de vitesse (2 armes portées)</p>`;
+            }
+        }
+        html += `<div class="weapon-hint">
+            <kbd>8</kbd> tap = switch rapide &nbsp;|&nbsp; maintenir <kbd>8</kbd> = roue d'armes (◀▶ pour naviguer)
+        </div>`;
+        container.innerHTML = html;
+    }
+
+    function menuEquipWeapon(slot) {
+        player.equip(slot);
+        renderWeapons();
+        showNotification(`${WEAPON_DATA[player.weapons[slot]]?.icon || '⚔️'} Arme équipée !`, '#FBD000');
+    }
+
+    function menuDropWeapon(slot) {
+        player.dropWeapon(slot);
+        renderWeapons();
     }
 
     function useItem(key) {
@@ -3651,8 +3766,8 @@
     }
 
     function drawWeapon(rc, weapon, isAttacking, comboStep, progress, skin) {
-        const trim = skin.trim || '#DAA520';
-        const armor0 = skin.armor ? skin.armor[0] : '#ccc';
+        const trim = skin?.trim || '#DAA520';
+        const armor0 = skin?.armor ? skin.armor[0] : '#ccc';
 
         if (weapon === 'sword') {
             let weaponAngle;
@@ -3803,7 +3918,7 @@
                 rc.rotate(-Math.PI * 0.2);
             }
             // Hampe
-            const staffColor = skin.trim || '#9c27b0';
+            const staffColor = skin?.trim || '#9c27b0';
             rc.fillStyle = '#2a1a3a'; rc.fillRect(-3, -44, 6, 44);
             // Bandes décoratives
             rc.fillStyle = staffColor;
@@ -3869,25 +3984,109 @@
             }
         }
 
+        // ── Applique les stats de l'arme équipée (+ pénalité de poids) ──
+        applyWeaponStats() {
+            const wid = (this.weapons && this.weapons.length > 0)
+                ? (this.weapons[this.equippedSlot] || this.weapons[0])
+                : (this.skin?.weapon || 'sword');
+            const wc  = WEAPON_CONFIG[wid] || WEAPON_CONFIG['sword'];
+            const mob = WEAPON_DATA[wid]?.mobility || {};
+            // Pénalité de poids si 2 armes portées : −15% de vitesse
+            const weightFactor = (this.weapons && this.weapons.length > 1) ? 0.85 : 1.0;
+            this.speed           = wc.speed * weightFactor;
+            this.jumpStrength    = wc.jumpStrength;
+            this._attackDuration = wc.attackDuration;
+            this.gravity         = wc.gravity ?? 0.8;
+            this._hasDash        = mob.dash !== false;
+            this._hasDoubleJump  = mob.doubleJump === true;
+        }
+
+        // ── Équipe l'arme du slot donné ──
+        equip(slot) {
+            if (slot < 0 || slot >= (this.weapons?.length || 0)) return;
+            this.equippedSlot = slot;
+            this.applyWeaponStats();
+            this.comboStep = 0;
+            this.comboResetTimer = 0;
+            this.isAttacking = false;
+            this.jumpsLeft = this._hasDoubleJump ? 2 : 1;
+        }
+
+        // ── Switch rapide entre les 2 armes ──
+        switchWeapon() {
+            if (!this.weapons || this.weapons.length < 2) return;
+            this.equip((this.equippedSlot + 1) % this.weapons.length);
+            const wid = this.weapons[this.equippedSlot];
+            showNotification(`${WEAPON_DATA[wid]?.icon || '⚔️'} ${WEAPON_DATA[wid]?.name || wid}`, '#B0C4DE');
+        }
+
+        // ── Ramasse une arme (depuis le sol) ──
+        pickupWeapon(wid) {
+            if (!this.weapons) this.weapons = [];
+            if (this.weapons.length >= 2) return false;
+            this.weapons.push(wid);
+            this.applyWeaponStats(); // recalcule pénalité de poids
+            showNotification(`${WEAPON_DATA[wid]?.icon || '⚔️'} ${WEAPON_DATA[wid]?.name || wid} ramassé !`, '#FBD000');
+            return true;
+        }
+
+        // ── Retourne l'ID de l'arme actuellement équipée ──
+        _equippedWeaponId() {
+            if (this.weapons && this.weapons.length > 0) {
+                return this.weapons[this.equippedSlot] || this.weapons[0];
+            }
+            return this.skin?.weapon || 'sword';
+        }
+
+        // ── Lâche l'arme du slot donné ──
+        dropWeapon(slot) {
+            if (!this.weapons || slot < 0 || slot >= this.weapons.length) return;
+            if (this.weapons.length === 1) {
+                showNotification('Impossible de lâcher la seule arme !', '#E52521');
+                return;
+            }
+            const wid = this.weapons[slot];
+            droppedWeapons.push(new DroppedWeapon(this.x + (this.facingRight ? this.width + 5 : -30), this.y, wid));
+            this.weapons.splice(slot, 1);
+            if (this.equippedSlot >= this.weapons.length) this.equippedSlot = 0;
+            this.applyWeaponStats();
+            this.jumpsLeft = this._hasDoubleJump ? 2 : 1;
+            showNotification(`${WEAPON_DATA[wid]?.icon || '⚔️'} ${WEAPON_DATA[wid]?.name || wid} lâchée`, '#888');
+        }
+
         reset() {
             this.x = 100;
-            this.y = 0; 
+            this.y = 0;
             this.vx = 0;
             this.vy = 0;
-            const wc = WEAPON_CONFIG[this.skin?.weapon || 'sword'];
-            this.speed = wc.speed;
-            this.jumpStrength = wc.jumpStrength;
-            this._attackDuration = wc.attackDuration;
-            this.gravity = wc.gravity ?? 0.8;
+            // ── INVENTAIRE D'ARMES ──────────────────────────────────────
+            // Si pas encore initialisé (premier appel ou réinitialisation explicite), créer l'inventaire
+            if (!this.weapons || this.weapons.length === 0) {
+                this.weapons = [this.skin?.weapon || 'sword'];
+                this.equippedSlot = 0;
+            }
+            // Sinon conserver l'inventaire en cours (respawn en partie)
+            // Roue d'armes
+            this._wheelHeld = false;
+            this._wheelHoldTimer = 0;
+            this._wheelOpen = false;
+            this._wheelSel = this.equippedSlot || 0;
+            this._lastWheelKey = false;
+            this._lastWheelLeft = false;
+            this._lastWheelRight = false;
+            this._nearDroppedWeapon = null;
+            this._lastInteract = false;
+            // Applique les stats de l'arme équipée
+            this.applyWeaponStats();
             this.grounded = false;
-            this.color = '#B0C4DE'; 
+            this.color = '#B0C4DE';
             this.facingRight = true;
             this.isAttacking = false;
             this.attackTimer = 0;
             this.comboStep = 0;
             this.comboResetTimer = 0;
             this.idleTime = 0;
-            
+
             this.level = 1;
             this.maxHp = 100;
             this.hp = this.maxHp;
@@ -3898,15 +4097,15 @@
             this.hasHit = new Set(); // Set pour toucher plusieurs ennemis par swing
             this.bonusDamage = 0;
             this.bloodStains = []; // Taches de sang sur le joueur
-            
-            // --- DASH (désactivé pour arme lourde) ---
+
+            // --- DASH ---
             this.dashCooldown = 0;
             this.dashTimer = 0;
             this.dashDir = 1;
             this.lastDashKey = false;
-            // --- DOUBLE SAUT (arme lourde uniquement) ---
+            // --- DOUBLE SAUT ---
             this.lastJumpKey = false;
-            this.jumpsLeft = 2;
+            this.jumpsLeft = this._hasDoubleJump ? 2 : 1;
 
             // --- CAPACITÉ SPÉCIALE (R) ---
             this.abilityCharge = 0;      // charges accumulées (hits sur ennemis)
@@ -4171,7 +4370,7 @@
             let justPressedDash = keys.dash && !this.lastDashKey;
             this.lastDashKey = keys.dash;
 
-            if (justPressedDash && this.dashCooldown === 0 && !this.isAttacking && this.skin?.weapon !== 'hammer') {
+            if (justPressedDash && this.dashCooldown === 0 && !this.isAttacking && this._hasDash !== false) {
                 // Direction : input prioritaire, sinon facing
                 if (keys.right) this.dashDir = 1;
                 else if (keys.left) this.dashDir = -1;
@@ -4189,7 +4388,7 @@
             if (this.abilityTimer === 0 && this.warCryActive) {
                 this.warCryActive = false;
                 this.bonusDamage = Math.max(0, this.bonusDamage - 20);
-                this.speed = 7;
+                this.applyWeaponStats(); // restaure la vitesse de l'arme équipée
             }
             if (this.abilityTimer === 0) { this.shieldActive = false; }
             if (this.shieldActive && this.abilityTimer > 0) this.hurtTimer = Math.max(this.hurtTimer, 2);
@@ -4197,6 +4396,59 @@
             const justPressedAbility = keys.ability && !this.lastAbilityKey;
             this.lastAbilityKey = keys.ability;
             if (justPressedAbility && this.abilityCharge >= this.abilityMaxCharge) this.useAbility();
+
+            // ── ROUE D'ARMES (Numpad8 / 8) ──────────────────────────────
+            const _wk = keys.weaponWheel;
+            const _justPressedWheel = _wk && !this._lastWheelKey;
+            this._lastWheelKey = _wk;
+            if (_justPressedWheel) {
+                this._wheelHoldTimer = 0;
+                this._wheelHeld = true;
+                this._wheelSel = this.equippedSlot;
+                this._lastWheelLeft  = keys.left;
+                this._lastWheelRight = keys.right;
+            }
+            if (this._wheelHeld && _wk) {
+                this._wheelHoldTimer++;
+                if (this._wheelHoldTimer >= 18) {
+                    this._wheelOpen = true;
+                    // Navigation gauche/droite dans la roue
+                    const _leftNow  = keys.left;
+                    const _rightNow = keys.right;
+                    if (_leftNow  && !this._lastWheelLeft  && this._wheelSel > 0) this._wheelSel--;
+                    if (_rightNow && !this._lastWheelRight && this._wheelSel < (this.weapons?.length || 1) - 1) this._wheelSel++;
+                    this._lastWheelLeft  = _leftNow;
+                    this._lastWheelRight = _rightNow;
+                }
+            }
+            if (!_wk && this._wheelHeld) {
+                if (this._wheelOpen) {
+                    // Équipe l'arme sélectionnée dans la roue
+                    this.equip(this._wheelSel);
+                } else {
+                    // Tap rapide : switch immédiat
+                    this.switchWeapon();
+                }
+                this._wheelHeld = false;
+                this._wheelOpen = false;
+                this._wheelHoldTimer = 0;
+            }
+
+            // ── INTERACTION arme au sol (touche E) ──────────────────────
+            const _justInteract = keys.interact && !this._lastInteract;
+            this._lastInteract = keys.interact;
+            if (_justInteract && this._nearDroppedWeapon) {
+                const dw = this._nearDroppedWeapon;
+                // Swap : dépose l'arme équipée, ramasse la nouvelle
+                const oldWid = this.weapons[this.equippedSlot];
+                droppedWeapons.push(new DroppedWeapon(this.x + (this.facingRight ? this.width + 5 : -30), this.y, oldWid));
+                this.weapons[this.equippedSlot] = dw.weaponId;
+                droppedWeapons.splice(droppedWeapons.indexOf(dw), 1);
+                this._nearDroppedWeapon = null;
+                this.applyWeaponStats();
+                this.comboStep = 0; this.comboResetTimer = 0; this.isAttacking = false;
+                showNotification(`${WEAPON_DATA[dw.weaponId]?.icon || '⚔️'} ${WEAPON_DATA[dw.weaponId]?.name || dw.weaponId} équipée !`, '#FBD000');
+            }
 
             // Mise à jour projectiles (Rôdeur)
             this.projectiles = this.projectiles.filter(p => {
@@ -4268,7 +4520,7 @@
                 } else {
                     this.comboStep = 0; 
                 }
-                this.comboResetTimer = (WEAPON_CONFIG[this.skin?.weapon || 'sword']?.comboWindow) || 25;
+                this.comboResetTimer = (WEAPON_CONFIG[this._equippedWeaponId() || 'sword']?.comboWindow) || 25;
             }
 
             if (this.isAttacking) {
@@ -4280,12 +4532,13 @@
                 if (this.comboResetTimer > 0) {
                     this.comboResetTimer--;
                 } else {
-                    this.comboStep = 0; 
+                    this.comboStep = 0;
                 }
             }
 
             this.attackHitbox = null;
-            const wc = WEAPON_CONFIG[this.skin?.weapon || 'sword'];
+            const _eid = this._equippedWeaponId();
+            const wc = WEAPON_CONFIG[_eid || 'sword'];
             const dur = this._attackDuration || 10;
             if (this.isAttacking && this.attackTimer < dur - 2 && this.attackTimer > 2) {
                 const radius = wc.hitRadii[this.comboStep] || 0;
@@ -4299,20 +4552,20 @@
                 }
             }
             // Bow : tir de flèche au début de l'attaque
-            if (this.skin?.weapon === 'bow' && this.isAttacking && this.attackTimer === (this._attackDuration||9) - 1) {
+            if (_eid === 'bow' && this.isAttacking && this.attackTimer === (this._attackDuration||9) - 1) {
                 const dir = this.facingRight ? 1 : -1;
                 const spd = this.comboStep === 3 ? 24 : 18;
                 const dmg = wc.dmg[this.comboStep];
                 this.projectiles.push({ x: this.x+this.width/2, y: this.y+this.height*0.3, vx: dir*spd, vy: 0, life: 70, dmg, charged: this.comboStep===3 });
             }
             // Staff step 0-2 : orbe magique
-            if (this.skin?.weapon === 'staff' && this.isAttacking && this.attackTimer === (this._attackDuration||11) - 1 && this.comboStep < 3) {
+            if (_eid === 'staff' && this.isAttacking && this.attackTimer === (this._attackDuration||11) - 1 && this.comboStep < 3) {
                 const dir = this.facingRight ? 1 : -1;
                 const dmg = wc.dmg[this.comboStep];
                 this.projectiles.push({ x: this.x+this.width/2, y: this.y+this.height*0.2, vx: dir*12, vy: -1, life: 55, dmg, magic: true });
             }
             // Staff step 3 : nova AoE au moment du relâché
-            if (this.skin?.weapon === 'staff' && this.isAttacking && this.comboStep === 3 && this.attackTimer === 4) {
+            if (_eid === 'staff' && this.isAttacking && this.comboStep === 3 && this.attackTimer === 4) {
                 const cx = this.x + this.width/2, cy = this.y + this.height/2;
                 for (let e of enemies) {
                     if (e.state !== 'DEAD' && Math.hypot((e.x+e.width/2)-cx, (e.y+e.height/2)-cy) < 90) {
@@ -4334,6 +4587,9 @@
                 if (this.dashTimer > 0) {
                     // Pendant le dash : vélocité fixe, ignore l'input directionnel
                     this.vx = this.dashDir * 18;
+                } else if (this._wheelOpen) {
+                    // Roue ouverte : bloquer le déplacement horizontal
+                    this.vx = 0;
                 } else if (keys.right) { this.vx = this.speed; this.facingRight = true; }
                 else if (keys.left) { this.vx = -this.speed; this.facingRight = false; }
                 else this.vx = 0;
@@ -4350,19 +4606,18 @@
                 if (this.vy > 15) this.vy = 15;
             }
 
-            const _isHeavy = this.skin?.weapon === 'hammer';
             const _justJump = keys.up && !this.lastJumpKey;
             this.lastJumpKey = keys.up;
             // Réinitialise le double saut dès qu'on touche le sol
-            if (this.grounded && _isHeavy) this.jumpsLeft = 2;
+            if (this.grounded && this._hasDoubleJump) this.jumpsLeft = 2;
             // Premier saut (au sol)
             if (keys.up && this.grounded) {
                 this.vy = this.jumpStrength;
                 this.grounded = false;
-                if (_isHeavy) this.jumpsLeft = 1; // consomme le 1er saut
+                if (this._hasDoubleJump) this.jumpsLeft = 1; // consomme le 1er saut
             }
-            // Double saut (en l'air, marteau uniquement — nécessite un nouvel appui)
-            else if (_justJump && _isHeavy && !this.grounded && this.jumpsLeft > 0) {
+            // Double saut (arme avec doubleJump=true — nécessite un nouvel appui)
+            else if (_justJump && this._hasDoubleJump && !this.grounded && this.jumpsLeft > 0) {
                 this.vy = this.jumpStrength * 0.82; // 2e saut légèrement moins haut
                 this.jumpsLeft = 0;
             }
@@ -4412,7 +4667,7 @@
             if (this.hurtTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
 
             const isMoving = Math.abs(this.vx) > 0.1;
-            const _wp = this.skin?.weapon || 'sword';
+            const _wp = this._equippedWeaponId();
             // Marche : vitesse et amplitude selon classe
             const _wt  = _wp==='hammer' ? 55 : _wp==='staff' ? 50 : _wp==='bow' ? 35 : 40;
             const _wamp = _wp==='hammer' ? 10 : _wp==='staff' ? 7  : _wp==='bow' ? 8  : 12;
@@ -4585,6 +4840,21 @@
             // Redessine uniquement les yeux animés par-dessus le sang
             drawHelmet(renderCtx, this.skin, drawX, bodyY, this.width, this.facingRight, lookAroundOffset, isBlinking, true);
 
+            // ── ARME DANS LE DOS (2e arme portée mais non équipée) ───────────
+            if (this.weapons && this.weapons.length > 1) {
+                const _backSlot = this.equippedSlot === 0 ? 1 : 0;
+                const _backWid  = this.weapons[_backSlot];
+                renderCtx.save();
+                const _bx = this.facingRight ? drawX + 2 : drawX + this.width - 2;
+                renderCtx.translate(_bx, bodyY + this.height * 0.3);
+                renderCtx.rotate(this.facingRight ? -0.65 : 0.65);
+                renderCtx.globalAlpha = 0.55;
+                renderCtx.scale(0.52, 0.52);
+                drawWeapon(renderCtx, _backWid, false, 0, 0, this.skin);
+                renderCtx.globalAlpha = 1;
+                renderCtx.restore();
+            }
+
             // ── ARME (drawWeapon) ─────────────────────────────────────────────
             renderCtx.save();
             const _handX = this.facingRight ? drawX + this.width/2 + 10 : drawX + this.width/2 - 10;
@@ -4597,6 +4867,63 @@
                 drawWeapon(renderCtx, _wp, this.isAttacking, this.comboStep, _prog, this.skin);
             }
             renderCtx.restore();
+
+            // ── ROUE D'ARMES (rendu canvas au-dessus du personnage) ───────────
+            if (this._wheelOpen && this.weapons && this.weapons.length > 0) {
+                const _wcx = drawX + this.width / 2;
+                const _wcy = bodyY - 58;
+                const slotW = 56, slotH = 48, gap = 10;
+                const totalW = this.weapons.length * slotW + (this.weapons.length - 1) * gap;
+                const startX = _wcx - totalW / 2;
+                // Fond
+                renderCtx.save();
+                renderCtx.fillStyle = 'rgba(5,10,20,0.88)';
+                renderCtx.beginPath();
+                renderCtx.roundRect(startX - 8, _wcy - slotH / 2 - 8, totalW + 16, slotH + 22, 12);
+                renderCtx.fill();
+                renderCtx.strokeStyle = 'rgba(41,128,185,0.5)';
+                renderCtx.lineWidth = 1.5;
+                renderCtx.stroke();
+                // Flèche indicatrice
+                renderCtx.fillStyle = 'rgba(255,255,255,0.18)';
+                renderCtx.beginPath();
+                renderCtx.moveTo(_wcx - 7, _wcy + slotH / 2 + 14);
+                renderCtx.lineTo(_wcx + 7, _wcy + slotH / 2 + 14);
+                renderCtx.lineTo(_wcx, _wcy + slotH / 2 + 22);
+                renderCtx.closePath();
+                renderCtx.fill();
+                // Slots
+                this.weapons.forEach((wid, i) => {
+                    const sx = startX + i * (slotW + gap);
+                    const isSel = (i === this._wheelSel);
+                    const isEq  = (i === this.equippedSlot);
+                    renderCtx.fillStyle = isSel ? 'rgba(251,208,0,0.25)' : 'rgba(41,128,185,0.12)';
+                    renderCtx.strokeStyle = isSel ? '#FBD000' : (isEq ? '#4CAF50' : 'rgba(41,128,185,0.4)');
+                    renderCtx.lineWidth = isSel ? 2.5 : 1.5;
+                    renderCtx.beginPath();
+                    renderCtx.roundRect(sx, _wcy - slotH/2, slotW, slotH, 8);
+                    renderCtx.fill(); renderCtx.stroke();
+                    // Icône
+                    const _icon = WEAPON_DATA[wid]?.icon || { sword:'⚔️', bow:'🏹', hammer:'🔨', staff:'🪄' }[wid] || '⚔️';
+                    renderCtx.font = '20px sans-serif';
+                    renderCtx.textAlign = 'center';
+                    renderCtx.fillStyle = '#fff';
+                    renderCtx.fillText(_icon, sx + slotW / 2, _wcy + 8);
+                    // Nom court
+                    const _shortName = WEAPON_DATA[wid]?.name?.split(' ')[0] || wid;
+                    renderCtx.font = 'bold 9px Rajdhani, sans-serif';
+                    renderCtx.fillStyle = isSel ? '#FBD000' : '#aac';
+                    renderCtx.fillText(_shortName, sx + slotW / 2, _wcy + slotH / 2 + 2);
+                    // Point équipée
+                    if (isEq) {
+                        renderCtx.fillStyle = '#4CAF50';
+                        renderCtx.beginPath();
+                        renderCtx.arc(sx + slotW - 6, _wcy - slotH/2 + 6, 4, 0, Math.PI*2);
+                        renderCtx.fill();
+                    }
+                });
+                renderCtx.restore();
+            }
 
             // Barre de vie
             if (this.hp < this.maxHp) {
@@ -4971,7 +5298,7 @@
                                 -2 - Math.random()*6));
                         }
                         // Notifier le host — il applique les dégâts et valide la mort
-                        const _wdmg = WEAPON_CONFIG[player.skin?.weapon||'sword']?.dmg || [15,15,15,25];
+                        const _wdmg = WEAPON_CONFIG[player._equippedWeaponId?.()??player.skin?.weapon??'sword']?.dmg || [15,15,15,25];
                         const dmg = (_wdmg[player.comboStep] || 15) + (player.bonusDamage || 0);
                         if (socket && socket.connected && roomCode) {
                             socket.emit('game-event', {
@@ -5071,7 +5398,7 @@
                     this.y < player.attackHitbox.y + player.attackHitbox.height &&
                     this.y + this.height > player.attackHitbox.y) {
                     
-                    const _wdmg2 = WEAPON_CONFIG[player.skin?.weapon||'sword']?.dmg || [15,15,15,25];
+                    const _wdmg2 = WEAPON_CONFIG[player._equippedWeaponId?.()??player.skin?.weapon??'sword']?.dmg || [15,15,15,25];
                     let damage = (_wdmg2[player.comboStep] || 15) + (player.bonusDamage || 0); 
                     this.hp -= damage;
                     this.hurtTimer = 30; 
@@ -5471,6 +5798,72 @@
         }
     }
 
+    // ── ARMES AU SOL ──────────────────────────────────────────────────────────
+    let droppedWeapons = [];
+
+    class DroppedWeapon {
+        constructor(x, y, weaponId) {
+            this.x = x;
+            this.y = y;
+            this.vy = -2;
+            this.grounded = false;
+            this.weaponId = weaponId;
+            this.bobTime = Math.random() * 100;
+            this.bobOffset = 0;
+        }
+
+        update(platforms) {
+            if (!this.grounded) {
+                this.vy += 0.55;
+                if (this.vy > 14) this.vy = 14;
+                this.y += this.vy;
+                for (let p of platforms) {
+                    if (this.x + 10 > p.x && this.x < p.x + p.width &&
+                        this.y + 24 > p.y && this.y < p.y + p.height && this.vy > 0) {
+                        this.y = p.y - 24;
+                        this.vy = 0;
+                        this.grounded = true;
+                    }
+                }
+            }
+            this.bobTime += 0.05;
+            this.bobOffset = this.grounded ? Math.sin(this.bobTime) * 4 : 0;
+        }
+
+        draw() {
+            const wdat = WEAPON_DATA[this.weaponId] || {};
+            const icon = wdat.icon || { sword:'⚔️', bow:'🏹', hammer:'🔨', staff:'🪄' }[this.weaponId] || '⚔️';
+            const name = wdat.name?.split(' ')[0] || this.weaponId;
+            const dy = this.bobOffset;
+
+            ctx.save();
+            ctx.translate(this.x + 12, this.y + dy);
+            ctx.rotate(-0.55);
+            ctx.scale(0.7, 0.7);
+            drawWeapon(ctx, this.weaponId, false, 0, 0, null);
+            ctx.restore();
+
+            // Halo de brillance
+            const glow = 0.45 + 0.35 * Math.sin(this.bobTime * 1.8);
+            ctx.save();
+            ctx.globalAlpha = glow * 0.4;
+            ctx.fillStyle = '#FBD000';
+            ctx.beginPath();
+            ctx.arc(this.x + 12, this.y + 12 + dy, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.restore();
+
+            // Icône + label (prompt interaction si plein)
+            ctx.save();
+            ctx.font = '16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#FBD000';
+            ctx.fillText(icon, this.x + 12, this.y - 4 + dy);
+            ctx.restore();
+        }
+    }
+
     // --- INSTANCIATION DES DONNÉES DE JEU ---
     const player       = new Player();
     const remotePlayer = new RemotePlayer();
@@ -5481,6 +5874,7 @@
         coins = [];
         clouds = [];
         items = [];
+        droppedWeapons = [];
         hitEffects = [];
         bloodDrops = [];
         floorBloods = [];
@@ -5561,7 +5955,31 @@
 
             coins.forEach(c => c.update());
             items.forEach(i => i.update());
-            
+
+            // ── ARMES AU SOL : update + ramassage ──────────────────────
+            player._nearDroppedWeapon = null;
+            const _hintEl = document.getElementById('weaponPickupHint');
+            let _showHint = false;
+            droppedWeapons.forEach(dw => {
+                dw.update(platforms);
+                const dist = Math.hypot((player.x + 25) - (dw.x + 12), (player.y + 25) - (dw.y + 12));
+                if (dist < 55) {
+                    if (player.weapons.length < 2) {
+                        // Ramassage auto
+                        player.pickupWeapon(dw.weaponId);
+                        dw._collected = true;
+                    } else {
+                        // Inventaire plein : proposer swap
+                        player._nearDroppedWeapon = dw;
+                        const icon = WEAPON_DATA[dw.weaponId]?.icon || '⚔️';
+                        const name = WEAPON_DATA[dw.weaponId]?.name || dw.weaponId;
+                        if (_hintEl) { _hintEl.innerHTML = `${icon} <b>${name}</b> — <kbd style="background:#1a252f;border:1px solid #2980b9;padding:1px 5px;border-radius:3px;font-family:monospace">E</kbd> pour échanger`; _showHint = true; }
+                    }
+                }
+            });
+            droppedWeapons = droppedWeapons.filter(dw => !dw._collected);
+            if (_hintEl) _hintEl.style.display = _showHint ? 'block' : 'none';
+
             // Mise à jour des effets de sang
             floorBloods.forEach(fb => fb.update());
             floorBloods = floorBloods.filter(fb => fb.life > 0);
@@ -5627,6 +6045,7 @@
         enemies.forEach(enemy => enemy.draw());
         coins.forEach(c => c.draw());
         items.forEach(i => i.draw());
+        droppedWeapons.forEach(dw => dw.draw());
 
         if (currentLevelData.goal) {
             drawFlag(currentLevelData.goal.x + 50, currentLevelData.goal.y - 100);
@@ -5706,9 +6125,12 @@
         buildLevel(); 
         
         // Appliquer la configuration choisie
-        player.reset(); 
-        player.pseudo = document.getElementById('pseudoInput').value || "Héros";
+        // Forcer la réinitialisation de l'inventaire d'armes au démarrage d'une partie
         player.skin = SKINS[currentSkinIndex];
+        player.weapons = [player.skin.weapon || 'sword'];
+        player.equippedSlot = 0;
+        player.reset();
+        player.pseudo = document.getElementById('pseudoInput').value || "Héros";
         syncAbilityBtn();
         
         scoreDisplay.innerText = `🪙 ${score}`;

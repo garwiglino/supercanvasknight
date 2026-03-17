@@ -3866,11 +3866,14 @@
             this.bonusDamage = 0;
             this.bloodStains = []; // Taches de sang sur le joueur
             
-            // --- DASH ---
+            // --- DASH (désactivé pour arme lourde) ---
             this.dashCooldown = 0;
             this.dashTimer = 0;
             this.dashDir = 1;
             this.lastDashKey = false;
+            // --- DOUBLE SAUT (arme lourde uniquement) ---
+            this.lastJumpKey = false;
+            this.jumpsLeft = 2;
 
             // --- CAPACITÉ SPÉCIALE (R) ---
             this.abilityCharge = 0;      // charges accumulées (hits sur ennemis)
@@ -4135,7 +4138,7 @@
             let justPressedDash = keys.dash && !this.lastDashKey;
             this.lastDashKey = keys.dash;
 
-            if (justPressedDash && this.dashCooldown === 0 && !this.isAttacking) {
+            if (justPressedDash && this.dashCooldown === 0 && !this.isAttacking && this.skin?.weapon !== 'hammer') {
                 // Direction : input prioritaire, sinon facing
                 if (keys.right) this.dashDir = 1;
                 else if (keys.left) this.dashDir = -1;
@@ -4314,9 +4317,21 @@
                 if (this.vy > 15) this.vy = 15;
             }
 
+            const _isHeavy = this.skin?.weapon === 'hammer';
+            const _justJump = keys.up && !this.lastJumpKey;
+            this.lastJumpKey = keys.up;
+            // Réinitialise le double saut dès qu'on touche le sol
+            if (this.grounded && _isHeavy) this.jumpsLeft = 2;
+            // Premier saut (au sol)
             if (keys.up && this.grounded) {
                 this.vy = this.jumpStrength;
                 this.grounded = false;
+                if (_isHeavy) this.jumpsLeft = 1; // consomme le 1er saut
+            }
+            // Double saut (en l'air, marteau uniquement — nécessite un nouvel appui)
+            else if (_justJump && _isHeavy && !this.grounded && this.jumpsLeft > 0) {
+                this.vy = this.jumpStrength * 0.82; // 2e saut légèrement moins haut
+                this.jumpsLeft = 0;
             }
 
             this.y += this.vy;

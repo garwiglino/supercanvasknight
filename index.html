@@ -2261,11 +2261,15 @@
     let currentSkinIndex = 0;
 
     const WEAPON_CONFIG = {
-        //                                  swing rapide  |  fenêtre entre coups (comboWindow)
-        sword:  { speed: 7,   jumpStrength: -16, attackDuration: 7,  comboWindow: 18, hitRadii: [70, 88, 80, 102], dmg: [15,15,15,28] },
-        bow:    { speed: 6.5, jumpStrength: -15, attackDuration: 7,  comboWindow: 22, hitRadii: [0,  0,  0,  0  ], dmg: [22,22,22,42] },
-        hammer: { speed: 5.5, jumpStrength: -14, attackDuration: 9,  comboWindow: 38, hitRadii: [88, 100,112,135], dmg: [20,20,25,38] },
-        staff:  { speed: 6,   jumpStrength: -15, attackDuration: 7,  comboWindow: 28, hitRadii: [0,  0,  0,  90 ], dmg: [18,18,18,15] },
+        //                                  swing  | fenêtre | dégâts par coup (combo 4 hits)
+        // Épée  : faible/coup mais très enchaînable → pression constante
+        sword:  { speed: 7,   jumpStrength: -16, attackDuration: 7,  comboWindow: 16, hitRadii: [70, 88, 80, 102], dmg: [10, 12, 10, 22] },
+        // Arc   : dégâts moyens, range = avantage, enchaîne assez vite
+        bow:    { speed: 6.5, jumpStrength: -15, attackDuration: 7,  comboWindow: 20, hitRadii: [0,  0,  0,  0  ], dmg: [16, 16, 16, 34] },
+        // Marteau : coup énorme, longue pause → burst / récompense le timing
+        hammer: { speed: 5.5, jumpStrength: -14, attackDuration: 9,  comboWindow: 50, hitRadii: [88, 100,112,135], dmg: [28, 30, 35, 62] },
+        // Bâton : faible/orbe mais nova AoE multi-cibles compense
+        staff:  { speed: 6,   jumpStrength: -15, attackDuration: 7,  comboWindow: 26, hitRadii: [0,  0,  0,  90 ], dmg: [13, 13, 13, 12] },
     };
 
     // --- GESTIONNAIRE D'ASSETS DYNAMIQUE ---
@@ -3995,7 +3999,7 @@
                         hitEffects.push(new HitEffect(e.x+e.width/2, e.y+e.height/2));
                         for (let i = 0; i < 6; i++)
                             this.abilityVfx.push({ x: e.x+e.width/2, y: e.y+e.height/2, vx: (cx-(e.x+e.width/2))/18 + (Math.random()-0.5)*2, vy: (cy-(e.y+e.height/2))/18 + (Math.random()-0.5)*2, life: 20, maxLife: 20, color: '#9c27b0', r: 4, grav: 0 });
-                        if (e.hp <= 0) { e.state='DEAD'; player.gainXp(20); updateQuest('kill_skel',1); triggerShake(11,14); }
+                        if (e.hp <= 0) { e.state='DEAD'; player.gainXp(10); updateQuest('kill_skel',1); triggerShake(11,14); }
                     }
                 }
                 if (stolen > 0) {
@@ -4167,7 +4171,7 @@
                         e.hp -= p.dmg; e.hurtTimer = 20; e.vx = p.vx * 0.4;
                         triggerShake(4, 6);
                         hitEffects.push(new HitEffect(p.x, p.y));
-                        if (e.hp <= 0) { e.state = 'DEAD'; player.gainXp(20); updateQuest('kill_skel', 1); triggerShake(11, 14); }
+                        if (e.hp <= 0) { e.state = 'DEAD'; player.gainXp(10); updateQuest('kill_skel', 1); triggerShake(11, 14); }
                         p.life = 0;
                         break;
                     }
@@ -4186,7 +4190,7 @@
                             e.hp -= 20;
                             hitEffects.push(new HitEffect(t.x, t.y));
                             triggerShake(5, 8);
-                            if (e.hp <= 0) { e.state='DEAD'; player.gainXp(20); updateQuest('kill_skel',1); triggerShake(11,14); }
+                            if (e.hp <= 0) { e.state='DEAD'; player.gainXp(10); updateQuest('kill_skel',1); triggerShake(11,14); }
                         }
                     }
                 }
@@ -4205,7 +4209,7 @@
                     if (e.state !== 'DEAD' && Math.abs((e.x+e.width/2) - (this.x+this.width/2)) < 80) {
                         e.hp -= 35; e.hurtTimer = 30; e.vy = -8; e.vx = (e.x > this.x ? 1 : -1) * 6;
                         hitEffects.push(new HitEffect(e.x+e.width/2, e.y+e.height/2));
-                        if (e.hp <= 0) { e.state='DEAD'; player.gainXp(20); updateQuest('kill_skel',1); }
+                        if (e.hp <= 0) { e.state='DEAD'; player.gainXp(10); updateQuest('kill_skel',1); }
                     }
                 }
                 // Shockwave VFX
@@ -4279,7 +4283,7 @@
                         const d = wc.dmg[3];
                         e.hp -= d; e.hurtTimer = 20;
                         hitEffects.push(new HitEffect(e.x+e.width/2, e.y+e.height/2));
-                        if (e.hp <= 0) { e.state='DEAD'; player.gainXp(20); updateQuest('kill_skel',1); triggerShake(10,14); }
+                        if (e.hp <= 0) { e.state='DEAD'; player.gainXp(10); updateQuest('kill_skel',1); triggerShake(10,14); }
                         else triggerShake(6,8);
                     }
                 }
@@ -4935,7 +4939,7 @@
                 if (this.state === 'ATTACK' && this.attackTimer === 1 &&
                         Math.abs((player.x+25)-(this.x+25)) < 70 &&
                         Math.abs(player.y - this.y) < 50 && player.hp > 0) {
-                    player.takeDamage(15, this.facingRight ? 1 : -1);
+                    player.takeDamage(20, this.facingRight ? 1 : -1);
                 }
                 return;
             }
@@ -4980,7 +4984,7 @@
                 
                 if (this.attackTimer === 0) {
                     this.attackTimer = 60; 
-                    player.takeDamage(15, this.facingRight ? 1 : -1);
+                    player.takeDamage(20, this.facingRight ? 1 : -1);
                 }
             } else if (distToPlayer < 350 && Math.abs(player.y - this.y) < 100 && playerIsAlive) {
                 this.state = 'CHASE';
@@ -5066,7 +5070,7 @@
                     if (this.hp <= 0) {
                         this.state = 'DEAD';
                         triggerShake(11, 14); // Mort ennemi — impact brutal
-                        player.gainXp(20);
+                        player.gainXp(10);
                         updateQuest('kill_skel', 1);
 
                         let dropRoll = Math.random();

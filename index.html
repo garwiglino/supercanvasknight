@@ -2261,10 +2261,11 @@
     let currentSkinIndex = 0;
 
     const WEAPON_CONFIG = {
-        sword:  { speed: 7,   jumpStrength: -16, attackDuration: 10, hitRadii: [70, 88, 80, 102], dmg: [15,15,15,28] },
-        bow:    { speed: 6.5, jumpStrength: -15, attackDuration: 9,  hitRadii: [0,  0,  0,  0  ], dmg: [22,22,22,42] },
-        hammer: { speed: 5.5, jumpStrength: -14, attackDuration: 15, hitRadii: [88, 100,112,135], dmg: [20,20,25,38] },
-        staff:  { speed: 6,   jumpStrength: -15, attackDuration: 11, hitRadii: [0,  0,  0,  90 ], dmg: [18,18,18,15] },
+        //                                  swing rapide  |  fenêtre entre coups (comboWindow)
+        sword:  { speed: 7,   jumpStrength: -16, attackDuration: 7,  comboWindow: 18, hitRadii: [70, 88, 80, 102], dmg: [15,15,15,28] },
+        bow:    { speed: 6.5, jumpStrength: -15, attackDuration: 7,  comboWindow: 22, hitRadii: [0,  0,  0,  0  ], dmg: [22,22,22,42] },
+        hammer: { speed: 5.5, jumpStrength: -14, attackDuration: 9,  comboWindow: 38, hitRadii: [88, 100,112,135], dmg: [20,20,25,38] },
+        staff:  { speed: 6,   jumpStrength: -15, attackDuration: 7,  comboWindow: 28, hitRadii: [0,  0,  0,  90 ], dmg: [18,18,18,15] },
     };
 
     // --- GESTIONNAIRE D'ASSETS DYNAMIQUE ---
@@ -4227,7 +4228,7 @@
                 } else {
                     this.comboStep = 0; 
                 }
-                this.comboResetTimer = 25; 
+                this.comboResetTimer = (WEAPON_CONFIG[this.skin?.weapon || 'sword']?.comboWindow) || 25;
             }
 
             if (this.isAttacking) {

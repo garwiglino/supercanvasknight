@@ -1405,7 +1405,7 @@
     }
 
     // ── Profil / progression ─────────────────────────────────────────
-    let _profile = { level: 1, xp: 0, maxXp: 50, totalKills: 0, gamesPlayed: 0 };
+    let _profile = { level: 1, xp: 0, maxXp: 80, totalKills: 0, gamesPlayed: 0 };
     let _socialBadge = 0;
 
     async function loadProfile() {
@@ -1414,7 +1414,7 @@
             const res = await fetch(`/api/profile?token=${encodeURIComponent(token)}`);
             if (!res.ok) return;
             const data = await res.json();
-            _profile = { level:1, xp:0, maxXp:50, totalKills:0, gamesPlayed:0, ...data };
+            _profile = { level:1, xp:0, maxXp:80, totalKills:0, gamesPlayed:0, ...data };
             updateHubProfile();
         } catch(e) {}
     }
@@ -2267,7 +2267,7 @@
         // Arc   : dégâts moyens, range = avantage, enchaîne assez vite
         bow:    { speed: 6.5, jumpStrength: -15, attackDuration: 7,  comboWindow: 20, hitRadii: [0,  0,  0,  0  ], dmg: [16, 16, 16, 34] },
         // Marteau : coup énorme, longue pause → burst / récompense le timing
-        hammer: { speed: 5.5, jumpStrength: -14, attackDuration: 9,  comboWindow: 50, hitRadii: [88, 100,112,135], dmg: [28, 30, 35, 62] },
+        hammer: { speed: 5.5, jumpStrength: -14, attackDuration: 9,  comboWindow: 75, hitRadii: [88, 100,112,135], dmg: [28, 30, 35, 62] },
         // Bâton : faible/orbe mais nova AoE multi-cibles compense
         staff:  { speed: 6,   jumpStrength: -15, attackDuration: 7,  comboWindow: 26, hitRadii: [0,  0,  0,  90 ], dmg: [13, 13, 13, 12] },
     };
@@ -3859,7 +3859,7 @@
             this.maxHp = 100;
             this.hp = this.maxHp;
             this.xp = 0;
-            this.maxXp = 50;
+            this.maxXp = 80;
             this.hurtTimer = 0;
             this.attackHitbox = null;
             this.hasHit = new Set(); // Set pour toucher plusieurs ennemis par swing
@@ -3898,7 +3898,7 @@
             if (this.xp >= this.maxXp) {
                 this.xp -= this.maxXp;
                 this.level++;
-                this.maxXp = Math.floor(this.maxXp * 1.5); 
+                this.maxXp = Math.floor(this.maxXp * 1.65);
                 this.maxHp += 20;
                 this.hp = this.maxHp; 
                 
@@ -4860,7 +4860,7 @@
     let _enemyIdCounter = 0; // ID stable indépendant de la position dans le tableau
 
     class Skeleton {
-        constructor(x, y, minX, maxX) {
+        constructor(x, y, minX, maxX, playerCount = 1) {
             this.id = _enemyIdCounter++;
             this.width = 50;
             this.height = 50;
@@ -4876,7 +4876,7 @@
             this.minX = minX || x - 150;
             this.maxX = maxX || x + 150;
 
-            this.maxHp = 40;
+            this.maxHp = Math.round(40 * (1 + (playerCount - 1) * 0.65));
             this.hp = this.maxHp;
             this.hurtTimer = 0;
             this.attackTimer = 0;
@@ -5450,8 +5450,9 @@
         }
 
         if(currentLevelData.skeletons) {
+            const _pc = (gameMode === 'host' || gameMode === 'guest' || gameMode === 'salon') ? 2 : 1;
             currentLevelData.skeletons.forEach(s => {
-                enemies.push(new Skeleton(s.x, s.y, s.x - 100, s.x + 150));
+                enemies.push(new Skeleton(s.x, s.y, s.x - 100, s.x + 150, _pc));
             });
         }
 

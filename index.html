@@ -1852,10 +1852,10 @@
         resultEl.style.color = '#aaa';
         resultEl.textContent = 'Envoi...';
         try {
-            const res = await fetch('/api/friend-request', {
+            const res = await fetch('/api/friends', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, to })
+                body: JSON.stringify({ token, action: 'request', to })
             });
             const data = await res.json();
             if (!res.ok) {
@@ -1877,10 +1877,10 @@
     async function respondFriendRequest(from, accept) {
         const token = localStorage.getItem('sckt_token');
         try {
-            const res = await fetch('/api/friend-respond', {
+            const res = await fetch('/api/friends', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, from, accept })
+                body: JSON.stringify({ token, action: 'respond', from, accept })
             });
             if (!res.ok) return;
             // Update local state
@@ -1955,10 +1955,10 @@
         const token = localStorage.getItem('sckt_token');
         const removedUser = _selectedUser;
         try {
-            await fetch('/api/unfriend', {
+            await fetch('/api/friends', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, target: removedUser })
+                body: JSON.stringify({ token, action: 'unfriend', target: removedUser })
             });
             _friends = _friends.filter(f => f !== removedUser);
             _selectedUser = null;

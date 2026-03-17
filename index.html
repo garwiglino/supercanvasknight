@@ -3617,21 +3617,21 @@
         const armor0 = skin.armor ? skin.armor[0] : '#ccc';
 
         if (weapon === 'sword') {
-            // Trail d'arc pendant l'attaque
+            let weaponAngle;
             if (isAttacking) {
                 let startAngle, endAngle, radius, scaleY;
-                if      (comboStep === 0) { startAngle=-Math.PI*0.7; endAngle= Math.PI*0.4;  radius=70;  scaleY=1;   }
-                else if (comboStep === 1) { startAngle=-Math.PI*0.8; endAngle= Math.PI*0.3;  radius=88;  scaleY=0.3; }
-                else if (comboStep === 2) { startAngle= Math.PI*0.6; endAngle=-Math.PI*0.5;  radius=80;  scaleY=1;   }
-                else                     { startAngle=-Math.PI;      endAngle= Math.PI*1.2;  radius=102; scaleY=0.4; }
+                if      (comboStep === 0) { startAngle=-Math.PI*0.85; endAngle= Math.PI*0.55;  radius=70;  scaleY=1;   }
+                else if (comboStep === 1) { startAngle=-Math.PI*0.95; endAngle= Math.PI*0.45;  radius=88;  scaleY=0.3; }
+                else if (comboStep === 2) { startAngle= Math.PI*0.7;  endAngle=-Math.PI*0.65;  radius=80;  scaleY=1;   }
+                else                     { startAngle=-Math.PI*0.5;   endAngle= Math.PI*0.5;   radius=102; scaleY=0.4; }
                 const alpha = Math.sin(progress * Math.PI);
-                const currentAngle = startAngle + progress * (endAngle - startAngle);
+                weaponAngle = startAngle + progress * (endAngle - startAngle);
+                // Trail (save/restore isolé pour le scale scaleY)
                 rc.save();
                 rc.scale(1, scaleY);
                 let r2 = comboStep===3?255:0, g2=comboStep===3?215:255, b2=comboStep===3?0:255;
-                let gr;
                 if (comboStep === 3) {
-                    gr = rc.createRadialGradient(0,0,radius*0.3,0,0,radius);
+                    const gr = rc.createRadialGradient(0,0,radius*0.3,0,0,radius);
                     gr.addColorStop(0, `rgba(${r2},${g2},${b2},0)`);
                     gr.addColorStop(1, `rgba(${r2},${g2},${b2},${alpha*0.8})`);
                     rc.fillStyle = gr;
@@ -3639,17 +3639,18 @@
                     rc.fillStyle = `rgba(255,255,255,${alpha*0.4})`;
                     rc.beginPath(); rc.arc(0,0,radius*1.05,0,Math.PI*2); rc.fill();
                 } else {
-                    gr = rc.createLinearGradient(Math.cos(startAngle)*radius,Math.sin(startAngle)*radius,Math.cos(currentAngle)*radius,Math.sin(currentAngle)*radius);
+                    const gr = rc.createLinearGradient(Math.cos(startAngle)*radius,Math.sin(startAngle)*radius,Math.cos(weaponAngle)*radius,Math.sin(weaponAngle)*radius);
                     gr.addColorStop(0, `rgba(${r2},${g2},${b2},0)`);
                     gr.addColorStop(1, `rgba(${r2},${g2},${b2},${alpha*0.9})`);
                     rc.fillStyle = gr;
-                    rc.beginPath(); rc.moveTo(0,0); rc.arc(0,0,radius,startAngle,currentAngle,endAngle<startAngle); rc.closePath(); rc.fill();
+                    rc.beginPath(); rc.moveTo(0,0); rc.arc(0,0,radius,startAngle,weaponAngle,endAngle<startAngle); rc.closePath(); rc.fill();
                 }
-                rc.rotate(currentAngle);
                 rc.restore();
             } else {
-                rc.rotate(-Math.PI / 6);
+                weaponAngle = -Math.PI / 6;
             }
+            // Rotation de l'arme HORS du save/restore — elle suit vraiment le swing
+            rc.rotate(weaponAngle);
             // Lame
             rc.fillStyle = '#C8D8E8'; rc.fillRect(-3, -38, 6, 38);
             // Affûtage (bord blanc)
@@ -3662,19 +3663,19 @@
             rc.fillStyle = trim; rc.beginPath(); rc.arc(0, 15, 4.5, 0, Math.PI*2); rc.fill();
 
         } else if (weapon === 'hammer') {
-            // Trail large et lent pendant attaque
+            let weaponAngle;
             if (isAttacking) {
                 let startAngle, endAngle, radius;
-                if      (comboStep === 0) { startAngle=-Math.PI*0.6; endAngle= Math.PI*0.5;  radius=88;  }
-                else if (comboStep === 1) { startAngle= Math.PI*0.4; endAngle=-Math.PI*0.6;  radius=100; }
-                else if (comboStep === 2) { startAngle=-Math.PI*0.9; endAngle= Math.PI*0.1;  radius=112; }
-                else                     { startAngle=-Math.PI*0.5; endAngle= Math.PI*0.5;  radius=135; }
+                // Hammer : arcs larges — step 0 swing droite, step 1 retour, step 2 overhead, step 3 slam bas
+                if      (comboStep === 0) { startAngle=-Math.PI*0.9;  endAngle= Math.PI*0.6;  radius=88;  }
+                else if (comboStep === 1) { startAngle= Math.PI*0.55; endAngle=-Math.PI*0.75; radius=100; }
+                else if (comboStep === 2) { startAngle=-Math.PI*1.1;  endAngle= Math.PI*0.2;  radius=112; }
+                else                     { startAngle=-Math.PI*0.55;  endAngle= Math.PI*0.55; radius=135; }
                 const alpha = Math.sin(progress * Math.PI);
-                const currentAngle = startAngle + progress * (endAngle - startAngle);
+                weaponAngle = startAngle + progress * (endAngle - startAngle);
                 rc.save();
                 const r2 = comboStep===3?255:220, g2=comboStep===3?80:100, b2=0;
                 if (comboStep === 3) {
-                    // Onde de choc au sol
                     rc.scale(1, 0.3);
                     const gr = rc.createRadialGradient(0,0,radius*0.2,0,0,radius);
                     gr.addColorStop(0, `rgba(${r2},${g2},${b2},0)`);
@@ -3682,17 +3683,18 @@
                     rc.fillStyle = gr;
                     rc.beginPath(); rc.arc(0,0,radius,0,Math.PI*2); rc.fill();
                 } else {
-                    const gr = rc.createLinearGradient(Math.cos(startAngle)*radius,Math.sin(startAngle)*radius,Math.cos(currentAngle)*radius,Math.sin(currentAngle)*radius);
+                    const gr = rc.createLinearGradient(Math.cos(startAngle)*radius,Math.sin(startAngle)*radius,Math.cos(weaponAngle)*radius,Math.sin(weaponAngle)*radius);
                     gr.addColorStop(0, `rgba(${r2},${g2},${b2},0)`);
                     gr.addColorStop(1, `rgba(${r2},${g2},${b2},${alpha*0.85})`);
                     rc.fillStyle = gr;
-                    rc.beginPath(); rc.moveTo(0,0); rc.arc(0,0,radius,startAngle,currentAngle,endAngle<startAngle); rc.closePath(); rc.fill();
+                    rc.beginPath(); rc.moveTo(0,0); rc.arc(0,0,radius,startAngle,weaponAngle,endAngle<startAngle); rc.closePath(); rc.fill();
                 }
-                rc.rotate(currentAngle);
                 rc.restore();
             } else {
-                rc.rotate(-Math.PI * 0.15);
+                weaponAngle = -Math.PI * 0.15;
             }
+            // Rotation de l'arme HORS du save/restore — suit vraiment le swing
+            rc.rotate(weaponAngle);
             // Manche
             rc.fillStyle = '#5c3a1e'; rc.fillRect(-3.5, -42, 7, 42);
             // Tête du marteau (rectangle épais)

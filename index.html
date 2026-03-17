@@ -2261,15 +2261,15 @@
     let currentSkinIndex = 0;
 
     const WEAPON_CONFIG = {
-        //                                  swing  | fenêtre | dégâts par coup (combo 4 hits)
+        //                                  swing  | fenêtre | gravité | dégâts par coup (combo 4 hits)
         // Épée  : faible/coup mais très enchaînable → pression constante
-        sword:  { speed: 7,   jumpStrength: -16, attackDuration: 7,  comboWindow: 16, hitRadii: [70, 88, 80, 102], dmg: [10, 12, 10, 22] },
+        sword:  { speed: 7,   jumpStrength: -16, attackDuration: 7,  comboWindow: 16,  gravity: 0.80, hitRadii: [70, 88, 80, 102], dmg: [10, 12, 10, 22] },
         // Arc   : dégâts moyens, range = avantage, enchaîne assez vite
-        bow:    { speed: 6.5, jumpStrength: -15, attackDuration: 7,  comboWindow: 20, hitRadii: [0,  0,  0,  0  ], dmg: [16, 16, 16, 34] },
-        // Marteau : coup énorme, longue pause → burst / récompense le timing
-        hammer: { speed: 5.5, jumpStrength: -14, attackDuration: 9,  comboWindow: 75, hitRadii: [88, 100,112,135], dmg: [28, 30, 35, 62] },
+        bow:    { speed: 6.5, jumpStrength: -15, attackDuration: 7,  comboWindow: 20,  gravity: 0.80, hitRadii: [0,  0,  0,  0  ], dmg: [16, 16, 16, 34] },
+        // Marteau : très lent, lourd, tombe vite — double saut compense le saut faible
+        hammer: { speed: 4.2, jumpStrength: -11, attackDuration: 14, comboWindow: 95,  gravity: 1.10, hitRadii: [88, 100,112,135], dmg: [28, 30, 35, 62] },
         // Bâton : faible/orbe mais nova AoE multi-cibles compense
-        staff:  { speed: 6,   jumpStrength: -15, attackDuration: 7,  comboWindow: 26, hitRadii: [0,  0,  0,  90 ], dmg: [13, 13, 13, 12] },
+        staff:  { speed: 6,   jumpStrength: -15, attackDuration: 7,  comboWindow: 26,  gravity: 0.80, hitRadii: [0,  0,  0,  90 ], dmg: [13, 13, 13, 12] },
     };
 
     // --- GESTIONNAIRE D'ASSETS DYNAMIQUE ---
@@ -3845,7 +3845,7 @@
             this.speed = wc.speed;
             this.jumpStrength = wc.jumpStrength;
             this._attackDuration = wc.attackDuration;
-            this.gravity = 0.8;
+            this.gravity = wc.gravity ?? 0.8;
             this.grounded = false;
             this.color = '#B0C4DE'; 
             this.facingRight = true;

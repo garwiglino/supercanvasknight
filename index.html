@@ -335,6 +335,103 @@
             background: rgba(0,0,0,0.85);
             z-index: 100;
         }
+        /* ── Options overlay ──────────────────────────────────────── */
+        .options-overlay {
+            position: fixed; inset: 0; z-index: 300;
+            background: rgba(0,0,0,0.72);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .options-overlay.hidden { display: none; }
+        .options-panel {
+            background: linear-gradient(160deg,#0e1320 0%,#1a2236 100%);
+            border: 1.5px solid rgba(120,160,255,0.22);
+            border-radius: 18px;
+            box-shadow: 0 8px 48px rgba(0,0,0,0.7);
+            width: min(520px, 92vw);
+            max-height: 85vh;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        .options-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 22px 12px;
+            border-bottom: 1px solid rgba(120,160,255,0.13);
+        }
+        .options-header span { font-family:'Cinzel',serif; font-size:18px; color:#e0e8ff; letter-spacing:1px; }
+        .options-header button { background:none; border:none; color:#8aaad8; font-size:20px; cursor:pointer; padding:2px 6px; border-radius:6px; }
+        .options-header button:hover { background:rgba(255,255,255,0.08); color:#fff; }
+        .opt-tabs { display:flex; gap:4px; padding:10px 14px 0; }
+        .opt-tab {
+            flex:1; padding:8px 0; border:none; border-radius:8px 8px 0 0;
+            background:rgba(255,255,255,0.05); color:#8aaad8;
+            font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:700; letter-spacing:1px;
+            cursor:pointer; text-transform:uppercase; transition:all .15s;
+        }
+        .opt-tab:hover { background:rgba(255,255,255,0.1); color:#c8dcff; }
+        .opt-tab.active { background:rgba(80,140,255,0.18); color:#c8e0ff; border-bottom:2px solid #5080e0; }
+        .opt-content {
+            flex:1; overflow-y:auto; padding:16px 18px;
+            scrollbar-width: thin; scrollbar-color: rgba(100,140,255,.3) transparent;
+        }
+        .opt-content::-webkit-scrollbar { width:5px; }
+        .opt-content::-webkit-scrollbar-thumb { background:rgba(100,140,255,.3); border-radius:4px; }
+        .opt-bind-row {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:9px 4px; border-bottom:1px solid rgba(255,255,255,0.05);
+        }
+        .opt-bind-label { color:#a0b8d8; font-size:14px; }
+        .opt-bind-key {
+            min-width:90px; text-align:center;
+            padding:6px 12px; border-radius:8px;
+            background:rgba(255,255,255,0.08); border:1.5px solid rgba(120,160,255,0.2);
+            color:#c8dcff; font-size:13px; font-weight:700; font-family:'Rajdhani',sans-serif;
+            cursor:pointer; transition:all .15s; white-space:nowrap;
+        }
+        .opt-bind-key:hover { background:rgba(80,140,255,0.18); border-color:rgba(120,180,255,0.4); }
+        .opt-bind-key.waiting { background:rgba(80,60,20,0.5); border-color:rgba(255,180,40,0.6); color:#ffe88a; animation:pulse-key .6s infinite alternate; }
+        @keyframes pulse-key { from{box-shadow:0 0 0 rgba(255,180,40,0)} to{box-shadow:0 0 10px rgba(255,180,40,0.5)} }
+        .opt-section-title { color:#6080c0; font-size:11px; letter-spacing:2px; text-transform:uppercase; margin:14px 0 6px; font-weight:700; }
+        .opt-vol-row { display:flex; align-items:center; gap:12px; padding:12px 4px; }
+        .opt-vol-row label { color:#a0b8d8; font-size:14px; min-width:100px; }
+        .opt-vol-row input[type=range] {
+            flex:1; accent-color:#5080e0; height:5px; cursor:pointer;
+        }
+        .opt-vol-val { color:#c8dcff; font-size:13px; font-weight:700; min-width:34px; text-align:right; }
+        .options-footer {
+            display:flex; gap:10px; justify-content:flex-end;
+            padding:12px 18px; border-top:1px solid rgba(120,160,255,0.1);
+        }
+        /* ── In-game ESC menu ─────────────────────────────────────── */
+        .ingame-menu-overlay {
+            position: fixed; inset: 0; z-index: 250;
+            background: rgba(0,0,0,0.55);
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(3px);
+        }
+        .ingame-menu-overlay.hidden { display: none; }
+        .ingame-menu-panel {
+            background: linear-gradient(160deg,#0e1320 0%,#1a2236 100%);
+            border: 1.5px solid rgba(120,160,255,0.22);
+            border-radius: 18px;
+            box-shadow: 0 8px 48px rgba(0,0,0,0.7);
+            padding: 28px 36px 24px;
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+            min-width: 240px;
+        }
+        .ingame-menu-title {
+            font-family:'Cinzel',serif; font-size:22px; color:#e0e8ff;
+            letter-spacing:3px; margin-bottom:8px;
+        }
+        .ingame-menu-btn {
+            width:100%; padding:12px 16px;
+            background: rgba(255,255,255,0.07); border: 1.5px solid rgba(120,160,255,0.2);
+            border-radius: 10px; color: #c8dcff;
+            font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; letter-spacing:1px;
+            cursor: pointer; text-align:left; transition: all .15s;
+        }
+        .ingame-menu-btn:hover { background:rgba(80,140,255,0.18); border-color:rgba(120,180,255,0.4); }
+        .ingame-menu-btn.danger { color:#ff8080; border-color:rgba(255,80,80,0.3); }
+        .ingame-menu-btn.danger:hover { background:rgba(180,40,40,0.25); border-color:rgba(255,80,80,0.5); }
         .menu-window {
             width: 80%;
             max-width: 600px;
@@ -969,6 +1066,7 @@
                         <button class="hub-nav-btn" id="navPlay" onclick="showHubTab('play')">⚔️ Jouer</button>
                         <button class="hub-nav-btn" id="navSocial" onclick="showHubTab('social')">👥 Social <span id="socialBadge" class="hub-badge hidden">0</span></button>
                         <button class="hub-nav-btn" id="navSalon" onclick="showHubTab('salon')">🏰 Salon</button>
+                        <button class="hub-nav-btn" id="navOptions" onclick="openOptions()">⚙️ Options</button>
                     </nav>
                     <button class="hub-logout-btn" onclick="logout()">⏻ Déconnexion</button>
                 </div>
@@ -1217,6 +1315,58 @@
         </div>
         <!-- Indicateur de ramassage d'arme -->
         <div id="weaponPickupHint"></div>
+
+        <!-- ── Options overlay ───────────────────────────────────── -->
+        <div id="optionsOverlay" class="options-overlay hidden">
+            <div class="options-panel">
+                <div class="options-header">
+                    <span>⚙️ Options</span>
+                    <button onclick="closeOptions()">✕</button>
+                </div>
+                <div class="opt-tabs">
+                    <button id="opt-tab-controls" class="opt-tab active" onclick="showOptTab('controls')">Contrôles</button>
+                    <button id="opt-tab-sound" class="opt-tab" onclick="showOptTab('sound')">Son</button>
+                </div>
+                <div id="opt-content-controls" class="opt-content">
+                    <div class="opt-section-title">Déplacement</div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Droite</span><button class="opt-bind-key" onclick="startRebind('right',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Gauche</span><button class="opt-bind-key" onclick="startRebind('left',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Sauter</span><button class="opt-bind-key" onclick="startRebind('up',this)"></button></div>
+                    <div class="opt-section-title">Combat</div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Attaquer</span><button class="opt-bind-key" onclick="startRebind('attack',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Dash</span><button class="opt-bind-key" onclick="startRebind('dash',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Capacité</span><button class="opt-bind-key" onclick="startRebind('ability',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Interagir</span><button class="opt-bind-key" onclick="startRebind('interact',this)"></button></div>
+                    <div class="opt-section-title">Interface</div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Chat</span><button class="opt-bind-key" onclick="startRebind('chat',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Inventaire</span><button class="opt-bind-key" onclick="startRebind('menu',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Quêtes</span><button class="opt-bind-key" onclick="startRebind('quests',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Armes</span><button class="opt-bind-key" onclick="startRebind('weapons',this)"></button></div>
+                </div>
+                <div id="opt-content-sound" class="opt-content" style="display:none">
+                    <div class="opt-section-title">Volume</div>
+                    <div class="opt-vol-row">
+                        <label>Effets sonores</label>
+                        <input type="range" min="0" max="100" id="sfxVolumeSlider" oninput="setSfxVolume(this.value)">
+                        <span class="opt-vol-val" id="sfxVolumeVal">100%</span>
+                    </div>
+                </div>
+                <div class="options-footer">
+                    <button class="btn-sec" onclick="resetKeybinds()">Réinitialiser</button>
+                    <button onclick="closeOptions()">Fermer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Menu en jeu (ESC) ─────────────────────────────────── -->
+        <div id="ingameMenu" class="ingame-menu-overlay hidden">
+            <div class="ingame-menu-panel">
+                <div class="ingame-menu-title">PAUSE</div>
+                <button class="ingame-menu-btn" onclick="closeIngameMenu()">▶ Reprendre</button>
+                <button class="ingame-menu-btn" onclick="closeIngameMenu(); openOptions();">⚙️ Options</button>
+                <button class="ingame-menu-btn danger" onclick="quitFromIngame()">🚪 Quitter la partie</button>
+            </div>
+        </div>
         
         <div id="touch-controls" class="hidden">
             <div class="touch-btn-group">
@@ -1402,7 +1552,15 @@
             const myPseudo = localStorage.getItem('sckt_pseudo');
             if (pseudo === myPseudo) return;
             if (online) { if (!_onlineUsers.includes(pseudo)) _onlineUsers.push(pseudo); }
-            else { _onlineUsers = _onlineUsers.filter(u => u !== pseudo); }
+            else { _onlineUsers = _onlineUsers.filter(u => u !== pseudo); delete _playerStatuses[pseudo]; }
+            renderFriendsList();
+        });
+
+        socket.on('status-update', ({ pseudo, status }) => {
+            const myPseudo = localStorage.getItem('sckt_pseudo');
+            if (pseudo === myPseudo) return;
+            if (status === 'online') delete _playerStatuses[pseudo];
+            else _playerStatuses[pseudo] = status;
             renderFriendsList();
         });
         socket.on('dm-received', ({ from, message, ts }) => {
@@ -1892,6 +2050,8 @@
     function backToMode() {
         cancelAnimationFrame(animationId);
         gameState = 'IDLE';
+        closeIngameMenu();
+        if (socket && socket.connected) socket.emit('status-update', { status: 'online' });
         roomCode = null; gameMode = null;
         clearInterval(_lobbyPoll);
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -1988,14 +2148,15 @@
         el.innerHTML = _friends.map(pseudo => {
             const online = _onlineUsers.includes(pseudo);
             const status = _playerStatuses[pseudo] || (online ? 'online' : 'offline');
-            const statusLabel = status === 'playing' ? '⚔️ En partie' : status === 'salon' ? '🏰 Salon' : online ? 'En ligne' : 'Hors ligne';
+            const statusLabel = status === 'playing-solo' ? '🗡️ Solo' : status === 'playing-coop' ? '⚔️ Coop' : status === 'playing' ? '⚔️ En partie' : status === 'salon' ? '🏰 Salon' : online ? 'En ligne' : 'Hors ligne';
+            const statusClass = (status.startsWith('playing') || status === 'salon') ? 'playing' : status === 'offline' ? 'offline' : 'online';
             const sel = _selectedUser === pseudo ? ' selected' : '';
             const unread = _dmUnread[pseudo] ? `<span class="dm-unread">${_dmUnread[pseudo]}</span>` : '';
             return `<div class="friend-item${sel}" onclick="selectOnlineUser('${pseudo.replace(/'/g,"\\'")}')">
                 <div class="${online ? 'friend-dot-on' : 'friend-dot-off'}"></div>
                 <div style="flex:1;min-width:0">
                     <div class="friend-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pseudo}</div>
-                    <div class="friend-status ${status === 'offline' ? 'offline' : status === 'playing' ? 'playing' : 'online'}">${statusLabel}</div>
+                    <div class="friend-status ${statusClass}">${statusLabel}</div>
                 </div>
                 ${unread}
             </div>`;
@@ -2597,6 +2758,11 @@
         const _lastPlayed = {};
         const COOLDOWN = { 'hit.flesh': 40, 'weapon.sword.swing': 0 };
 
+        let _masterVolume = (() => {
+            const saved = parseInt(localStorage.getItem('sckt_sfx_volume'));
+            return isNaN(saved) ? 1 : saved / 100;
+        })();
+
         function play(key, volume = 1) {
             const variants = MANIFEST[key];
             if (!variants || !variants.length) return;
@@ -2606,9 +2772,12 @@
             _lastPlayed[key] = now;
             const path = variants[Math.floor(Math.random() * variants.length)];
             const audio = new Audio(path);
-            audio.volume = Math.min(1, Math.max(0, volume));
+            audio.volume = Math.min(1, Math.max(0, volume * _masterVolume));
             audio.play().catch(() => {});
         }
+
+        function setVolume(v) { _masterVolume = Math.min(1, Math.max(0, v)); }
+        function getVolume() { return _masterVolume; }
 
         function swing(weaponId) {
             play(`weapon.${weaponId}.swing`);
@@ -2623,7 +2792,7 @@
             play(`step.${surface}`, volume);
         }
 
-        return { play, swing, hit, step };
+        return { play, swing, hit, step, setVolume, getVolume };
     })();
 
     // Données d'affichage (nom, description, icône) — remplies depuis weapons.json
@@ -3219,52 +3388,181 @@
 
     const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, interact: false };
 
+    // ── Keybinds remappables ───────────────────────────────────────
+    const KEYBINDS_DEFAULT = {
+        right: 'KeyD', left: 'KeyA', up: 'Space',
+        attack: 'Digit0', dash: 'ShiftLeft', ability: 'KeyR',
+        interact: 'KeyE', chat: 'KeyT', menu: 'KeyI', quests: 'KeyQ', weapons: 'KeyP'
+    };
+    let _keybinds = { ...KEYBINDS_DEFAULT };
+    (() => {
+        try { Object.assign(_keybinds, JSON.parse(localStorage.getItem('sckt_keybinds') || '{}')); } catch(e) {}
+    })();
+    function saveKeybinds() { localStorage.setItem('sckt_keybinds', JSON.stringify(_keybinds)); }
+    function isKey(e, action) { return e.code === _keybinds[action]; }
+
+    // Libellé lisible pour un code de touche
+    function keyLabel(code) {
+        const map = {
+            'Space':'Espace','ShiftLeft':'Maj G','ShiftRight':'Maj D',
+            'ControlLeft':'Ctrl G','ControlRight':'Ctrl D',
+            'AltLeft':'Alt G','AltRight':'Alt D',
+            'ArrowLeft':'← Gauche','ArrowRight':'→ Droite','ArrowUp':'↑ Haut','ArrowDown':'↓ Bas',
+        };
+        if (map[code]) return map[code];
+        const m = code.match(/^(Key|Digit|Numpad)(.+)$/);
+        return m ? m[2] : code;
+    }
+
+    let _rebindAction = null;
+    let _rebindBtn = null;
+
+    function startRebind(action, btn) {
+        if (_rebindAction) {
+            _rebindBtn.classList.remove('waiting');
+            _rebindBtn.textContent = keyLabel(_keybinds[_rebindAction]);
+        }
+        _rebindAction = action;
+        _rebindBtn = btn;
+        btn.classList.add('waiting');
+        btn.textContent = '...';
+    }
+
+    function cancelRebind() {
+        if (_rebindBtn) { _rebindBtn.classList.remove('waiting'); _rebindBtn.textContent = keyLabel(_keybinds[_rebindAction]); }
+        _rebindAction = null; _rebindBtn = null;
+    }
+
+    function refreshBindLabels() {
+        document.querySelectorAll('.opt-bind-key').forEach(btn => {
+            const action = btn.getAttribute('onclick')?.match(/startRebind\('(\w+)'/)?.[1];
+            if (action && _keybinds[action]) btn.textContent = keyLabel(_keybinds[action]);
+        });
+        const sfxSlider = document.getElementById('sfxVolumeSlider');
+        if (sfxSlider) { sfxSlider.value = Math.round(SFX.getVolume() * 100); document.getElementById('sfxVolumeVal').textContent = sfxSlider.value + '%'; }
+    }
+
+    function openOptions() {
+        document.getElementById('optionsOverlay').classList.remove('hidden');
+        showOptTab('controls');
+        refreshBindLabels();
+    }
+
+    function closeOptions() {
+        cancelRebind();
+        document.getElementById('optionsOverlay').classList.add('hidden');
+    }
+
+    function showOptTab(tab) {
+        ['controls','sound'].forEach(t => {
+            document.getElementById('opt-tab-' + t).classList.toggle('active', t === tab);
+            document.getElementById('opt-content-' + t).style.display = t === tab ? 'block' : 'none';
+        });
+        refreshBindLabels();
+    }
+
+    function resetKeybinds() {
+        _keybinds = { ...KEYBINDS_DEFAULT };
+        saveKeybinds();
+        refreshBindLabels();
+    }
+
+    function setSfxVolume(val) {
+        const v = parseInt(val) / 100;
+        SFX.setVolume(v);
+        document.getElementById('sfxVolumeVal').textContent = val + '%';
+        localStorage.setItem('sckt_sfx_volume', val);
+    }
+
+    // ── In-game ESC menu ──────────────────────────────────────────
+    let _ingameMenuOpen = false;
+
+    function openIngameMenu() {
+        _ingameMenuOpen = true;
+        document.getElementById('ingameMenu').classList.remove('hidden');
+        keys.right = false; keys.left = false; keys.up = false; keys.attack = false;
+    }
+
+    function closeIngameMenu() {
+        _ingameMenuOpen = false;
+        document.getElementById('ingameMenu').classList.add('hidden');
+    }
+
+    function quitFromIngame() {
+        closeIngameMenu();
+        backToMode();
+    }
+
     window.addEventListener('keydown', (e) => {
-        if (gameState === 'MENU' && e.code !== 'KeyI' && e.code !== 'KeyQ' && e.code !== 'KeyP' && e.code !== 'Escape') return;
+        // Capture de rebind en cours
+        if (_rebindAction) {
+            if (e.code === 'Escape') { cancelRebind(); e.preventDefault(); return; }
+            _keybinds[_rebindAction] = e.code;
+            saveKeybinds();
+            _rebindBtn.classList.remove('waiting');
+            _rebindBtn.textContent = keyLabel(e.code);
+            _rebindAction = null; _rebindBtn = null;
+            e.preventDefault(); return;
+        }
+
+        // Options overlay ouverte
+        if (!document.getElementById('optionsOverlay').classList.contains('hidden')) {
+            if (e.code === 'Escape') closeOptions();
+            return;
+        }
+
+        // Menu en jeu (ESC) — toggle sans stopper le jeu
+        if (e.code === 'Escape' && gameState === 'PLAYING') {
+            if (_ingameMenuOpen) closeIngameMenu(); else openIngameMenu();
+            e.preventDefault(); return;
+        }
+        if (_ingameMenuOpen) return;
+
+        if (gameState === 'MENU' && !isKey(e,'menu') && !isKey(e,'quests') && !isKey(e,'weapons') && e.code !== 'Escape') return;
 
         // Empêcher les actions de jeu si on écrit son pseudo
         if (document.activeElement.tagName === 'INPUT') {
             if (e.code === 'Enter' || e.code === 'NumpadEnter') {
                 if (assetsLoaded && gameState === 'START') startGame();
             }
-            return; 
+            return;
         }
 
-        if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); 
-        
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA' || e.code === 'KeyQ') keys.left = true;
-        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'KeyZ') keys.up = true;
-        if (e.code === 'Digit0' || e.code === 'Numpad0') keys.attack = true;
-        if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.dash = true;
-        if (e.code === 'KeyR') keys.ability = true;
+        if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+
+        if (e.code === 'ArrowRight' || isKey(e,'right')) keys.right = true;
+        if (e.code === 'ArrowLeft' || isKey(e,'left')) keys.left = true;
+        if (e.code === 'ArrowUp' || isKey(e,'up')) keys.up = true;
+        if (e.code === 'Numpad0' || isKey(e,'attack')) keys.attack = true;
+        if (e.code === 'ShiftRight' || isKey(e,'dash')) keys.dash = true;
+        if (isKey(e,'ability')) keys.ability = true;
         if (e.code === 'Numpad8' || e.code === 'Digit8') { keys.weaponWheel = true; e.preventDefault(); }
-        if (e.code === 'KeyE') keys.interact = true;
+        if (isKey(e,'interact')) keys.interact = true;
 
         if (e.code === 'Enter' || e.code === 'NumpadEnter') {
             if (assetsLoaded && (gameState === 'START' || gameState === 'GAMEOVER')) startGame();
         }
 
-        if (e.code === 'KeyI') toggleMenu('inventory');
-        if (e.code === 'KeyQ') toggleMenu('quests');
-        if (e.code === 'KeyP') toggleMenu('weapons');
+        if (isKey(e,'menu')) toggleMenu('inventory');
+        if (isKey(e,'quests')) toggleMenu('quests');
+        if (isKey(e,'weapons')) toggleMenu('weapons');
         if (e.code === 'Escape' && gameState === 'MENU') toggleMenu();
 
-        if (e.code === 'KeyT' && gameState === 'PLAYING' && (gameMode === 'host' || gameMode === 'guest')) {
+        if (isKey(e,'chat') && gameState === 'PLAYING' && (gameMode === 'host' || gameMode === 'guest')) {
             e.preventDefault();
             openGameChat();
         }
     });
 
     window.addEventListener('keyup', (e) => {
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA' || e.code === 'KeyQ') keys.left = false;
-        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'KeyZ') keys.up = false;
-        if (e.code === 'Digit0' || e.code === 'Numpad0') keys.attack = false;
-        if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.dash = false;
-        if (e.code === 'KeyR') keys.ability = false;
+        if (e.code === 'ArrowRight' || isKey(e,'right')) keys.right = false;
+        if (e.code === 'ArrowLeft' || isKey(e,'left')) keys.left = false;
+        if (e.code === 'ArrowUp' || isKey(e,'up')) keys.up = false;
+        if (e.code === 'Numpad0' || isKey(e,'attack')) keys.attack = false;
+        if (e.code === 'ShiftRight' || isKey(e,'dash')) keys.dash = false;
+        if (isKey(e,'ability')) keys.ability = false;
         if (e.code === 'Numpad8' || e.code === 'Digit8') keys.weaponWheel = false;
-        if (e.code === 'KeyE') keys.interact = false;
+        if (isKey(e,'interact')) keys.interact = false;
     });
 
     const btnLeft = document.getElementById('btn-left');
@@ -7748,12 +8046,21 @@
 
         networkFrameCount = 0;
         gameState = 'PLAYING';
+
+        // Émettre le statut de jeu aux amis
+        if (socket && socket.connected) {
+            const status = (gameMode === 'host' || gameMode === 'guest') ? 'playing-coop' : 'playing-solo';
+            socket.emit('status-update', { status });
+        }
+
         gameLoop();
     }
 
     function endGame(win) {
         gameState = 'GAMEOVER';
         cancelAnimationFrame(animationId);
+        closeIngameMenu();
+        if (socket && socket.connected) socket.emit('status-update', { status: 'online' });
         gameOverScreen.classList.remove('hidden');
 
         if (win) {

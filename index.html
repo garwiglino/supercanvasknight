@@ -1886,7 +1886,6 @@
             // ── Attaque ennemie sur le joueur guest ──────────────────────
             if (event.type === 'enemy-attack-player' && gameMode === 'guest' && player && player.hp > 0) {
                 player.takeDamage(event.damage, event.dir);
-                if (event.enemyType) SFX.pain(event.enemyType);
             }
 
             // ── Pièce collectée par le partenaire ────────────────────────
@@ -7382,8 +7381,7 @@
                     if (Math.abs((player.x + 19) - (this.x + 19)) < 68 &&
                         Math.abs(player.y - this.y) < 50 && player.hp > 0) {
                         player.takeDamage(12, this.facingRight ? 1 : -1, this);
-                        SFX.pain('goblin');
-                        if (socket && socket.connected && roomCode && gameMode === 'host') {
+                            if (socket && socket.connected && roomCode && gameMode === 'host') {
                             socket.emit('game-event', { type: 'enemy-attack-player', damage: 12, dir: this.facingRight ? 1 : -1, enemyType: 'goblin' });
                         }
                     }
@@ -7526,6 +7524,7 @@
                     player.hasHit.add(this);
                     triggerShake(isCritG ? 6 : 3, isCritG ? 8 : 5);
                     SFX.hit('flesh');
+                    SFX.pain('goblin');
                     player.abilityCharge = Math.min(player.abilityMaxCharge, player.abilityCharge + 1);
 
                     let hitX = this.x + this.width / 2;

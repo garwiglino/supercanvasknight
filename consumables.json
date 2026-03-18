@@ -1,0 +1,24 @@
+{
+  "consumables": {
+    "potion": {
+      "id": "potion",
+      "name": "Potion de Soin",
+      "icon": "🧪",
+      "type": "heal",
+      "value": 35,
+      "iconPath": "./art/potion.svg",
+      "iconScale": 1.0,
+      "description": "Restaure 35 points de vie instantanément. Indispensable dans les combats prolongés."
+    },
+    "force": {
+      "id": "force",
+      "name": "Élixir de Force",
+      "icon": "⚡",
+      "type": "damage",
+      "value": 15,
+      "iconPath": "./art/force.svg",
+      "iconScale": 1.3,
+      "description": "Augmente les dégâts de 15 points pour le reste de la partie. Ne se cumule pas."
+    }
+  }
+}

@@ -473,18 +473,70 @@
             color: white;
         }
         .inv-grid { display: flex; flex-wrap: wrap; gap: 15px; }
-        .inv-slot { 
-            width: 80px; height: 80px; 
-            border: 2px solid #555; background: #1a252f; 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 40px; cursor: pointer; position: relative; 
+        .inv-slot {
+            width: 80px; height: 80px;
+            border: 2px solid #555; background: #1a252f;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px; cursor: pointer; position: relative;
             border-radius: 8px; transition: 0.2s;
         }
         .inv-slot:hover { border-color: #FBD000; background: #34495e; transform: scale(1.05); }
-        .item-count { 
-            position: absolute; bottom: 2px; right: 5px; 
+        .item-count {
+            position: absolute; bottom: 2px; right: 5px;
             font-size: 16px; font-weight: bold; text-shadow: 1px 1px 0 #000;
         }
+
+        /* ── Accès rapide consommables — menu inventaire ── */
+        .inv-quick-header { font-family:'Rajdhani',sans-serif; font-size:13px; color:#7ecb7e; font-weight:700; letter-spacing:.8px; text-transform:uppercase; margin-bottom:8px; }
+        .inv-quick-header kbd { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:4px; padding:1px 5px; font-size:11px; }
+        .inv-quick-slots { display:flex; gap:12px; margin-bottom:6px; }
+        .inv-qs-slot {
+            width:78px; min-height:78px; border:2px dashed rgba(76,175,80,0.35);
+            background:rgba(10,30,12,0.55); border-radius:10px;
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            position:relative; transition:.18s; cursor:default;
+        }
+        .inv-qs-slot.qs-menu-active { border-color:#FBD000; border-style:solid; background:rgba(40,35,5,0.65); }
+        .inv-qs-slot.dragover { border-color:#4CAF50; border-style:solid; background:rgba(20,60,22,0.70); }
+        .inv-qs-item { display:flex; flex-direction:column; align-items:center; cursor:grab; }
+        .inv-qs-item:active { cursor:grabbing; }
+        .qs-menu-count { font-size:12px; font-weight:700; color:#7ecb7e; margin-top:2px; }
+        .qs-menu-num {
+            position:absolute; top:4px; left:6px;
+            font-size:10px; font-weight:700; color:rgba(180,220,180,0.55);
+            font-family:'Rajdhani',sans-serif;
+        }
+        .inv-qs-slot.qs-menu-active .qs-menu-num { color:#FBD000; }
+        .qs-menu-empty { font-size:11px; color:rgba(180,200,180,0.35); font-family:'Rajdhani',sans-serif; }
+        .qs-clear-btn {
+            position:absolute; top:3px; right:4px;
+            background:none; border:none; color:rgba(220,80,80,0.6);
+            font-size:10px; cursor:pointer; padding:0; line-height:1;
+        }
+        .qs-clear-btn:hover { color:#e74c3c; }
+
+        /* ── Quick slots HUD en jeu (bas-droite) ── */
+        #quick-slots-hud {
+            position:absolute; bottom:16px; right:16px;
+            display:flex; gap:8px; z-index:50; pointer-events:none;
+            font-family:'Rajdhani',sans-serif;
+        }
+        .qs-hud-slot {
+            width:48px; height:52px;
+            background:rgba(6,10,20,0.80); border:2px solid rgba(76,175,80,0.30);
+            border-radius:8px; display:flex; flex-direction:column;
+            align-items:center; justify-content:center; position:relative;
+            backdrop-filter:blur(6px); transition:.15s;
+        }
+        .qs-hud-slot.qs-hud-active { border-color:#FBD000; background:rgba(40,35,0,0.82); }
+        .qs-hud-slot.qs-hud-empty { opacity:.38; }
+        .qs-hud-icon { font-size:20px; line-height:1; }
+        .qs-hud-count { font-size:11px; font-weight:700; color:#7ecb7e; line-height:1; margin-top:1px; }
+        .qs-hud-num {
+            position:absolute; top:2px; left:5px;
+            font-size:9px; font-weight:700; color:rgba(180,220,180,0.55);
+        }
+        .qs-hud-slot.qs-hud-active .qs-hud-num { color:#FBD000; }
         .quest-item { background: #1a252f; border: 2px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
         .quest-item h3 { margin: 0 0 5px 0; color: #FBD000; font-size: 22px; }
         .quest-item p { margin: 0 0 15px 0; font-size: 16px; color: #ccc; }
@@ -993,7 +1045,10 @@
             <!-- Liste joueurs (visible uniquement en coop) -->
             <div id="hud-player-list" style="display:none;"></div>
         </div>
-        
+
+        <!-- Quick slots consommables (bas-droite) -->
+        <div id="quick-slots-hud"></div>
+
         <!-- ── ÉDITEUR CARTE DE PROFIL (overlay) ─────────────────────── -->
         <div id="cardEditorOverlay" class="card-editor-overlay hidden">
             <div class="card-editor">
@@ -3117,9 +3172,17 @@
 
     // --- GESTIONNAIRE D'ASSETS DYNAMIQUE ---
     const itemDatabase = {
-        "potion": { "name": "Potion de Soin", "type": "heal", "value": 35, "iconPath": "./art/potion.svg", "iconScale": 1.0 },
-        "force": { "name": "Élixir de Force", "type": "damage", "value": 15, "iconPath": "./art/force.svg", "iconScale": 1.3 }
+        "potion": { "id": "potion", "name": "Potion de Soin", "icon": "🧪", "type": "heal", "value": 35, "iconPath": "./art/potion.svg", "iconScale": 1.0 },
+        "force":  { "id": "force",  "name": "Élixir de Force", "icon": "⚡",  "type": "damage", "value": 15, "iconPath": "./art/force.svg", "iconScale": 1.3 }
     };
+
+    // Enrichit itemDatabase depuis consumables.json (description, icon overrides…)
+    fetch('/consumables.json').then(r => r.json()).then(data => {
+        const c = data.consumables || {};
+        for (const [id, entry] of Object.entries(c)) {
+            itemDatabase[id] = { ...itemDatabase[id], ...entry };
+        }
+    }).catch(() => {});
     
     const fxPaths = {
         "init_blood": "./art/init_blood.svg",
@@ -3683,7 +3746,7 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, interact: false, block: false, parry: false };
+    const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, consumeWheel: false, interact: false, block: false, parry: false };
 
     // ── Keybinds remappables ───────────────────────────────────────
     const KEYBINDS_DEFAULT = {
@@ -3847,6 +3910,7 @@
         if (e.code === 'ShiftRight' || isKey(e,'dash')) keys.dash = true;
         if (isKey(e,'ability')) keys.ability = true;
         if (e.code === 'Numpad8' || e.code === 'Digit8') { keys.weaponWheel = true; e.preventDefault(); }
+        if (e.code === 'Numpad4' || e.code === 'Digit4') { keys.consumeWheel = true; e.preventDefault(); }
         if (isKey(e,'interact')) keys.interact = true;
 
         if (e.code === 'Enter' || e.code === 'NumpadEnter') {
@@ -3875,6 +3939,7 @@
         if (e.code === 'ShiftRight' || isKey(e,'dash')) keys.dash = false;
         if (isKey(e,'ability')) keys.ability = false;
         if (e.code === 'Numpad8' || e.code === 'Digit8') keys.weaponWheel = false;
+        if (e.code === 'Numpad4' || e.code === 'Digit4') keys.consumeWheel = false;
         if (isKey(e,'interact')) keys.interact = false;
     });
 
@@ -4108,34 +4173,124 @@
         }
     }
 
+    // ── Drag & drop state ──────────────────────────────────────────────
+    let _dragState = { id: null, fromType: null, fromIndex: null };
+
+    function _dragStartItem(id, ev) {
+        _dragState = { id, fromType: 'inventory', fromIndex: null };
+        ev.dataTransfer.effectAllowed = 'move';
+    }
+    function _dragStartQuickSlot(i, ev) {
+        _dragState = { id: player.quickSlots[i], fromType: 'quickslot', fromIndex: i };
+        ev.dataTransfer.effectAllowed = 'move';
+    }
+    function _dragOverQS(i, ev) {
+        ev.preventDefault();
+        document.querySelectorAll('.inv-qs-slot').forEach((el, idx) => {
+            el.classList.toggle('dragover', idx === i);
+        });
+    }
+    function _dragLeaveQS() {
+        document.querySelectorAll('.inv-qs-slot').forEach(el => el.classList.remove('dragover'));
+    }
+    function _dropOnQuickSlot(i, ev) {
+        ev.preventDefault();
+        document.querySelectorAll('.inv-qs-slot').forEach(el => el.classList.remove('dragover'));
+        if (!_dragState.id) return;
+        if (_dragState.fromType === 'quickslot' && _dragState.fromIndex !== null && _dragState.fromIndex !== i) {
+            // Swap des deux slots
+            const tmp = player.quickSlots[i];
+            player.quickSlots[i] = _dragState.id;
+            player.quickSlots[_dragState.fromIndex] = tmp;
+        } else if (_dragState.fromType === 'inventory') {
+            player.quickSlots[i] = _dragState.id;
+        }
+        _dragState = { id: null, fromType: null, fromIndex: null };
+        renderInventory();
+        updateQuickSlotsHUD();
+    }
+    function _clearQuickSlot(i) {
+        player.quickSlots[i] = null;
+        renderInventory();
+        updateQuickSlotsHUD();
+    }
+
+    // ── Met à jour le HUD en jeu (3 slots bas-droite) ─────────────────
+    function updateQuickSlotsHUD() {
+        const hud = document.getElementById('quick-slots-hud');
+        if (!hud || !player) return;
+        hud.innerHTML = '';
+        for (let i = 0; i < 3; i++) {
+            const itemId  = player.quickSlots[i];
+            const isActive = (i === player.quickSel);
+            const db      = itemId ? (itemDatabase[itemId] || {}) : null;
+            const count   = db ? (player.inventory[itemId]?.count || 0) : 0;
+            const isEmpty = !db;
+            const slot = document.createElement('div');
+            slot.className = 'qs-hud-slot' + (isActive ? ' qs-hud-active' : '') + (isEmpty ? ' qs-hud-empty' : '');
+            slot.innerHTML = `<span class="qs-hud-num">${i + 1}</span>`
+                + (db ? `<span class="qs-hud-icon">${db.icon || '📦'}</span><span class="qs-hud-count">×${count}</span>`
+                       : `<span class="qs-hud-icon" style="font-size:14px;opacity:.35">—</span>`);
+            hud.appendChild(slot);
+        }
+    }
+
     function renderInventory() {
         const grid = document.getElementById('content-inventory');
-        grid.innerHTML = '<div class="inv-grid"></div>';
-        const invGrid = grid.querySelector('.inv-grid');
-        
+        if (!grid) return;
+
+        // ── Section accès rapide ──────────────────────────────────────
+        let qHtml = `<div class="inv-quick-header">Accès rapide <span style="color:#888;font-size:11px;">(maintenir <kbd>4</kbd> · glisser pour assigner)</span></div>`;
+        qHtml += `<div class="inv-quick-slots">`;
+        for (let i = 0; i < 3; i++) {
+            const itemId   = player.quickSlots[i];
+            const isActive = (i === player.quickSel);
+            const db       = itemId ? (itemDatabase[itemId] || {}) : null;
+            const count    = db ? (player.inventory[itemId]?.count || 0) : 0;
+            qHtml += `<div class="inv-qs-slot${isActive ? ' qs-menu-active' : ''}"
+                ondragover="_dragOverQS(${i},event)" ondragleave="_dragLeaveQS()" ondrop="_dropOnQuickSlot(${i},event)"
+                title="Slot ${i + 1}${isActive ? ' (actif)' : ''} — glisser un objet ici">
+                <span class="qs-menu-num">${i + 1}</span>`;
+            if (db) {
+                qHtml += `<div class="inv-qs-item" draggable="true" ondragstart="_dragStartQuickSlot(${i},event)">
+                    <img src="${db.iconPath}" style="max-width:38px;max-height:38px;object-fit:contain;" onerror="this.outerHTML='${db.icon || '📦'}'">
+                    <span class="qs-menu-count">×${count}</span>
+                </div>
+                <button class="qs-clear-btn" onclick="_clearQuickSlot(${i})">✕</button>`;
+            } else {
+                qHtml += `<span class="qs-menu-empty">vide</span>`;
+            }
+            qHtml += `</div>`;
+        }
+        qHtml += `</div><hr style="border:none;border-top:1px solid rgba(255,255,255,0.09);margin:10px 0 14px;">`;
+
+        // ── Inventaire ────────────────────────────────────────────────
         let hasItems = false;
+        let invHtml = '<div class="inv-grid">';
         for (let key in player.inventory) {
-            let invItem = player.inventory[key];
+            const invItem = player.inventory[key];
             if (invItem.count > 0) {
                 hasItems = true;
-                let dbItem = itemDatabase[key] || { name: "Objet", iconPath: "", iconScale: 1 };
-                let fallbackIcon = key === 'potion' ? '🧪' : '📦';
-                
-                let iconHtml = `<img src="${dbItem.iconPath}" style="max-width: 60px; max-height: 60px; object-fit: contain;" onerror="this.onerror=null; this.outerHTML='${fallbackIcon}'">`;
-
-                invGrid.innerHTML += `
-                    <div class="inv-slot" onclick="useItem('${key}')" title="${dbItem.name} (Cliquez pour utiliser)">
-                        ${iconHtml}
-                        <span class="item-count">${invItem.count}</span>
-                    </div>
-                `;
+                const dbItem = itemDatabase[key] || { name: 'Objet', iconPath: '', iconScale: 1, icon: '📦' };
+                const iconHtml = `<img src="${dbItem.iconPath}" style="max-width:60px;max-height:60px;object-fit:contain;" onerror="this.outerHTML='${dbItem.icon || '📦'}'">`;
+                invHtml += `<div class="inv-slot" draggable="true"
+                    ondragstart="_dragStartItem('${key}',event)"
+                    onclick="useItem('${key}')"
+                    title="${dbItem.name} — Clic pour utiliser · glisser vers un slot rapide">
+                    ${iconHtml}
+                    <span class="item-count">${invItem.count}</span>
+                </div>`;
             }
         }
+        invHtml += '</div>';
+
         if (!hasItems) {
-            grid.innerHTML = '<p style="text-align:center; color:#888; margin-top: 50px; font-size:18px;">Votre inventaire est vide.</p>';
+            invHtml = '<p style="text-align:center;color:#888;font-size:15px;margin-top:16px;">Inventaire vide.</p>';
         } else {
-            grid.innerHTML += '<p style="font-size:15px; color:#aaa; margin-top:20px; text-align:center;"><i>Cliquez sur un objet pour l\'utiliser.</i></p>';
+            invHtml += `<p style="font-size:13px;color:#aaa;margin-top:10px;text-align:center;"><i>Clic = utiliser · glisser = assigner à un slot rapide</i></p>`;
         }
+
+        grid.innerHTML = qHtml + invHtml;
     }
 
     function renderWeapons() {
@@ -4319,15 +4474,17 @@
                     player.inventory[key].count--;
                     player.updateUI();
                     renderInventory();
+                    updateQuickSlotsHUD();
                     showNotification(`Vous avez utilisé ${dbItem.name} !`, "#4CAF50");
                 } else {
                     showNotification("Votre santé est déjà au maximum.", "#FBD000");
                 }
-            } 
+            }
             else if (dbItem.type === 'damage') {
                 player.bonusDamage += dbItem.value;
                 player.inventory[key].count--;
                 renderInventory();
+                updateQuickSlotsHUD();
                 showNotification(`Dégâts augmentés de ${dbItem.value} !`, "#E52521");
             }
         }
@@ -5172,6 +5329,16 @@
             this._lastWheelKey = false;
             this._lastWheelLeft = false;
             this._lastWheelRight = false;
+            // Roue de consommables (touche 4)
+            this.quickSlots = [null, null, null];
+            this.quickSel = 0;
+            this._cWheelHeld = false;
+            this._cWheelTimer = 0;
+            this._cWheelOpen = false;
+            this._cWheelSel = 0;
+            this._lastCKey = false;
+            this._lastCLeft = false;
+            this._lastCRight = false;
             this._nearDroppedWeapon = null;
             this._lastInteract = false;
             // Applique les stats de l'arme équipée
@@ -5619,6 +5786,41 @@
                 this._wheelHeld = false;
                 this._wheelOpen = false;
                 this._wheelHoldTimer = 0;
+            }
+
+            // ── ROUE DE CONSOMMABLES (Numpad4 / 4) ──────────────────────
+            const _ck = keys.consumeWheel;
+            const _justCKey = _ck && !this._lastCKey;
+            this._lastCKey = _ck;
+            if (_justCKey) {
+                this._cWheelTimer = 0;
+                this._cWheelHeld = true;
+                this._cWheelSel = this.quickSel;
+                this._lastCLeft  = keys.left;
+                this._lastCRight = keys.right;
+            }
+            if (this._cWheelHeld && _ck) {
+                this._cWheelTimer++;
+                if (this._cWheelTimer >= 18) {
+                    this._cWheelOpen = true;
+                    const _cL = keys.left, _cR = keys.right;
+                    if (_cL && !this._lastCLeft  && this._cWheelSel > 0) this._cWheelSel--;
+                    if (_cR && !this._lastCRight && this._cWheelSel < 2)  this._cWheelSel++;
+                    this._lastCLeft  = _cL;
+                    this._lastCRight = _cR;
+                }
+            }
+            if (!_ck && this._cWheelHeld) {
+                const _useSlot = this._cWheelOpen ? this._cWheelSel : this.quickSel;
+                if (this._cWheelOpen) this.quickSel = this._cWheelSel;
+                const _useId = this.quickSlots[_useSlot];
+                if (_useId && this.inventory[_useId]?.count > 0) {
+                    useItem(_useId);
+                }
+                this._cWheelHeld = false;
+                this._cWheelOpen = false;
+                this._cWheelTimer = 0;
+                updateQuickSlotsHUD();
             }
 
             // ── INTERACTION arme au sol (touche E) ──────────────────────
@@ -6198,6 +6400,66 @@
                         renderCtx.fill();
                     }
                 });
+                renderCtx.restore();
+            }
+
+            // ── ROUE DE CONSOMMABLES (rendu canvas au-dessus du personnage) ──
+            if (this._cWheelOpen) {
+                const _ccx = drawX + this.width / 2;
+                const _ccy = bodyY - (this._wheelOpen ? 130 : 58);
+                const slotW = 54, slotH = 50, gap = 8;
+                const totalW = 3 * slotW + 2 * gap;
+                const startX = _ccx - totalW / 2;
+                renderCtx.save();
+                renderCtx.fillStyle = 'rgba(2,18,8,0.90)';
+                renderCtx.beginPath();
+                renderCtx.roundRect(startX - 8, _ccy - slotH/2 - 8, totalW + 16, slotH + 22, 12);
+                renderCtx.fill();
+                renderCtx.strokeStyle = 'rgba(76,175,80,0.55)';
+                renderCtx.lineWidth = 1.5;
+                renderCtx.stroke();
+                // Flèche indicatrice
+                renderCtx.fillStyle = 'rgba(255,255,255,0.18)';
+                renderCtx.beginPath();
+                renderCtx.moveTo(_ccx - 7, _ccy + slotH/2 + 14);
+                renderCtx.lineTo(_ccx + 7, _ccy + slotH/2 + 14);
+                renderCtx.lineTo(_ccx, _ccy + slotH/2 + 22);
+                renderCtx.closePath();
+                renderCtx.fill();
+                for (let i = 0; i < 3; i++) {
+                    const sx = startX + i * (slotW + gap);
+                    const isSel    = (i === this._cWheelSel);
+                    const isActive = (i === this.quickSel);
+                    const itemId   = this.quickSlots[i];
+                    const db       = itemId ? (itemDatabase[itemId] || {}) : null;
+                    const count    = db ? (this.inventory[itemId]?.count || 0) : 0;
+                    renderCtx.fillStyle   = isSel ? 'rgba(76,175,80,0.28)' : 'rgba(10,35,14,0.70)';
+                    renderCtx.strokeStyle = isSel ? '#4CAF50' : (isActive ? '#FBD000' : 'rgba(76,175,80,0.28)');
+                    renderCtx.lineWidth   = isSel ? 2.5 : 1.5;
+                    renderCtx.beginPath();
+                    renderCtx.roundRect(sx, _ccy - slotH/2, slotW, slotH, 8);
+                    renderCtx.fill(); renderCtx.stroke();
+                    // Numéro de slot
+                    renderCtx.font = 'bold 8px Rajdhani, sans-serif';
+                    renderCtx.textAlign = 'center';
+                    renderCtx.fillStyle = isActive ? '#FBD000' : 'rgba(180,220,180,0.55)';
+                    renderCtx.fillText(`${i + 1}`, sx + 9, _ccy - slotH/2 + 10);
+                    if (db) {
+                        renderCtx.font = '20px sans-serif';
+                        renderCtx.fillStyle = count > 0 ? '#fff' : 'rgba(255,255,255,0.3)';
+                        renderCtx.fillText(db.icon || '📦', sx + slotW/2, _ccy + 8);
+                        renderCtx.font = 'bold 9px Rajdhani, sans-serif';
+                        renderCtx.fillStyle = isSel ? '#4CAF50' : '#8ab';
+                        renderCtx.fillText(`×${count}`, sx + slotW/2, _ccy + slotH/2 + 2);
+                    } else {
+                        renderCtx.font = '15px sans-serif';
+                        renderCtx.fillStyle = 'rgba(180,200,180,0.28)';
+                        renderCtx.fillText('—', sx + slotW/2, _ccy + 6);
+                        renderCtx.font = 'bold 9px Rajdhani, sans-serif';
+                        renderCtx.fillStyle = 'rgba(180,200,180,0.28)';
+                        renderCtx.fillText('vide', sx + slotW/2, _ccy + slotH/2 + 2);
+                    }
+                }
                 renderCtx.restore();
             }
 
@@ -8888,8 +9150,11 @@
         lives = 3;
         
         initQuests();
-        buildLevel(); 
-        
+        buildLevel();
+
+        // Reset quick slots HUD
+        updateQuickSlotsHUD();
+
         // Appliquer la configuration choisie
         // Forcer la réinitialisation de l'inventaire d'armes au démarrage d'une partie
         player.skin = SKINS[currentSkinIndex];

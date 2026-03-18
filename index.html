@@ -7774,10 +7774,10 @@
                     // ── Vérification blocage ennemi ──────────────────────────
                     let _skelBlocked = false;
                     if (this.blockTimer > 0) {
-                        // Attaque de face ? (joueur frappe dans le sens du regard ennemi)
+                        // Attaque de face ? (joueur attaque en direction opposée au regard ennemi)
                         const _atkDir  = player.facingRight ? 1 : -1;
                         const _faceDir = this.facingRight  ? 1 : -1;
-                        if (_atkDir === _faceDir) {
+                        if (_atkDir !== _faceDir) {
                             _skelBlocked = true;
                             SFX.hit('stone');
                             const _bx = this.facingRight ? this.x + this.width + 4 : this.x - 4;

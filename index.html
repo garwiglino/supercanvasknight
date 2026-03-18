@@ -55,49 +55,97 @@
             display: flex;
             flex-direction: column;
         }
+        /* ── HUD compact bas-gauche ── */
         .hud {
-            display: flex;
-            justify-content: space-between;
-            padding: 20px 30px;
-            color: white;
-            font-size: 28px;
-            font-weight: 900;
-            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        .stats-container {
+            position: absolute;
+            bottom: 18px;
+            left: 18px;
+            width: 220px;
+            background: rgba(8,12,22,0.78);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            padding: 10px 13px 9px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 18px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            width: 250px;
+            gap: 6px;
+            font-family: 'Rajdhani', sans-serif;
+            color: #fff;
+            pointer-events: none;
+            z-index: 50;
         }
+        .hud-name-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .hud-name { color: #e8e8e8; }
+        .hud-level { color: #9b59b6; font-size: 12px; }
+        .hud-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+        }
+        .hud-bar-icon { font-size: 13px; width: 16px; text-align: center; }
         .bar-bg {
-            width: 100%;
-            height: 22px;
-            background-color: rgba(0,0,0,0.5);
-            border: 3px solid #fff;
-            border-radius: 12px;
+            flex: 1;
+            height: 10px;
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
             overflow: hidden;
             position: relative;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.5);
         }
-        .bar-fill {
-            height: 100%;
-            transition: width 0.2s ease-out, background-color 0.2s;
+        .bar-bg.xp-bar { height: 6px; }
+        .bar-fill { height: 100%; transition: width 0.15s ease-out; }
+        #hp-fill  { background: linear-gradient(90deg,#c0392b,#e74c3c); width: 100%; }
+        #xp-fill  { background: linear-gradient(90deg,#6c3483,#9b59b6); width: 0%; }
+        .bar-label { display: none; }
+        .hud-hp-text { color: #ccc; font-size: 10px; min-width: 34px; text-align: right; }
+        .hud-info-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 1px;
         }
-        #hp-fill { background-color: #E52521; width: 100%; }
-        #xp-fill { background-color: #9b59b6; width: 0%; }
-        .bar-label {
-            position: absolute;
-            top: 0px;
-            left: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
-            text-shadow: 1px 1px 0 #000;
-            z-index: 2;
+        .hud-ability-wrap {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: auto;
         }
+        .hud-ability-bar-bg {
+            width: 44px; height: 6px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        /* Liste joueurs (coop) */
+        #hud-player-list {
+            margin-top: 3px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .hud-pl-entry {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+        }
+        .hud-pl-dot { width: 7px; height: 7px; border-radius: 50%; background: #4af; flex-shrink: 0; }
+        .hud-pl-name { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hud-pl-hp-bg { width: 60px; height: 5px; background: rgba(0,0,0,0.5); border-radius: 3px; overflow: hidden; }
+        .hud-pl-hp-fill { height: 100%; background: #e74c3c; border-radius: 3px; transition: width 0.15s; }
+        .hud-pl-skull { font-size: 12px; }
         .screen {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -784,27 +832,40 @@
         <div id="notificationArea"></div>
 
         <div class="hud">
-            <div class="stats-container">
+            <!-- Identité joueur -->
+            <div class="hud-name-row">
+                <span class="hud-name" id="hud-pseudo">Héros</span>
+                <span class="hud-level" id="lvl-label">Niv. 1</span>
+            </div>
+            <!-- HP -->
+            <div class="hud-bar-row">
+                <span class="hud-bar-icon">❤️</span>
                 <div class="bar-bg">
                     <div id="hp-fill" class="bar-fill"></div>
-                    <span class="bar-label">HP</span>
                 </div>
-                <div class="bar-bg">
+                <span class="hud-hp-text" id="hud-hp-text">100</span>
+            </div>
+            <!-- XP -->
+            <div class="hud-bar-row">
+                <span class="hud-bar-icon">✨</span>
+                <div class="bar-bg xp-bar">
                     <div id="xp-fill" class="bar-fill"></div>
-                    <span class="bar-label" id="lvl-label">Niv. 1</span>
                 </div>
             </div>
-            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+            <!-- Ligne infos : vies + pièces + ability -->
+            <div class="hud-info-row">
+                <span id="livesDisplay">❤️❤️❤️</span>
                 <span id="scoreDisplay">🪙 0</span>
-                <span id="livesDisplay">❤️ 3</span>
-                <div id="abilityHud" style="display:flex;align-items:center;gap:6px;font-size:18px;font-weight:bold;text-shadow:2px 2px 0 #000;">
-                    <span id="abilityIcon">✨</span>
-                    <div style="width:60px;height:10px;background:rgba(0,0,0,0.5);border:2px solid #fff;border-radius:5px;overflow:hidden;">
-                        <div id="abilityCooldownBar" style="height:100%;background:#00e5ff;width:0%;transition:width 0.05s;"></div>
+                <div class="hud-ability-wrap" id="abilityHud">
+                    <span id="abilityIcon" style="font-size:13px;">✨</span>
+                    <div class="hud-ability-bar-bg">
+                        <div id="abilityCooldownBar" style="height:100%;background:#00e5ff;width:0%;transition:width 0.05s;border-radius:4px;"></div>
                     </div>
-                    <span style="font-size:13px;color:#aaa;">[R]</span>
+                    <span style="font-size:10px;color:#666;">[R]</span>
                 </div>
             </div>
+            <!-- Liste joueurs (visible uniquement en coop) -->
+            <div id="hud-player-list" style="display:none;"></div>
         </div>
         
         <!-- ── ÉDITEUR CARTE DE PROFIL (overlay) ─────────────────────── -->
@@ -1438,6 +1499,18 @@
             // ── Message de chat en jeu ───────────────────────────────────
             if (event.type === 'game-chat') {
                 addChatBubble(remotePlayer, event.text);
+            }
+
+            // ── Mort du partenaire ───────────────────────────────────────
+            if (event.type === 'player-dying') {
+                remotePlayer.isDying = true;
+                remotePlayer.deathTimer = 60;
+                remotePlayer.vx = event.dir * 8;
+                remotePlayer.vy = -6;
+            }
+            if (event.type === 'player-respawn') {
+                remotePlayer.isDying = false;
+                remotePlayer.deathTimer = 0;
             }
         });
 
@@ -4220,6 +4293,8 @@
             this.bonusDamage = 0;
             this.bloodStains = []; // Taches de sang sur le joueur
             this.chatBubbles = [];
+            this.isDying = false;
+            this.deathTimer = 0;
 
             // --- DASH ---
             this.dashCooldown = 0;
@@ -4246,9 +4321,14 @@
         }
 
         updateUI() {
-            if(hpFill) hpFill.style.width = Math.max(0, (this.hp / this.maxHp) * 100) + '%';
-            if(xpFill) xpFill.style.width = Math.min(100, (this.xp / this.maxXp) * 100) + '%';
-            if(lvlLabel) lvlLabel.innerText = `Niv. ${this.level}`;
+            if (hpFill)   hpFill.style.width   = Math.max(0, (this.hp / this.maxHp) * 100) + '%';
+            if (xpFill)   xpFill.style.width   = Math.min(100, (this.xp / this.maxXp) * 100) + '%';
+            if (lvlLabel) lvlLabel.innerText    = `Niv. ${this.level}`;
+            const hpText = document.getElementById('hud-hp-text');
+            if (hpText)   hpText.innerText      = Math.max(0, this.hp) + '/' + this.maxHp;
+            const hudPseudo = document.getElementById('hud-pseudo');
+            if (hudPseudo && this.pseudo) hudPseudo.innerText = this.pseudo;
+            updatePlayerList();
         }
         
         gainXp(amount) {
@@ -4312,8 +4392,15 @@
             
             this.updateUI();
             
-            if (this.hp <= 0) {
-                handlePlayerDeath(); 
+            if (this.hp <= 0 && !this.isDying) {
+                this.isDying = true;
+                this.deathTimer = 60; // 1 seconde
+                this.vx = knockbackDir * 8;
+                this.vy = -6;
+                triggerShake(12, 18);
+                if (socket && socket.connected && roomCode) {
+                    socket.emit('game-event', { type: 'player-dying', x: this.x, y: this.y, dir: knockbackDir });
+                }
             }
         }
 
@@ -4457,20 +4544,25 @@
 
         respawn() {
             this.x = 100;
-            
+
             let startY = 0;
             if (typeof platforms !== 'undefined' && platforms.length > 0) startY = platforms[0].y - 100;
-            
+
             this.y = startY;
             this.vx = 0;
             this.vy = 0;
-            this.hp = this.maxHp; 
-            this.hurtTimer = 60;  
+            this.hp = this.maxHp;
+            this.hurtTimer = 60;
             this.isAttacking = false;
             this.attackTimer = 0;
             this.comboStep = 0;
             this.abilityCharge = 0;
-            this.bloodStains = []; // Nettoie le sang à la réapparition
+            this.isDying = false;
+            this.deathTimer = 0;
+            this.bloodStains = [];
+            if (socket && socket.connected && roomCode) {
+                socket.emit('game-event', { type: 'player-respawn' });
+            }
 
             // Réinitialise la physique cape/cheveux pour éviter les artefacts de téléportation
             if (this.skin) {
@@ -4485,6 +4577,28 @@
         }
 
         update(platforms) {
+            // ── État mort : physique de projection ──
+            if (this.isDying) {
+                this.deathTimer--;
+                this.vy += 0.7;
+                if (this.vy > 15) this.vy = 15;
+                this.y += this.vy;
+                this.x += this.vx;
+                this.vx *= 0.84;
+                for (let p of platforms) {
+                    if (this.x < p.x + p.width && this.x + this.width > p.x &&
+                        this.y < p.y + p.height && this.y + this.height > p.y && this.vy > 0) {
+                        this.y = p.y - this.height;
+                        this.vy = 0;
+                    }
+                }
+                if (this.deathTimer <= 0) {
+                    this.isDying = false;
+                    handlePlayerDeath();
+                }
+                return;
+            }
+
             if (this.hurtTimer > 0) this.hurtTimer--;
             if (this.dashCooldown > 0) this.dashCooldown--;
             if (this.dashTimer > 0) this.dashTimer--;
@@ -4770,8 +4884,8 @@
             }
 
             let deathY = levelDeadZone;
-            if (this.y > deathY) {
-                handlePlayerDeath(); 
+            if (this.y > deathY && !this.isDying) {
+                handlePlayerDeath();
             }
         }
 
@@ -4802,22 +4916,32 @@
 
         // Permet d'injecter un contexte pour dessiner dans la miniature de création
         draw(renderCtx = ctx) {
-            if (this.hurtTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
+            if (this.hurtTimer > 0 && !this.isDying && Math.floor(Date.now() / 100) % 2 === 0) return;
 
-            const isMoving = Math.abs(this.vx) > 0.1;
+            const _dyingAlpha = this.isDying ? Math.max(0, this.deathTimer / 60) : 1;
+            if (this.isDying) {
+                renderCtx.save();
+                renderCtx.globalAlpha = _dyingAlpha;
+                const _dcx = this.x + this.width / 2;
+                renderCtx.translate(_dcx, this.y + this.height);
+                renderCtx.rotate(this.facingRight ? 0.55 : -0.55);
+                renderCtx.translate(-_dcx, -(this.y + this.height));
+            }
+
+            const isMoving = this.isDying ? false : Math.abs(this.vx) > 0.1;
             const _wp = this._equippedWeaponId();
             // Marche : vitesse et amplitude selon classe
             const _wt  = _wp==='hammer' ? 55 : _wp==='staff' ? 50 : _wp==='bow' ? 35 : 40;
             const _wamp = _wp==='hammer' ? 10 : _wp==='staff' ? 7  : _wp==='bow' ? 8  : 12;
             const walkAnim = (this.grounded && isMoving) ? Math.sin(Date.now() / _wt) * _wamp : 0;
-            const jumpAnim = !this.grounded ? -10 : 0;
+            const jumpAnim = (!this.grounded && !this.isDying) ? -10 : 0;
             // Bob : plus fort pour hammer
             const _bt = _wp==='hammer' ? 110 : 80;
             const _bamp = _wp==='hammer' ? 4 : 2;
             const bodyBob = (this.grounded && isMoving) ? Math.abs(Math.cos(Date.now() / _bt)) * _bamp : 0;
             // Respiration + lévitation (staff)
-            const breathAnim = (this.idleTime > 0) ? Math.sin(Date.now() / 300) * 1.5 : 0;
-            const floatAnim = _wp==='staff' ? Math.sin(Date.now() / 600) * 3 : 0;
+            const breathAnim = (this.idleTime > 0 && !this.isDying) ? Math.sin(Date.now() / 300) * 1.5 : 0;
+            const floatAnim = (_wp==='staff' && !this.isDying) ? Math.sin(Date.now() / 600) * 3 : 0;
 
             let attackOffsetX = 0, attackOffsetY = 0;
             if (this.isAttacking) {
@@ -5154,7 +5278,6 @@
                     renderCtx.strokeStyle = '#69f0ae';
                     renderCtx.lineWidth = 2;
                     renderCtx.globalAlpha = t.triggerTimer / 120;
-                    // Étoile de piège déclenché
                     for (let i = 0; i < 4; i++) {
                         renderCtx.beginPath();
                         renderCtx.moveTo(0, -12); renderCtx.lineTo(0, 12);
@@ -5164,7 +5287,6 @@
                 } else {
                     const blink = Math.floor(Date.now() / 400) % 2;
                     renderCtx.fillStyle = blink ? '#69f0ae' : '#3d6b38';
-                    // Triangle piège
                     renderCtx.beginPath();
                     renderCtx.moveTo(0, -7); renderCtx.lineTo(-10, 3); renderCtx.lineTo(10, 3);
                     renderCtx.closePath(); renderCtx.fill();
@@ -5173,6 +5295,8 @@
                 }
                 renderCtx.restore();
             });
+
+            if (this.isDying) renderCtx.restore();
         }
     }
 
@@ -5189,6 +5313,8 @@
             this.pseudo = ''; this.visible = false;
             this.vx = 0; this.vy = 0; this.idleTime = 0;
             this.chatBubbles = [];
+            this.isDying = false;
+            this.deathTimer = 0;
         }
 
         updateFromNetwork(data) {
@@ -5219,7 +5345,19 @@
 
         interpolate() {
             if (!this.visible || this.targetX === undefined) return;
-            // player-state envoyé chaque frame → convergence rapide
+            if (this.isDying) {
+                this.deathTimer = Math.max(0, this.deathTimer - 1);
+                this.vy += 0.7; if (this.vy > 15) this.vy = 15;
+                this.x += this.vx; this.y += this.vy; this.vx *= 0.84;
+                for (let p of platforms) {
+                    if (this.x < p.x + p.width && this.x + this.width > p.x &&
+                        this.y < p.y + p.height && this.y + this.height > p.y && this.vy > 0) {
+                        this.y = p.y - this.height; this.vy = 0;
+                    }
+                }
+                if (this.deathTimer <= 0) { this.isDying = false; }
+                return;
+            }
             const LERP = 0.7;
             this.x += (this.targetX - this.x) * LERP;
             this.y += (this.targetY - this.y) * LERP;
@@ -5227,11 +5365,20 @@
 
         draw() {
             if (!this.visible || !this.skin) return;
-            if (this.hurtTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
+            if (this.hurtTimer > 0 && !this.isDying && Math.floor(Date.now() / 100) % 2 === 0) return;
+
+            if (this.isDying) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.deathTimer / 60);
+                const _rdcx = this.x + this.width / 2;
+                ctx.translate(_rdcx, this.y + this.height);
+                ctx.rotate(this.facingRight ? 0.55 : -0.55);
+                ctx.translate(-_rdcx, -(this.y + this.height));
+            }
 
             const W = this.width, H = this.height;
             const isFemale = this.skin.gender === 'F';
-            const isMoving = Math.abs(this.vx) > 0.1;
+            const isMoving = !this.isDying && Math.abs(this.vx) > 0.1;
             const _rwp = this.skin?.weapon || 'sword';
             const _rwt  = _rwp==='hammer'?55:_rwp==='staff'?50:_rwp==='bow'?35:40;
             const _rwamp= _rwp==='hammer'?10:_rwp==='staff'?7:_rwp==='bow'?8:12;
@@ -5368,6 +5515,8 @@
                 ctx.beginPath(); ctx.arc(this.x+W/2, this.y+W/2, 30+p*5, 0, Math.PI*2); ctx.fill();
                 ctx.restore();
             }
+
+            if (this.isDying) ctx.restore();
         }
     }
 
@@ -7047,6 +7196,9 @@
         player.draw();
         remotePlayer.draw(); // joueur distant (multijoueur)
 
+        // ── Liste joueurs HUD ──
+        updatePlayerList();
+
         // ── Bulles de chat ──
         updateChatBubbles(player);
         updateChatBubbles(remotePlayer);
@@ -7065,6 +7217,40 @@
         if (remotePlayer.visible) drawOffscreenIndicator(remotePlayer);
 
         animationId = requestAnimationFrame(gameLoop);
+    }
+
+    // ════════════════════════════════════════════════════════
+    // LISTE JOUEURS HUD
+    // ════════════════════════════════════════════════════════
+
+    function updatePlayerList() {
+        const list = document.getElementById('hud-player-list');
+        if (!list) return;
+        const isCoop = gameMode === 'host' || gameMode === 'guest';
+        if (!isCoop) { list.style.display = 'none'; return; }
+
+        list.style.display = 'flex';
+        list.innerHTML = '';
+
+        const entries = [
+            { pseudo: player.pseudo || '?', hp: player.hp, maxHp: player.maxHp, isDying: player.isDying, isLocal: true },
+        ];
+        if (remotePlayer.visible) {
+            entries.push({ pseudo: remotePlayer.pseudo || '?', hp: remotePlayer.hp, maxHp: remotePlayer.maxHp, isDying: remotePlayer.isDying, isLocal: false });
+        }
+
+        entries.forEach(e => {
+            const div = document.createElement('div');
+            div.className = 'hud-pl-entry';
+            const pct = Math.max(0, (e.hp / e.maxHp) * 100);
+            const skull = e.isDying ? ' 💀' : '';
+            div.innerHTML = `
+                <div class="hud-pl-dot" style="background:${e.isLocal ? '#4af' : '#fa4'};"></div>
+                <span class="hud-pl-name">${e.pseudo}${skull}</span>
+                <div class="hud-pl-hp-bg"><div class="hud-pl-hp-fill" style="width:${pct}%;background:${e.isDying ? '#555' : '#e74c3c'};"></div></div>
+            `;
+            list.appendChild(div);
+        });
     }
 
     // ════════════════════════════════════════════════════════
@@ -7246,19 +7432,22 @@
         ctx.save();
         ctx.globalAlpha = 0.92;
 
-        // Halo pulsé
+        // Couleur selon état mort
+        const isDead = remote.isDying;
         const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 300);
-        ctx.fillStyle = `rgba(80,160,255,${0.12 + pulse * 0.1})`;
+        ctx.fillStyle = isDead
+            ? `rgba(200,40,40,${0.15 + pulse * 0.12})`
+            : `rgba(80,160,255,${0.12 + pulse * 0.1})`;
         ctx.beginPath();
         ctx.arc(edgeX, edgeY, R + 8 + pulse * 4, 0, Math.PI * 2);
         ctx.fill();
 
         // Cercle fond
-        ctx.fillStyle = 'rgba(10,20,50,0.82)';
+        ctx.fillStyle = isDead ? 'rgba(50,10,10,0.88)' : 'rgba(10,20,50,0.82)';
         ctx.beginPath();
         ctx.arc(edgeX, edgeY, R, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(100,180,255,0.7)';
+        ctx.strokeStyle = isDead ? 'rgba(255,60,60,0.85)' : 'rgba(100,180,255,0.7)';
         ctx.lineWidth = 2.5;
         ctx.stroke();
 
@@ -7356,7 +7545,9 @@
         player.weapons = [player.skin.weapon || 'sword'];
         player.equippedSlot = 0;
         player.reset();
-        player.pseudo = document.getElementById('pseudoInput').value || "Héros";
+        player.pseudo = localStorage.getItem('sckt_pseudo') || document.getElementById('pseudoInput').value || "Héros";
+        const hudPseudo = document.getElementById('hud-pseudo');
+        if (hudPseudo) hudPseudo.innerText = player.pseudo;
         syncAbilityBtn();
         
         scoreDisplay.innerText = `🪙 ${score}`;

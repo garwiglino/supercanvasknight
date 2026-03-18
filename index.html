@@ -770,7 +770,15 @@
 
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
-    
+
+    <!-- Chat en jeu -->
+    <div id="gameChatBar" style="display:none; position:absolute; bottom:60px; left:50%; transform:translateX(-50%); z-index:200; display:none; align-items:center; gap:8px; background:rgba(0,0,0,0.72); border:1px solid rgba(255,255,255,0.18); border-radius:10px; padding:7px 12px; backdrop-filter:blur(6px); min-width:320px; max-width:520px;">
+        <span style="color:#aaa; font-family:'Rajdhani',sans-serif; font-size:13px; white-space:nowrap;">💬 Chat</span>
+        <input id="gameChatInput" type="text" maxlength="120" placeholder="Envoyer un message… (Entrée pour valider)"
+            style="flex:1; background:transparent; border:none; outline:none; color:#fff; font-family:'Rajdhani',sans-serif; font-size:15px; caret-color:#fff;">
+        <span id="gameChatCount" style="color:#666; font-family:'Rajdhani',sans-serif; font-size:12px;">120</span>
+    </div>
+
     <div id="ui-layer">
         <!-- Zone de Notifications Animées -->
         <div id="notificationArea"></div>
@@ -1425,6 +1433,11 @@
             // ── Fin de niveau déclenchée par le partenaire ───────────────
             if (event.type === 'level-complete' && gameState === 'PLAYING') {
                 endGame(event.won);
+            }
+
+            // ── Message de chat en jeu ───────────────────────────────────
+            if (event.type === 'game-chat') {
+                addChatBubble(remotePlayer, event.text);
             }
         });
 
@@ -3033,6 +3046,11 @@
         if (e.code === 'KeyQ') toggleMenu('quests');
         if (e.code === 'KeyP') toggleMenu('weapons');
         if (e.code === 'Escape' && gameState === 'MENU') toggleMenu();
+
+        if (e.code === 'KeyT' && gameState === 'PLAYING' && (gameMode === 'host' || gameMode === 'guest')) {
+            e.preventDefault();
+            openGameChat();
+        }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -4201,6 +4219,7 @@
             this.hasHit = new Set(); // Set pour toucher plusieurs ennemis par swing
             this.bonusDamage = 0;
             this.bloodStains = []; // Taches de sang sur le joueur
+            this.chatBubbles = [];
 
             // --- DASH ---
             this.dashCooldown = 0;
@@ -5169,6 +5188,7 @@
             this.skin = null;
             this.pseudo = ''; this.visible = false;
             this.vx = 0; this.vy = 0; this.idleTime = 0;
+            this.chatBubbles = [];
         }
 
         updateFromNetwork(data) {
@@ -7027,6 +7047,12 @@
         player.draw();
         remotePlayer.draw(); // joueur distant (multijoueur)
 
+        // ── Bulles de chat ──
+        updateChatBubbles(player);
+        updateChatBubbles(remotePlayer);
+        drawChatBubbles(player);
+        if (remotePlayer.visible) drawChatBubbles(remotePlayer);
+
         // On dessine les particules de sang au-dessus du reste
         bloodDrops.forEach(bd => bd.draw());
         hitEffects.forEach(he => he.draw());
@@ -7035,7 +7061,235 @@
 
         ctx.restore();
 
+        // ── Indicateur hors-écran (hors du ctx.save camera) ──
+        if (remotePlayer.visible) drawOffscreenIndicator(remotePlayer);
+
         animationId = requestAnimationFrame(gameLoop);
+    }
+
+    // ════════════════════════════════════════════════════════
+    // CHAT EN JEU
+    // ════════════════════════════════════════════════════════
+
+    const CHAT_MAX_BUBBLES = 3;
+    const CHAT_BUBBLE_LIFE = 210; // frames (~3.5s à 60fps)
+    const CHAT_FADE_FRAMES = 45;
+
+    function addChatBubble(entity, text) {
+        if (!entity.chatBubbles) entity.chatBubbles = [];
+        entity.chatBubbles.push({
+            text,
+            life: CHAT_BUBBLE_LIFE,
+            maxLife: CHAT_BUBBLE_LIFE,
+            wobblePhase: Math.random() * Math.PI * 2
+        });
+        // Max CHAT_MAX_BUBBLES bulles — supprimer la plus ancienne
+        if (entity.chatBubbles.length > CHAT_MAX_BUBBLES) {
+            entity.chatBubbles.shift();
+        }
+    }
+
+    function updateChatBubbles(entity) {
+        if (!entity.chatBubbles) return;
+        for (let i = entity.chatBubbles.length - 1; i >= 0; i--) {
+            entity.chatBubbles[i].life--;
+            if (entity.chatBubbles[i].life <= 0) entity.chatBubbles.splice(i, 1);
+        }
+    }
+
+    function drawChatBubbles(entity) {
+        if (!entity.chatBubbles || entity.chatBubbles.length === 0) return;
+        const bubbleW = 200;
+        const bubbleH = 28;
+        const gap = 6;
+        const baseY = entity.y - 48; // au-dessus de la barre de vie/nom
+
+        entity.chatBubbles.forEach((b, idx) => {
+            const stackY = baseY - idx * (bubbleH + gap);
+            const wobbleX = Math.sin(Date.now() / 180 + b.wobblePhase) * 2.5;
+            const wobbleR = Math.sin(Date.now() / 220 + b.wobblePhase + 1) * 0.025;
+
+            // Fade
+            const fadeAlpha = b.life < CHAT_FADE_FRAMES ? b.life / CHAT_FADE_FRAMES : 1;
+            // Bulles plus hautes = légèrement plus transparentes (quinconce)
+            const stackAlpha = 1 - idx * 0.18;
+            const alpha = fadeAlpha * stackAlpha;
+
+            // Légère alternance gauche/droite (quinconce)
+            const quincX = idx % 2 === 0 ? 0 : 10;
+
+            const bx = entity.x + entity.width / 2 - bubbleW / 2 + wobbleX + quincX;
+            const by = stackY;
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+
+            // Rotation wobbly
+            const cx = bx + bubbleW / 2;
+            const cy = by + bubbleH / 2;
+            ctx.translate(cx, cy);
+            ctx.rotate(wobbleR);
+            ctx.translate(-cx, -cy);
+
+            // Fond bulle
+            ctx.fillStyle = 'rgba(15,15,25,0.82)';
+            ctx.beginPath();
+            ctx.roundRect(bx, by, bubbleW, bubbleH, 9);
+            ctx.fill();
+            // Bordure
+            ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            // Petite queue vers le bas (triangle)
+            const tailX = bx + bubbleW / 2 - quincX;
+            ctx.fillStyle = 'rgba(15,15,25,0.82)';
+            ctx.beginPath();
+            ctx.moveTo(tailX - 5, by + bubbleH);
+            ctx.lineTo(tailX + 5, by + bubbleH);
+            ctx.lineTo(tailX, by + bubbleH + 7);
+            ctx.closePath(); ctx.fill();
+
+            // Texte
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '13px "Rajdhani", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // Tronquer si nécessaire (sécurité)
+            let displayText = b.text;
+            if (ctx.measureText(displayText).width > bubbleW - 16) {
+                while (ctx.measureText(displayText + '…').width > bubbleW - 16 && displayText.length > 0) {
+                    displayText = displayText.slice(0, -1);
+                }
+                displayText += '…';
+            }
+            ctx.fillText(displayText, bx + bubbleW / 2, by + bubbleH / 2);
+
+            ctx.restore();
+        });
+    }
+
+    function openGameChat() {
+        const bar = document.getElementById('gameChatBar');
+        const input = document.getElementById('gameChatInput');
+        const count = document.getElementById('gameChatCount');
+        if (!bar || !input) return;
+        bar.style.display = 'flex';
+        input.value = '';
+        count.textContent = '120';
+        input.focus();
+
+        const onInput = () => {
+            count.textContent = 120 - input.value.length;
+        };
+        const onKeydown = (e) => {
+            if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+                e.preventDefault();
+                const text = input.value.trim();
+                if (text.length > 0) {
+                    addChatBubble(player, text);
+                    if (socket && socket.connected && roomCode) {
+                        socket.emit('game-event', { type: 'game-chat', text });
+                    }
+                }
+                closeGameChat();
+            } else if (e.code === 'Escape') {
+                closeGameChat();
+            }
+            e.stopPropagation();
+        };
+        input._chatOnInput   = onInput;
+        input._chatOnKeydown = onKeydown;
+        input.addEventListener('input',   onInput);
+        input.addEventListener('keydown', onKeydown);
+    }
+
+    function closeGameChat() {
+        const bar = document.getElementById('gameChatBar');
+        const input = document.getElementById('gameChatInput');
+        if (!bar || !input) return;
+        bar.style.display = 'none';
+        if (input._chatOnInput)   input.removeEventListener('input',   input._chatOnInput);
+        if (input._chatOnKeydown) input.removeEventListener('keydown', input._chatOnKeydown);
+        input.blur();
+    }
+
+    // ════════════════════════════════════════════════════════
+    // INDICATEUR JOUEUR HORS-ÉCRAN
+    // ════════════════════════════════════════════════════════
+
+    function drawOffscreenIndicator(remote) {
+        if (!remote.visible || !remote.skin) return;
+
+        // Position canvas du remote (en coordonnées monde → écran via la caméra)
+        // La caméra est appliquée via ctx.save/translate dans le game loop
+        // On doit recalculer la position écran
+        const camX = canvas.width  / 2 - player.x - player.width  / 2;
+        const camY = canvas.height / 2 - player.y - player.height / 2;
+
+        const screenX = remote.x + remote.width  / 2 + camX;
+        const screenY = remote.y + remote.height / 2 + camY;
+
+        const margin = 28;
+        const W = canvas.width, H = canvas.height;
+
+        const isOffscreen = screenX < 0 || screenX > W || screenY < 0 || screenY > H;
+        if (!isOffscreen) return;
+
+        // Clamp le point de référence sur le bord de l'écran
+        const clampedX = Math.max(margin, Math.min(W - margin, screenX));
+        const clampedY = Math.max(margin, Math.min(H - margin, screenY));
+
+        // Angle vers le remote
+        const angle = Math.atan2(screenY - H / 2, screenX - W / 2);
+
+        // Position sur le bord
+        let edgeX, edgeY;
+        const tan = Math.tan(angle);
+        if (Math.abs(Math.cos(angle)) > Math.abs(Math.sin(angle))) {
+            // Bord gauche ou droit
+            edgeX = screenX < 0 ? margin : W - margin;
+            edgeY = H / 2 + (edgeX - W / 2) * tan;
+            edgeY = Math.max(margin, Math.min(H - margin, edgeY));
+        } else {
+            // Bord haut ou bas
+            edgeY = screenY < 0 ? margin : H - margin;
+            edgeX = W / 2 + (edgeY - H / 2) / tan;
+            edgeX = Math.max(margin, Math.min(W - margin, edgeX));
+        }
+
+        ctx.save();
+        ctx.globalAlpha = 0.85;
+
+        // Cercle de fond
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.beginPath();
+        ctx.arc(edgeX, edgeY, 18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Flèche
+        ctx.save();
+        ctx.translate(edgeX, edgeY);
+        ctx.rotate(angle);
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(14, 0);
+        ctx.lineTo(6, -6);
+        ctx.lineTo(6, 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        // Pseudo au-dessus
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 11px "Rajdhani", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(remote.pseudo || '?', edgeX, edgeY - 20);
+
+        ctx.restore();
     }
 
     function drawFlag(x, y) {

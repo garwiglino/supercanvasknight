@@ -1374,7 +1374,7 @@
                     <div class="opt-bind-row"><span class="opt-bind-label">Inventaire</span><button class="opt-bind-key" onclick="startRebind('menu',this)"></button></div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Quêtes</span><button class="opt-bind-key" onclick="startRebind('quests',this)"></button></div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Armes</span><button class="opt-bind-key" onclick="startRebind('weapons',this)"></button></div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Bouclier</span><button class="opt-bind-key" onclick="startRebind('shield',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Menu Boucliers</span><button class="opt-bind-key" onclick="startRebind('shield',this)"></button></div>
                 </div>
                 <div id="opt-content-sound" class="opt-content" style="display:none">
                     <div class="opt-section-title">Volume</div>
@@ -5209,23 +5209,39 @@
             this.updateUI();
         }
         
-        takeDamage(amount, knockbackDir) {
+        takeDamage(amount, knockbackDir, attacker = null) {
             if (this.hurtTimer > 0) return;
 
-            // ── BLOCAGE : réduction des dégâts et usure du bouclier ──────
+            // ── BLOCAGE : protection frontale uniquement ──────────────────
             if (this.isBlocking && this.equippedShield && this.blockDurability > 0) {
-                const sd = SHIELD_DATA[this.equippedShield];
-                const factor = sd?.blockFactor ?? 0.5;
-                const blocked = amount * factor;
-                amount = Math.round(amount * (1 - factor));
-                this.blockDurability = Math.max(0, this.blockDurability - blocked);
-                this.vx = 0; // pas de recul en blocage
-                SFX.hit('stone');
-                if (this.blockDurability <= 0) {
-                    showNotification('🛡️ Bouclier brisé !', '#E52521');
-                    this.equippedShield = null;
-                    this.isBlocking = false;
-                    this.blockMaxDurability = 0;
+                // frontHit = l'attaque vient du côté face du joueur
+                const frontHit = (knockbackDir < 0) === this.facingRight;
+                if (frontHit) {
+                    const sd = SHIELD_DATA[this.equippedShield];
+                    const factor = sd?.blockFactor ?? 0.5;
+                    const blocked = amount * factor;
+                    this.blockDurability = Math.max(0, this.blockDurability - blocked);
+                    SFX.hit('stone');
+                    // VFX : étincelles sur le bouclier
+                    const sx = this.facingRight ? this.x - 4 : this.x + this.width + 4;
+                    const sy = this.y + this.height * 0.35;
+                    for (let i = 0; i < 7; i++) {
+                        const a = (i / 7) * Math.PI + (this.facingRight ? Math.PI : 0);
+                        this.abilityVfx.push({ x: sx, y: sy, vx: Math.cos(a) * (3 + Math.random()*3), vy: Math.sin(a) * 3 - 1, life: 14, maxLife: 14, color: i % 2 === 0 ? '#FFF176' : '#FFB300', r: 3, grav: 0.3 });
+                    }
+                    // Recul ennemi
+                    if (attacker && attacker.state !== 'DEAD') {
+                        attacker.vx = -knockbackDir * 5;
+                        attacker.vy = -2.5;
+                        attacker.hurtTimer = Math.max(attacker.hurtTimer || 0, 18);
+                    }
+                    if (this.blockDurability <= 0) {
+                        showNotification('🛡️ Bouclier brisé !', '#E52521');
+                        this.equippedShield = null;
+                        this.isBlocking = false;
+                        this.blockMaxDurability = 0;
+                    }
+                    return; // bloc complet : aucun dégât, aucun recul sur le joueur
                 }
             }
 
@@ -5630,7 +5646,7 @@
                 const is2H = equippedWep ? (WEAPON_DATA[equippedWep]?.twoHanded ?? false) : false;
                 if (keys.block && !this.isAttacking && !is2H) {
                     this.isBlocking = true;
-                    this.vx = 0;
+                    if (this.grounded) this.vx = 0; // en l'air : garder le momentum
                 } else {
                     this.isBlocking = false;
                 }
@@ -5723,8 +5739,8 @@
                 if (this.dashTimer > 0) {
                     // Pendant le dash : vélocité fixe, ignore l'input directionnel
                     this.vx = this.dashDir * 18;
-                } else if (this._wheelOpen || this.isBlocking) {
-                    // Roue ouverte ou blocage : immobile
+                } else if (this._wheelOpen || (this.isBlocking && this.grounded)) {
+                    // Roue ouverte ou blocage au sol : immobile
                     this.vx = 0;
                 } else if (keys.right) { this.vx = this.speed; this.facingRight = true; }
                 else if (keys.left) { this.vx = -this.speed; this.facingRight = false; }
@@ -5747,7 +5763,7 @@
             // Réinitialise le double saut dès qu'on touche le sol
             if (this.grounded && this._hasDoubleJump) this.jumpsLeft = 2;
             // Premier saut (au sol)
-            if (keys.up && this.grounded) {
+            if (keys.up && this.grounded && !this.isBlocking) {
                 this.vy = this.jumpStrength;
                 this.grounded = false;
                 if (this._hasDoubleJump) this.jumpsLeft = 1; // consomme le 1er saut
@@ -6709,7 +6725,7 @@
                 if (this.state === 'ATTACK' && this.attackTimer === 1 &&
                         Math.abs((player.x+25)-(this.x+25)) < 70 &&
                         Math.abs(player.y - this.y) < 50 && player.hp > 0) {
-                    player.takeDamage(20, this.facingRight ? 1 : -1);
+                    player.takeDamage(20, this.facingRight ? 1 : -1, this);
                 }
                 return;
             }
@@ -6753,8 +6769,8 @@
                 intendedVx = 0; 
                 
                 if (this.attackTimer === 0) {
-                    this.attackTimer = 60; 
-                    player.takeDamage(20, this.facingRight ? 1 : -1);
+                    this.attackTimer = 60;
+                    player.takeDamage(20, this.facingRight ? 1 : -1, this);
                 }
             } else if (distToPlayer < 350 && Math.abs(player.y - this.y) < 100 && playerIsAlive) {
                 this.state = 'CHASE';
@@ -7099,7 +7115,7 @@
                 if (this.state === 'ATTACK' && this.attackTimer === 1 &&
                     Math.abs((player.x + 19) - (this.x + 19)) < 60 &&
                     Math.abs(player.y - this.y) < 45 && player.hp > 0) {
-                    player.takeDamage(12, this.facingRight ? 1 : -1);
+                    player.takeDamage(12, this.facingRight ? 1 : -1, this);
                 }
                 return;
             }
@@ -7139,7 +7155,7 @@
                 intendedVx = 0;
                 if (this.attackTimer === 0) {
                     this.attackTimer = 42;
-                    player.takeDamage(12, this.facingRight ? 1 : -1);
+                    player.takeDamage(12, this.facingRight ? 1 : -1, this);
                 }
             } else if (distToPlayer < 300 && Math.abs(player.y - this.y) < 90 && playerIsAlive) {
                 this.state = 'CHASE';

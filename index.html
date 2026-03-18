@@ -2866,6 +2866,10 @@
             {x: 900, y: 400}, {x: 1500, y: 450}, {x: 2600, y: 450}, {x: 2800, y: 450},
             {x: 3620, y: 200}, {x: 4500, y: 450}, {x: 4900, y: 450}, {x: 6300, y: 450}
         ],
+        goblins: [
+            {x: 650, y: 450}, {x: 1200, y: 450}, {x: 1850, y: 450}, {x: 2200, y: 450},
+            {x: 3100, y: 450}, {x: 3700, y: 170}, {x: 5600, y: 280}, {x: 5900, y: 180}
+        ],
         goal: {x: 6700, y: 480, width: 150, height: 20},
         deadZone: 1000
     };
@@ -5589,6 +5593,388 @@
         }
     }
 
+    class Goblin {
+        constructor(x, y, minX, maxX, playerCount = 1) {
+            this.id = _enemyIdCounter++;
+            this.type = 'goblin';
+            this.width = 38;
+            this.height = 42;
+            this.x = x;
+            this.y = y;
+            this.vx = 0;
+            this.vy = 0;
+            this.speed = 2.5 + Math.random() * 0.8;
+            this.gravity = 0.8;
+            this.grounded = false;
+            this.facingRight = Math.random() > 0.5;
+
+            this.minX = minX || x - 120;
+            this.maxX = maxX || x + 120;
+
+            this.maxHp = Math.round(22 * (1 + (playerCount - 1) * 0.55));
+            this.hp = this.maxHp;
+            this.hurtTimer = 0;
+            this.attackTimer = 0;
+            this.state = 'PATROL';
+            this.currentPlatform = null;
+            this.targetX = x;
+            this.targetY = y;
+        }
+
+        update(platforms, player) {
+            if (this.state === 'DEAD') return;
+
+            // ── Guest : lerp pur ──
+            if (gameMode === 'guest') {
+                this.x += (this.targetX - this.x) * 0.45;
+                this.y += (this.targetY - this.y) * 0.45;
+                if (this.hurtTimer > 0) this.hurtTimer--;
+                if (this.attackTimer > 0) this.attackTimer--;
+
+                if (player.attackHitbox && !player.hasHit.has(this)) {
+                    if (this.x < player.attackHitbox.x + player.attackHitbox.width &&
+                        this.x + this.width > player.attackHitbox.x &&
+                        this.y < player.attackHitbox.y + player.attackHitbox.height &&
+                        this.y + this.height > player.attackHitbox.y) {
+
+                        player.hasHit.add(this);
+                        this.hurtTimer = 25;
+                        this.vx = player.facingRight ? 9 : -9;
+                        this.vy = -5;
+                        player.abilityCharge = Math.min(player.abilityMaxCharge, player.abilityCharge + 1);
+                        triggerShake(3, 5);
+
+                        const hitX = this.x + this.width / 2;
+                        const hitY = this.y + this.height / 2;
+                        hitEffects.push(new HitEffect(hitX, hitY));
+                        const dc = 2 + Math.floor(Math.random() * 3);
+                        for (let i = 0; i < dc; i++) {
+                            bloodDrops.push(new BloodDrop(hitX, hitY,
+                                (player.facingRight ? 2 : -2) + (Math.random() * 6 - 3),
+                                -2 - Math.random() * 6));
+                        }
+                        const _wdmg = WEAPON_CONFIG[player._equippedWeaponId?.() ?? player.skin?.weapon ?? 'sword']?.dmg || [15, 15, 15, 25];
+                        const dmg = (_wdmg[player.comboStep] || 15) + (player.bonusDamage || 0);
+                        if (socket && socket.connected && roomCode) {
+                            socket.emit('game-event', {
+                                type: 'enemy-hit', id: this.id,
+                                damage: dmg, dir: player.facingRight ? 1 : -1,
+                                hitX, hitY
+                            });
+                        }
+                    }
+                }
+
+                if (this.state === 'ATTACK' && this.attackTimer === 1 &&
+                    Math.abs((player.x + 19) - (this.x + 19)) < 60 &&
+                    Math.abs(player.y - this.y) < 45 && player.hp > 0) {
+                    player.takeDamage(12, this.facingRight ? 1 : -1);
+                }
+                return;
+            }
+
+            if (this.hurtTimer > 0) this.hurtTimer--;
+            if (this.attackTimer > 0) this.attackTimer--;
+
+            this.vy += this.gravity;
+            if (this.vy > 15) this.vy = 15;
+            this.y += this.vy;
+            this.grounded = false;
+
+            if (this.y > levelDeadZone) { this.state = 'DEAD'; return; }
+
+            this.currentPlatform = null;
+            for (let p of platforms) {
+                if (this.x < p.x + p.width && this.x + this.width > p.x &&
+                    this.y < p.y + p.height && this.y + this.height > p.y) {
+                    if (this.vy > 0) {
+                        this.y = p.y - this.height;
+                        this.grounded = true;
+                        this.vy = 0;
+                        this.currentPlatform = p;
+                    }
+                }
+            }
+
+            let distToPlayer = Math.abs((player.x + player.width / 2) - (this.x + this.width / 2));
+            let playerIsAlive = player.hp > 0;
+            let intendedVx = 0;
+
+            if (this.hurtTimer > 18) {
+                intendedVx = this.vx;
+            } else if (distToPlayer < 58 && Math.abs(player.y - this.y) < 45 && playerIsAlive) {
+                this.state = 'ATTACK';
+                this.facingRight = player.x > this.x;
+                intendedVx = 0;
+                if (this.attackTimer === 0) {
+                    this.attackTimer = 42;
+                    player.takeDamage(12, this.facingRight ? 1 : -1);
+                }
+            } else if (distToPlayer < 300 && Math.abs(player.y - this.y) < 90 && playerIsAlive) {
+                this.state = 'CHASE';
+                this.facingRight = player.x > this.x;
+                intendedVx = this.facingRight ? this.speed * 1.7 : -this.speed * 1.7;
+            } else {
+                this.state = 'PATROL';
+                if (this.x < this.minX) this.facingRight = true;
+                if (this.x > this.maxX) this.facingRight = false;
+                intendedVx = this.facingRight ? this.speed : -this.speed;
+            }
+
+            if (this.grounded && this.currentPlatform && this.hurtTimer <= 18) {
+                let nextX = this.x + intendedVx;
+                let pL = this.currentPlatform.x;
+                let pR = this.currentPlatform.x + this.currentPlatform.width;
+                if (nextX < pL) { intendedVx = 0; this.x = pL; if (this.state === 'PATROL') this.facingRight = true; }
+                else if (nextX + this.width > pR) { intendedVx = 0; this.x = pR - this.width; if (this.state === 'PATROL') this.facingRight = false; }
+            }
+
+            this.vx = intendedVx;
+            this.x += this.vx;
+
+            // ── Collision avec le joueur → dégâts ──
+            if (player.attackHitbox && !player.hasHit.has(this)) {
+                if (this.x < player.attackHitbox.x + player.attackHitbox.width &&
+                    this.x + this.width > player.attackHitbox.x &&
+                    this.y < player.attackHitbox.y + player.attackHitbox.height &&
+                    this.y + this.height > player.attackHitbox.y) {
+
+                    const _wdmg2 = WEAPON_CONFIG[player._equippedWeaponId?.() ?? player.skin?.weapon ?? 'sword']?.dmg || [15, 15, 15, 25];
+                    let damage = (_wdmg2[player.comboStep] || 15) + (player.bonusDamage || 0);
+                    this.hp -= damage;
+                    this.hurtTimer = 25;
+                    this.vx = player.facingRight ? 9 : -9;
+                    this.vy = -5;
+                    player.hasHit.add(this);
+                    triggerShake(3, 5);
+                    player.abilityCharge = Math.min(player.abilityMaxCharge, player.abilityCharge + 1);
+
+                    let hitX = this.x + this.width / 2;
+                    let hitY = this.y + this.height / 2;
+                    hitEffects.push(new HitEffect(hitX, hitY));
+                    let dropCount = 2 + Math.floor(Math.random() * 3);
+                    for (let i = 0; i < dropCount; i++) {
+                        bloodDrops.push(new BloodDrop(hitX, hitY,
+                            (player.facingRight ? 2 : -2) + (Math.random() * 6 - 3),
+                            -2 - Math.random() * 6));
+                    }
+                    if (socket && socket.connected && roomCode) {
+                        socket.emit('game-event', { type: 'combat-vfx', x: hitX, y: hitY, dir: player.facingRight ? 1 : -1 });
+                    }
+                    let stainCount = 1 + Math.floor(Math.random() * 2);
+                    for (let i = 0; i < stainCount; i++) {
+                        player.bloodStains.push({
+                            dx: Math.random() * player.width,
+                            dy: -20 + Math.random() * (player.height + 20),
+                            scale: 0.12 + Math.random() * 0.12,
+                            rotation: Math.random() * Math.PI * 2
+                        });
+                    }
+                    if (player.bloodStains.length > 100) player.bloodStains.shift();
+
+                    if (this.hp <= 0) {
+                        this.state = 'DEAD';
+                        triggerShake(8, 10);
+                        player.gainXp(6);
+                        updateQuest('kill_goblin', 1);
+
+                        let dropRoll = Math.random();
+                        let dropType = dropRoll > 0.88 ? 'force' : dropRoll > 0.72 ? 'potion' : dropRoll > 0.4 ? 'coin' : null;
+                        if (dropType === 'force') items.push(new ItemDrop(this.x, this.y, 'force'));
+                        else if (dropType === 'potion') items.push(new ItemDrop(this.x, this.y, 'potion'));
+                        else if (dropType === 'coin') coins.push(new Coin(this.x, this.y));
+
+                        if (socket && socket.connected && roomCode && gameMode === 'host') {
+                            const spawnedItem = items[items.length - 1];
+                            socket.emit('game-event', {
+                                type: 'enemy-death', id: this.id, x: this.x, y: this.y, dropType,
+                                dropNetId: spawnedItem ? spawnedItem.netId : null
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        draw() {
+            if (this.state === 'DEAD') return;
+            if (this.hurtTimer > 0 && Math.floor(Date.now() / 80) % 2 === 0) return;
+
+            const isMoving = Math.abs(this.vx) > 0.1 && this.state !== 'ATTACK';
+            const t = Date.now();
+            const walkAnim = (this.grounded && isMoving) ? Math.sin(t / 50) * 10 : 0;
+            const bodyBob = (this.grounded && isMoving) ? Math.abs(Math.cos(t / 100)) * 3 : 0;
+            // Goblin se penche en avant quand il court
+            const leanAngle = (this.state === 'CHASE') ? (this.facingRight ? 0.22 : -0.22) : 0;
+
+            let attackOffsetX = 0, attackOffsetY = 0;
+            if (this.state === 'ATTACK') {
+                let p = Math.sin((1 - this.attackTimer / 42) * Math.PI);
+                attackOffsetX = (this.facingRight ? 1 : -1) * p * 10;
+                attackOffsetY = p * 3;
+            }
+
+            const drawX = this.x + attackOffsetX;
+            const bodyY = this.y - bodyBob + attackOffsetY;
+            const cx = drawX + this.width / 2;
+
+            ctx.save();
+            ctx.translate(cx, bodyY + this.height);
+            ctx.rotate(leanAngle);
+            ctx.translate(-cx, -(bodyY + this.height));
+
+            // ── Jambes ──
+            const legColor = '#6b4a1e';
+            ctx.fillStyle = legColor;
+            ctx.beginPath(); ctx.roundRect(drawX + 4 + walkAnim, bodyY + this.height - 18, 11, 22, 3); ctx.fill();
+            ctx.beginPath(); ctx.roundRect(drawX + this.width - 15 - walkAnim, bodyY + this.height - 18, 11, 22, 3); ctx.fill();
+            // Pieds
+            ctx.fillStyle = '#4a3010';
+            ctx.beginPath(); ctx.roundRect(drawX + 2 + walkAnim, bodyY + this.height + 2, 14, 7, 2); ctx.fill();
+            ctx.beginPath(); ctx.roundRect(drawX + this.width - 16 - walkAnim, bodyY + this.height + 2, 14, 7, 2); ctx.fill();
+
+            // ── Corps (cuir cabossé) ──
+            let bodyGrad = ctx.createLinearGradient(drawX, bodyY + 10, drawX + this.width, bodyY + this.height);
+            bodyGrad.addColorStop(0, '#7a5a20');
+            bodyGrad.addColorStop(0.5, '#5c4218');
+            bodyGrad.addColorStop(1, '#3e2c0e');
+            ctx.fillStyle = bodyGrad;
+            ctx.beginPath();
+            ctx.roundRect(drawX + 2, bodyY + 14, this.width - 4, this.height - 16, 5);
+            ctx.fill();
+            // Coutures de cuir
+            ctx.strokeStyle = '#3e2c0e';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(drawX + 10, bodyY + 18); ctx.lineTo(drawX + 10, bodyY + this.height - 6);
+            ctx.moveTo(drawX + this.width - 10, bodyY + 18); ctx.lineTo(drawX + this.width - 10, bodyY + this.height - 6);
+            ctx.stroke();
+            // Rivets
+            ctx.fillStyle = '#c8a030';
+            for (let ry of [bodyY + 20, bodyY + 30]) {
+                ctx.beginPath(); ctx.arc(drawX + 8, ry, 2, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(drawX + this.width - 8, ry, 2, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // ── Peau verte (bras) ──
+            ctx.fillStyle = '#3d7a2e';
+            // Bras gauche
+            let armLX = this.facingRight ? drawX - 6 : drawX + this.width - 5;
+            ctx.beginPath(); ctx.roundRect(armLX, bodyY + 16, 10, 18, 4); ctx.fill();
+            // Bras droit (avec dague)
+            let armRX = this.facingRight ? drawX + this.width - 5 : drawX - 6;
+            ctx.beginPath(); ctx.roundRect(armRX, bodyY + 16, 10, 18, 4); ctx.fill();
+
+            // ── Dague dans la main droite ──
+            ctx.save();
+            const daggerHandX = this.facingRight ? drawX + this.width + 2 : drawX - 8;
+            const daggerHandY = bodyY + 26;
+            ctx.translate(daggerHandX, daggerHandY);
+            if (!this.facingRight) ctx.scale(-1, 1);
+            if (this.state === 'ATTACK') {
+                let ap = this.attackTimer / 42;
+                ctx.rotate(ap > 0.7 ? -Math.PI / 2 : ap > 0.4 ? Math.PI / 5 : Math.PI / 8);
+            } else {
+                ctx.rotate(Math.PI / 6);
+            }
+            // Lame
+            ctx.fillStyle = '#aab8c8';
+            ctx.beginPath();
+            ctx.moveTo(0, -22); ctx.lineTo(3, -6); ctx.lineTo(-3, -6); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#c8d4e0';
+            ctx.beginPath();
+            ctx.moveTo(0, -22); ctx.lineTo(1.5, -6); ctx.lineTo(0, -8); ctx.closePath(); ctx.fill();
+            // Garde
+            ctx.fillStyle = '#8b6914';
+            ctx.fillRect(-5, -6, 10, 3);
+            // Poignée
+            ctx.fillStyle = '#5c3d0e';
+            ctx.beginPath(); ctx.roundRect(-2, -3, 4, 10, 2); ctx.fill();
+            ctx.restore();
+
+            // ── Tête ──
+            const headW = this.width + 4;
+            const headH = 20;
+            const headX = drawX - 2;
+            const headY = bodyY - 2;
+
+            // Peau verte tête
+            let headGrad = ctx.createLinearGradient(headX, headY, headX + headW, headY + headH);
+            headGrad.addColorStop(0, '#4a9c36');
+            headGrad.addColorStop(1, '#2e6e1e');
+            ctx.fillStyle = headGrad;
+            ctx.beginPath(); ctx.roundRect(headX, headY, headW, headH, [8, 8, 4, 4]); ctx.fill();
+
+            // Grandes oreilles pointues
+            ctx.fillStyle = '#3d8a2a';
+            // Oreille gauche
+            ctx.beginPath();
+            ctx.moveTo(headX + 3, headY + 5);
+            ctx.lineTo(headX - 10, headY - 6);
+            ctx.lineTo(headX + 8, headY + 12);
+            ctx.closePath(); ctx.fill();
+            // Oreille droite
+            ctx.beginPath();
+            ctx.moveTo(headX + headW - 3, headY + 5);
+            ctx.lineTo(headX + headW + 10, headY - 6);
+            ctx.lineTo(headX + headW - 8, headY + 12);
+            ctx.closePath(); ctx.fill();
+            // Intérieur oreilles (rose)
+            ctx.fillStyle = '#c06060';
+            ctx.beginPath();
+            ctx.moveTo(headX + 3, headY + 6);
+            ctx.lineTo(headX - 5, headY - 2);
+            ctx.lineTo(headX + 6, headY + 11);
+            ctx.closePath(); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(headX + headW - 3, headY + 6);
+            ctx.lineTo(headX + headW + 5, headY - 2);
+            ctx.lineTo(headX + headW - 6, headY + 11);
+            ctx.closePath(); ctx.fill();
+
+            // Yeux jaunes lumineux
+            const eyeOffL = this.facingRight ? headX + 8 : headX + 4;
+            const eyeOffR = this.facingRight ? headX + headW - 12 : headX + headW - 16;
+            // Glow
+            ctx.shadowColor = '#ffcc00';
+            ctx.shadowBlur = 6;
+            ctx.fillStyle = '#ffdd00';
+            ctx.beginPath(); ctx.ellipse(eyeOffL + 3, headY + 9, 4, 4, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(eyeOffR + 3, headY + 9, 4, 4, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+            // Pupilles noires
+            ctx.fillStyle = '#111';
+            ctx.beginPath(); ctx.ellipse(eyeOffL + 3 + (this.facingRight ? 1 : -1), headY + 9, 2, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(eyeOffR + 3 + (this.facingRight ? 1 : -1), headY + 9, 2, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+
+            // Sourcils menaçants
+            ctx.strokeStyle = '#1a3d10';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(eyeOffL, headY + 5); ctx.lineTo(eyeOffL + 7, headY + 7); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(eyeOffR + 6, headY + 5); ctx.lineTo(eyeOffR - 1, headY + 7); ctx.stroke();
+
+            // Petite corne (milieu front)
+            ctx.fillStyle = '#d4a830';
+            ctx.beginPath();
+            ctx.moveTo(headX + headW / 2, headY - 8);
+            ctx.lineTo(headX + headW / 2 - 4, headY + 1);
+            ctx.lineTo(headX + headW / 2 + 4, headY + 1);
+            ctx.closePath(); ctx.fill();
+
+            ctx.restore();
+
+            // ── Barre de vie ──
+            if (this.hp < this.maxHp) {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(this.x, this.y - 10, this.width, 5);
+                ctx.fillStyle = '#22cc44';
+                ctx.fillRect(this.x + 1, this.y - 9, ((this.width - 2) * this.hp) / this.maxHp, 3);
+            }
+        }
+    }
+
     class Platform {
         constructor(x, y, width, height, type = 'normal') {
             this.x = x;
@@ -5891,10 +6277,15 @@
             platforms.push(new Platform(currentLevelData.goal.x, currentLevelData.goal.y, currentLevelData.goal.width, currentLevelData.goal.height, 'goal'));
         }
 
+        const _pc = (gameMode === 'host' || gameMode === 'guest' || gameMode === 'salon') ? 2 : 1;
         if(currentLevelData.skeletons) {
-            const _pc = (gameMode === 'host' || gameMode === 'guest' || gameMode === 'salon') ? 2 : 1;
             currentLevelData.skeletons.forEach(s => {
                 enemies.push(new Skeleton(s.x, s.y, s.x - 100, s.x + 150, _pc));
+            });
+        }
+        if(currentLevelData.goblins) {
+            currentLevelData.goblins.forEach(g => {
+                enemies.push(new Goblin(g.x, g.y, g.x - 120, g.x + 120, _pc));
             });
         }
 

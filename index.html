@@ -5723,8 +5723,8 @@
                 if (this.dashTimer > 0) {
                     // Pendant le dash : vélocité fixe, ignore l'input directionnel
                     this.vx = this.dashDir * 18;
-                } else if (this._wheelOpen) {
-                    // Roue ouverte : bloquer le déplacement horizontal
+                } else if (this._wheelOpen || this.isBlocking) {
+                    // Roue ouverte ou blocage : immobile
                     this.vx = 0;
                 } else if (keys.right) { this.vx = this.speed; this.facingRight = true; }
                 else if (keys.left) { this.vx = -this.speed; this.facingRight = false; }

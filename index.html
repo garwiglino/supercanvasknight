@@ -1346,11 +1346,16 @@
             // ── Mort d'ennemi déclenchée par le host ────────────────────
             if (event.type === 'enemy-death' && gameMode === 'guest') {
                 const e = enemies.find(en => en.id === event.id);
-                if (e && e.state !== 'DEAD') {
-                    e.state = 'DEAD';
+                if (e && e.state !== 'DEAD' && e.state !== 'DYING') {
                     triggerShake(11, 14);
                     if (event.wasCrit) {
+                        e.state = 'DEAD';
                         decapHeads.push(new DecapHead(event.x + (e.width||50)/2, event.y, true, event.enemyType || 'skeleton'));
+                    } else {
+                        e.state = 'DYING';
+                        e.deathTimer = 55;
+                        e.targetX = event.x;
+                        e.targetY = event.y;
                     }
                     if (event.dropType === 'force') {
                         const it = new ItemDrop(event.x, event.y, 'force');
@@ -1385,9 +1390,16 @@
                     }
                     // Broadcast VFX au guest (le host ne renvoie pas, le guest a déjà spawné localement)
                     if (e.hp <= 0) {
-                        e.state = 'DEAD';
-                        triggerShake(11, 14);
-                        if (event.isCrit) decapHeads.push(new DecapHead(e.x + (e.width||50)/2, e.y, event.dir > 0, e.type || 'skeleton'));
+                        triggerShake(event.isCrit ? 11 : 8, event.isCrit ? 14 : 10);
+                        if (event.isCrit) {
+                            e.state = 'DEAD';
+                            decapHeads.push(new DecapHead(e.x + (e.width||50)/2, e.y, event.dir > 0, e.type || 'skeleton'));
+                        } else {
+                            e.state = 'DYING';
+                            e.deathTimer = 55;
+                            e.vx = event.dir * 5;
+                            e.vy = -4;
+                        }
                         const dropRoll = Math.random();
                         const dropType = dropRoll > 0.85 ? 'force' : dropRoll > 0.7 ? 'potion' : dropRoll > 0.3 ? 'coin' : null;
                         if (dropType === 'force') items.push(new ItemDrop(e.x, e.y, 'force'));
@@ -5519,13 +5531,36 @@
             this.attackTimer = 0;
             this.state = 'PATROL';
             this.currentPlatform = null;
-            // Cibles réseau initialisées à la position de spawn (évite chute avant 1er sync)
+            this.deathTimer = 0;
             this.targetX = x;
             this.targetY = y;
         }
 
         update(platforms, player) {
             if (this.state === 'DEAD') return;
+
+            if (this.state === 'DYING') {
+                this.deathTimer--;
+                if (this.deathTimer <= 0) { this.state = 'DEAD'; return; }
+                if (gameMode === 'guest') {
+                    this.x += (this.targetX - this.x) * 0.45;
+                    this.y += (this.targetY - this.y) * 0.45;
+                    return;
+                }
+                this.vy += this.gravity;
+                if (this.vy > 15) this.vy = 15;
+                this.y += this.vy;
+                this.x += this.vx;
+                this.vx *= 0.82;
+                for (let p of platforms) {
+                    if (this.x < p.x + p.width && this.x + this.width > p.x &&
+                        this.y < p.y + p.height && this.y + this.height > p.y && this.vy > 0) {
+                        this.y = p.y - this.height;
+                        this.vy = 0;
+                    }
+                }
+                return;
+            }
 
             // ── Mode guest : pas de physique locale, lerp pur vers position host ──
             if (gameMode === 'guest') {
@@ -5703,11 +5738,16 @@
                     if (player.bloodStains.length > 100) player.bloodStains.shift();
 
                     if (this.hp <= 0) {
-                        this.state = 'DEAD';
+                        if (isCrit) {
+                            this.state = 'DEAD';
+                            decapHeads.push(new DecapHead(this.x + this.width/2, this.y, player.facingRight, 'skeleton'));
+                        } else {
+                            this.state = 'DYING';
+                            this.deathTimer = 55;
+                        }
                         triggerShake(11, 14);
                         player.gainXp(10);
                         updateQuest('kill_skel', 1);
-                        if (isCrit) decapHeads.push(new DecapHead(this.x + this.width/2, this.y, player.facingRight, 'skeleton'));
 
                         let dropRoll = Math.random();
                         let dropType = dropRoll > 0.85 ? 'force' : dropRoll > 0.7 ? 'potion' : dropRoll > 0.3 ? 'coin' : null;
@@ -5730,11 +5770,12 @@
 
         draw() {
             if (this.state === 'DEAD') return;
-            if (this.hurtTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
+            const isDying = this.state === 'DYING';
+            if (this.hurtTimer > 0 && !isDying && Math.floor(Date.now() / 100) % 2 === 0) return;
 
             const isMoving = Math.abs(this.vx) > 0.1 && this.state !== 'ATTACK';
-            const walkAnim = (this.grounded && isMoving) ? Math.sin(Date.now() / 60) * 12 : 0;
-            const bodyBob = (this.grounded && isMoving) ? Math.abs(Math.cos(Date.now() / 120)) * 2 : 0;
+            const walkAnim = 0; // figé en mort
+            const bodyBob  = 0;
             
             let attackOffsetX = 0;
             let attackOffsetY = 0;
@@ -5748,6 +5789,15 @@
 
             let drawX = this.x + attackOffsetX;
             let bodyY = this.y - bodyBob + attackOffsetY;
+
+            if (isDying) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.deathTimer / 55);
+                const cx = this.x + this.width / 2;
+                ctx.translate(cx, this.y + this.height);
+                ctx.rotate(this.facingRight ? 0.5 : -0.5);
+                ctx.translate(-cx, -(this.y + this.height));
+            }
 
             ctx.save();
 
@@ -5841,6 +5891,8 @@
             ctx.restore();
             ctx.restore();
 
+            if (isDying) { ctx.restore(); return; }
+
             if (this.hp < this.maxHp) {
                 ctx.fillStyle = '#000';
                 ctx.fillRect(this.x, this.y - 22, this.width, 6);
@@ -5872,6 +5924,7 @@
             this.hp = this.maxHp;
             this.hurtTimer = 0;
             this.attackTimer = 0;
+            this.deathTimer = 0;
             this.state = 'PATROL';
             this.currentPlatform = null;
             this.targetX = x;
@@ -5880,6 +5933,29 @@
 
         update(platforms, player) {
             if (this.state === 'DEAD') return;
+
+            if (this.state === 'DYING') {
+                this.deathTimer--;
+                if (this.deathTimer <= 0) { this.state = 'DEAD'; return; }
+                if (gameMode === 'guest') {
+                    this.x += (this.targetX - this.x) * 0.45;
+                    this.y += (this.targetY - this.y) * 0.45;
+                    return;
+                }
+                this.vy += this.gravity;
+                if (this.vy > 15) this.vy = 15;
+                this.y += this.vy;
+                this.x += this.vx;
+                this.vx *= 0.82;
+                for (let p of platforms) {
+                    if (this.x < p.x + p.width && this.x + this.width > p.x &&
+                        this.y < p.y + p.height && this.y + this.height > p.y && this.vy > 0) {
+                        this.y = p.y - this.height;
+                        this.vy = 0;
+                    }
+                }
+                return;
+            }
 
             // ── Guest : lerp pur ──
             if (gameMode === 'guest') {
@@ -6038,11 +6114,17 @@
                     if (player.bloodStains.length > 100) player.bloodStains.shift();
 
                     if (this.hp <= 0) {
-                        this.state = 'DEAD';
-                        triggerShake(8, 10);
+                        triggerShake(isCritG ? 11 : 8, isCritG ? 14 : 10);
                         player.gainXp(6);
                         updateQuest('kill_goblin', 1);
-                        if (isCritG) decapHeads.push(new DecapHead(this.x + this.width/2, this.y, player.facingRight, 'goblin'));
+
+                        if (isCritG) {
+                            this.state = 'DEAD';
+                            decapHeads.push(new DecapHead(this.x + this.width/2, this.y, player.facingRight, 'goblin'));
+                        } else {
+                            this.state = 'DYING';
+                            this.deathTimer = 55;
+                        }
 
                         let dropRoll = Math.random();
                         let dropType = dropRoll > 0.88 ? 'force' : dropRoll > 0.72 ? 'potion' : dropRoll > 0.4 ? 'coin' : null;
@@ -6065,12 +6147,13 @@
 
         draw() {
             if (this.state === 'DEAD') return;
-            if (this.hurtTimer > 0 && Math.floor(Date.now() / 80) % 2 === 0) return;
+            const isDying = this.state === 'DYING';
+            if (this.hurtTimer > 0 && !isDying && Math.floor(Date.now() / 80) % 2 === 0) return;
 
             const isMoving = Math.abs(this.vx) > 0.1 && this.state !== 'ATTACK';
             const t = Date.now();
-            const walkAnim = (this.grounded && isMoving) ? Math.sin(t / 50) * 10 : 0;
-            const bodyBob = (this.grounded && isMoving) ? Math.abs(Math.cos(t / 100)) * 3 : 0;
+            const walkAnim = isDying ? 0 : ((this.grounded && isMoving) ? Math.sin(t / 50) * 10 : 0);
+            const bodyBob = isDying ? 0 : ((this.grounded && isMoving) ? Math.abs(Math.cos(t / 100)) * 3 : 0);
 
             let attackOffsetX = 0, attackOffsetY = 0;
             if (this.state === 'ATTACK') {
@@ -6083,6 +6166,15 @@
             const drawX = this.x + attackOffsetX;
             const bodyY = this.y - bodyBob + attackOffsetY;
             const W = this.width; // 38 — hitbox width
+
+            if (isDying) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.deathTimer / 55);
+                const cx = this.x + this.width / 2;
+                ctx.translate(cx, this.y + this.height);
+                ctx.rotate(this.facingRight ? 0.5 : -0.5);
+                ctx.translate(-cx, -(this.y + this.height));
+            }
 
             // ── Proportions : grande tête, petit corps ──
             const headX = drawX - 5;   // tête 10px plus large que la hitbox
@@ -6209,6 +6301,8 @@
             ctx.fillRect(headX + headW / 2 - 1, headY - 6, 2, 5);
 
             ctx.restore();
+
+            if (isDying) { ctx.restore(); return; }
 
             // ── Barre de vie ──
             if (this.hp < this.maxHp) {

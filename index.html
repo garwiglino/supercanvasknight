@@ -3393,13 +3393,10 @@
         // Casque
         drawHelmet(rCtx, skin, px, py, W, facingRight, 0, false);
 
-        // Épée
+        // Arme selon skin
         rCtx.save();
         rCtx.translate(px + W / 2 + 10, py + H * 0.55);
-        rCtx.rotate(Math.PI / 8);
-        rCtx.fillStyle = '#B0C4DE'; rCtx.fillRect(-3, -30, 6, 30);
-        rCtx.fillStyle = '#DAA520'; rCtx.fillRect(-10, 0, 20, 4);
-        rCtx.fillStyle = '#222'; rCtx.fillRect(-3, 4, 6, 8);
+        drawWeapon(rCtx, skin.weapon || 'sword', false, 0, 0, skin);
         rCtx.restore();
     }
 
@@ -3678,14 +3675,11 @@
         // Casque
         drawHelmet(rCtx, skin, px, py, W, facingRight, 0, false);
 
-        // Épée
+        // Arme selon skin
         rCtx.save();
         rCtx.translate(facingRight ? px + W / 2 + 9 : px + W / 2 - 9, py + H * 0.52);
         if (!facingRight) rCtx.scale(-1, 1);
-        rCtx.rotate(Math.PI / 8);
-        rCtx.fillStyle = '#B0C4DE'; rCtx.fillRect(-3, -28, 5, 28);
-        rCtx.fillStyle = '#DAA520'; rCtx.fillRect(-8, 0, 16, 3);
-        rCtx.fillStyle = '#222'; rCtx.fillRect(-2, 3, 5, 7);
+        drawWeapon(rCtx, skin.weapon || 'sword', false, 0, 0, skin);
         rCtx.restore();
     }
 
@@ -5626,10 +5620,11 @@
             this.lastAbilityKey = false;
             this.abilityVfx = [];        // particules VFX de capacité
             // États spécifiques
-            this.warCryActive = false;   // Chevalier Classique
-            this.shieldActive = false;   // Séraphin
-            this.projectiles = [];       // Rôdeur
-            this.traps = [];             // Chasseresse
+            this.warCryActive = false;      // Chevalier Classique
+            this.shieldActive = false;      // Séraphin
+            this.shadowBurstActive = false; // Ombre Maudite
+            this.projectiles = [];          // Rôdeur
+            this.traps = [];                // Chasseresse
 
             // ── BOUCLIER ─────────────────────────────────────────────────
             if (this.equippedShield === undefined) this.equippedShield = null;
@@ -5802,21 +5797,25 @@
                 showNotification('⚔️ Cri de Guerre !', '#FFD700');
             }
             else if (name === 'Rôdeur Sylvestre') {
-                // Tir de flèche : projectile rapide
+                // Rafale de Précision : 3 flèches simultanées (droite, haut-diagonale, bas-diagonale)
                 this.abilityCharge = 0;
                 const dir = this.facingRight ? 1 : -1;
-                this.projectiles.push({ x: cx, y: cy - 5, vx: dir * 22, vy: 0, life: 60, dmg: 30, color: '#82b366' });
-                // VFX trait vert
-                for (let i = 0; i < 5; i++)
-                    this.abilityVfx.push({ x: cx + dir*i*4, y: cy - 5, vx: 0, vy: 0, life: 8, maxLife: 8, color: '#a5d6a7', r: 3, grav: 0 });
+                const spd = 24;
+                this.projectiles.push({ x: cx, y: cy - 5, vx: dir * spd,        vy:  0,   life: 75, dmg: 22 });
+                this.projectiles.push({ x: cx, y: cy - 5, vx: dir * spd * 0.93, vy: -7,   life: 75, dmg: 22 });
+                this.projectiles.push({ x: cx, y: cy - 5, vx: dir * spd * 0.93, vy:  7,   life: 75, dmg: 22 });
+                // VFX éventail vert
+                for (let i = 0; i < 10; i++)
+                    this.abilityVfx.push({ x: cx, y: cy - 5, vx: dir*(4+Math.random()*8), vy: (Math.random()-0.5)*6, life: 12, maxLife: 12, color: '#a5d6a7', r: 3, grav: 0 });
+                showNotification('🏹 Rafale de Précision !', '#a5d6a7');
             }
             else if (name === 'Chevalier Noir') {
-                // Drain d'âme : vole 20 HP à chaque ennemi proche (<120px)
+                // Drain d'âme : vole 25 HP à chaque ennemi proche (<160px)
                 this.abilityCharge = 0;
                 let stolen = 0;
                 for (let e of enemies) {
-                    if (e.state !== 'DEAD' && Math.hypot((e.x+e.width/2)-cx, (e.y+e.height/2)-cy) < 120) {
-                        const drain = Math.min(20, e.hp);
+                    if (e.state !== 'DEAD' && Math.hypot((e.x+e.width/2)-cx, (e.y+e.height/2)-cy) < 160) {
+                        const drain = Math.min(25, e.hp);
                         e.hp -= drain; stolen += drain;
                         e.hurtTimer = 20;
                         hitEffects.push(new HitEffect(e.x+e.width/2, e.y+e.height/2));
@@ -5850,11 +5849,11 @@
                 showNotification(`✨ Soin Sacré ! +${healed} HP`, '#ffe082');
             }
             else if (name === 'Valkyrie Écarlate') {
-                // Frappe plongeante : saut forcé + slam
+                // Frappe plongeante : saut forcé + slam au sol (AOE 80px, 40 dmg)
                 this.abilityCharge = 0;
-                this.abilityTimer = 60;
+                this.abilityTimer = 80;
                 this.abilityLanded = false;
-                this.vy = -18;
+                this.vy = -21;
                 this.grounded = false;
                 triggerShake(4, 6);
                 for (let i = 0; i < 8; i++)
@@ -5862,7 +5861,7 @@
                 showNotification('🔱 Frappe Plongeante !', '#ff80ab');
             }
             else if (name === 'Chasseresse des Bois') {
-                // Piège : pose un piège devant soi
+                // Piège mortel : pose un piège devant soi (45 dmg, immobilise 3s)
                 this.abilityCharge = 0;
                 const trapX = this.x + (this.facingRight ? this.width + 20 : -40);
                 // Cherche le sol sous le point de pose
@@ -5870,7 +5869,7 @@
                 for (let p of platforms) {
                     if (trapX > p.x && trapX < p.x + p.width && trapY <= p.y + 4) trapY = p.y;
                 }
-                this.traps.push({ x: trapX + 20, y: trapY, life: 600, triggered: false, triggerTimer: 0 });
+                this.traps.push({ x: trapX + 20, y: trapY, life: 1200, triggered: false, triggerTimer: 0 });
                 // VFX vert de pose
                 for (let i = 0; i < 6; i++)
                     this.abilityVfx.push({ x: trapX+20, y: trapY, vx: (Math.random()-0.5)*3, vy: -2-Math.random()*2, life: 15, maxLife: 15, color: '#69f0ae', r: 3, grav: 0.1 });
@@ -5899,22 +5898,35 @@
                     // VFX arrivée
                     for (let i = 0; i < 10; i++)
                         this.abilityVfx.push({ x: this.x+this.width/2, y: this.y+this.height/2, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, life: 18, maxLife: 18, color: '#ea80fc', r: 4, grav: 0 });
-                    showNotification('👁 Téléportation !', '#ea80fc');
+                    // Boost de dégâts post-téléport (assassin)
+                    this.bonusDamage += 15;
+                    this.shadowBurstActive = true;
+                    this.abilityTimer = 120; // 2s de burst
+                    showNotification('👁 Téléportation + Burst !', '#ea80fc');
                 } else {
                     this.abilityCharge = 0;
                     showNotification('Aucun ennemi à portée', '#888');
                 }
             }
             else if (name === 'Séraphin Céleste') {
-                // Bouclier Divin : invincibilité 3s + aura
+                // Bouclier Divin : invincibilité 3s + nova de répulsion
                 this.abilityCharge = 0;
                 this.abilityTimer = 180;
                 this.shieldActive = true;
-                this.hurtTimer = 180; // invincibilité via hurtTimer mais sans clignoter
+                this.hurtTimer = 180;
                 triggerShake(4, 8);
-                for (let i = 0; i < 24; i++) {
-                    const a = (i/24)*Math.PI*2;
-                    this.abilityVfx.push({ x: cx+Math.cos(a)*35, y: cy+Math.sin(a)*35, vx: Math.cos(a)*0.8, vy: Math.sin(a)*0.8-0.5, life: 60, maxLife: 60, color: '#ffe57f', r: 5, grav: -0.01 });
+                // Répulsion des ennemis proches
+                for (let e of enemies) {
+                    if (e.state !== 'DEAD' && Math.hypot((e.x+e.width/2)-cx, (e.y+e.height/2)-cy) < 180) {
+                        const dx = (e.x+e.width/2) - cx, dy = (e.y+e.height/2) - cy;
+                        const dist = Math.max(1, Math.hypot(dx, dy));
+                        e.vx = (dx/dist) * 12; e.vy = (dy/dist) * 8 - 4;
+                        e.hurtTimer = 20;
+                    }
+                }
+                for (let i = 0; i < 28; i++) {
+                    const a = (i/28)*Math.PI*2;
+                    this.abilityVfx.push({ x: cx+Math.cos(a)*35, y: cy+Math.sin(a)*35, vx: Math.cos(a)*3, vy: Math.sin(a)*3-0.5, life: 60, maxLife: 60, color: '#ffe57f', r: 5, grav: -0.01 });
                 }
                 showNotification('🌟 Bouclier Divin !', '#ffe57f');
             }
@@ -6032,6 +6044,10 @@
                 this.bonusDamage = Math.max(0, this.bonusDamage - 20);
                 this.applyWeaponStats(); // restaure la vitesse de l'arme équipée
             }
+            if (this.abilityTimer === 0 && this.shadowBurstActive) {
+                this.shadowBurstActive = false;
+                this.bonusDamage = Math.max(0, this.bonusDamage - 15);
+            }
             if (this.abilityTimer === 0) { this.shieldActive = false; }
             if (this.shieldActive && this.abilityTimer > 0) this.hurtTimer = Math.max(this.hurtTimer, 2);
 
@@ -6097,7 +6113,7 @@
                 p.x += p.vx; p.life--;
                 // Collision ennemis
                 for (let e of enemies) {
-                    if (e.state !== 'DEAD' && Math.abs(p.x - (e.x+e.width/2)) < 20 && Math.abs(p.y - (e.y+e.height/2)) < 20) {
+                    if (e.state !== 'DEAD' && Math.abs(p.x - (e.x+e.width/2)) < 35 && Math.abs(p.y - (e.y+e.height/2)) < 32) {
                         e.hp -= p.dmg; e.hurtTimer = 20; e.vx = p.vx * 0.4;
                         triggerShake(4, 6);
                         hitEffects.push(new HitEffect(p.x, p.y));
@@ -6115,9 +6131,9 @@
                 if (!t.triggered) {
                     for (let e of enemies) {
                         if (e.state !== 'DEAD' && Math.abs((e.x+e.width/2) - t.x) < 22 && Math.abs((e.y+e.height) - t.y) < 18) {
-                            t.triggered = true; t.triggerTimer = 120;
-                            e.hurtTimer = 120; e.vx = 0;
-                            e.hp -= 20;
+                            t.triggered = true; t.triggerTimer = 180;
+                            e.hurtTimer = 180; e.vx = 0;
+                            e.hp -= 45;
                             hitEffects.push(new HitEffect(t.x, t.y));
                             triggerShake(5, 8);
                             if (e.hp <= 0) { e.state='DEAD'; player.gainXp(10); updateQuest('kill_skel',1); triggerShake(11,14); }
@@ -6132,7 +6148,7 @@
             this.abilityVfx = this.abilityVfx.filter(v => { v.life--; v.x += v.vx||0; v.y += v.vy||0; v.vy = (v.vy||0) + (v.grav||0); return v.life > 0; });
 
             // Frappe plongeante Valkyrie — dégâts au sol
-            if (this.skin.name === 'Valkyrie Écarlate' && this.abilityTimer > 0 && this.abilityTimer < 30 && this.grounded && !this.abilityLanded) {
+            if (this.skin.name === 'Valkyrie Écarlate' && this.abilityTimer > 0 && this.abilityTimer < 45 && this.grounded && !this.abilityLanded) {
                 this.abilityLanded = true;
                 triggerShake(10, 14);
                 for (let e of enemies) {
@@ -6887,33 +6903,36 @@
                 renderCtx.save();
                 renderCtx.translate(p.x, p.y);
                 if (p.magic) {
-                    // Orbe magique (staff)
-                    renderCtx.globalAlpha = 0.85;
-                    const mg = renderCtx.createRadialGradient(0,0,1,0,0,6);
+                    // Orbe magique (staff) — plus grande et plus visible
+                    renderCtx.globalAlpha = 0.35;
+                    renderCtx.fillStyle = this.skin.trim || '#9c27b0';
+                    renderCtx.beginPath(); renderCtx.arc(0, 0, 22, 0, Math.PI*2); renderCtx.fill();
+                    renderCtx.globalAlpha = 0.9;
+                    const mg = renderCtx.createRadialGradient(0,0,2,0,0,14);
                     mg.addColorStop(0, '#fff');
-                    mg.addColorStop(0.4, this.skin.trim || '#9c27b0');
+                    mg.addColorStop(0.35, this.skin.trim || '#9c27b0');
                     mg.addColorStop(1, 'rgba(0,0,0,0)');
                     renderCtx.fillStyle = mg;
-                    renderCtx.beginPath(); renderCtx.arc(0, 0, 7, 0, Math.PI*2); renderCtx.fill();
+                    renderCtx.beginPath(); renderCtx.arc(0, 0, 14, 0, Math.PI*2); renderCtx.fill();
                     renderCtx.globalAlpha = 1;
                 } else if (p.charged) {
-                    // Flèche chargée (arc step 3)
+                    // Flèche chargée (arc step 3) — plus imposante
                     renderCtx.rotate(p.vx > 0 ? 0 : Math.PI);
                     renderCtx.fillStyle = '#c8e6c9';
-                    renderCtx.fillRect(-18, -1.5, 18, 3);
+                    renderCtx.fillRect(-26, -3, 26, 6);
                     renderCtx.fillStyle = '#fff';
-                    renderCtx.beginPath(); renderCtx.moveTo(0,0); renderCtx.lineTo(-7,-4); renderCtx.lineTo(-7,4); renderCtx.closePath(); renderCtx.fill();
-                    renderCtx.globalAlpha = 0.5;
+                    renderCtx.beginPath(); renderCtx.moveTo(0,0); renderCtx.lineTo(-10,-7); renderCtx.lineTo(-10,7); renderCtx.closePath(); renderCtx.fill();
+                    renderCtx.globalAlpha = 0.55;
                     renderCtx.fillStyle = '#69f0ae';
-                    renderCtx.beginPath(); renderCtx.arc(-2, 0, 5, 0, Math.PI*2); renderCtx.fill();
+                    renderCtx.beginPath(); renderCtx.arc(-2, 0, 10, 0, Math.PI*2); renderCtx.fill();
                     renderCtx.globalAlpha = 1;
                 } else {
-                    // Flèche normale
+                    // Flèche normale — plus visible
                     renderCtx.rotate(p.vx > 0 ? 0 : Math.PI);
                     renderCtx.fillStyle = '#82b366';
-                    renderCtx.fillRect(-14, -1, 14, 2);
+                    renderCtx.fillRect(-20, -2.5, 20, 5);
                     renderCtx.fillStyle = '#d5e8d4';
-                    renderCtx.beginPath(); renderCtx.moveTo(0,0); renderCtx.lineTo(-5,-3); renderCtx.lineTo(-5,3); renderCtx.closePath(); renderCtx.fill();
+                    renderCtx.beginPath(); renderCtx.moveTo(0,0); renderCtx.lineTo(-8,-6); renderCtx.lineTo(-8,6); renderCtx.closePath(); renderCtx.fill();
                 }
                 renderCtx.restore();
             });

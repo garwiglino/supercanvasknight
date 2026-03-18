@@ -1,1 +1,16 @@
-{}
+{
+  "redirects": [
+    {
+      "source": "/((?!maintenance.html$).*)",
+      "has": [{ "type": "host", "value": "supercanvasknight.com" }],
+      "destination": "/maintenance.html",
+      "permanent": false
+    },
+    {
+      "source": "/((?!maintenance.html$).*)",
+      "has": [{ "type": "host", "value": "www.supercanvasknight.com" }],
+      "destination": "/maintenance.html",
+      "permanent": false
+    }
+  ]
+}

@@ -1024,16 +1024,40 @@
         <div id="authScreen" class="screen">
             <h1>⚔️ Super Canvas Knight</h1>
             <div class="auth-window">
-                <div class="auth-tabs">
+                <!-- Onglets (cachés en mode forgot/reset) -->
+                <div class="auth-tabs" id="authTabs">
                     <div id="authTabLogin"    class="auth-tab active" onclick="switchAuthTab('login')">CONNEXION</div>
                     <div id="authTabRegister" class="auth-tab"        onclick="switchAuthTab('register')">INSCRIPTION</div>
                 </div>
-                <div class="auth-body">
+                <!-- Formulaire login / inscription -->
+                <div class="auth-body" id="authBodyMain">
                     <input type="text"     id="authPseudo"          class="auth-input" placeholder="Pseudo (3–12 car.)"        maxlength="12" autocomplete="username">
+                    <input type="email"    id="authEmail"           class="auth-input" placeholder="Adresse email"             maxlength="120" autocomplete="email" style="display:none;">
                     <input type="password" id="authPassword"        class="auth-input" placeholder="Mot de passe (6+ car.)"    maxlength="64" autocomplete="current-password">
                     <input type="password" id="authPasswordConfirm" class="auth-input" placeholder="Confirmer le mot de passe" maxlength="64" autocomplete="new-password" style="display:none;">
                     <div id="authError" class="auth-error"></div>
                     <button id="authBtn" onclick="submitAuth()">CONNEXION</button>
+                    <div id="forgotLink" style="text-align:center;margin-top:6px;">
+                        <span onclick="showForgot()" style="color:#4a7aaa;font-size:13px;cursor:pointer;text-decoration:underline;">Mot de passe oublié ?</span>
+                    </div>
+                </div>
+                <!-- Formulaire mot de passe oublié -->
+                <div class="auth-body" id="authBodyForgot" style="display:none;">
+                    <p style="color:#8aaad8;font-size:14px;margin:0 0 12px;text-align:center;">Saisis ton adresse email pour recevoir un lien de réinitialisation.</p>
+                    <input type="email" id="forgotEmail" class="auth-input" placeholder="Adresse email" maxlength="120" autocomplete="email">
+                    <div id="forgotError" class="auth-error"></div>
+                    <button id="forgotBtn" onclick="submitForgot()">Envoyer le lien</button>
+                    <div style="text-align:center;margin-top:8px;">
+                        <span onclick="showLogin()" style="color:#4a7aaa;font-size:13px;cursor:pointer;text-decoration:underline;">↩ Retour à la connexion</span>
+                    </div>
+                </div>
+                <!-- Formulaire nouveau mot de passe (lien email) -->
+                <div class="auth-body" id="authBodyReset" style="display:none;">
+                    <p style="color:#8aaad8;font-size:14px;margin:0 0 12px;text-align:center;">Choisis un nouveau mot de passe.</p>
+                    <input type="password" id="resetPassword"        class="auth-input" placeholder="Nouveau mot de passe (6+ car.)" maxlength="64" autocomplete="new-password">
+                    <input type="password" id="resetPasswordConfirm" class="auth-input" placeholder="Confirmer le mot de passe"       maxlength="64" autocomplete="new-password">
+                    <div id="resetError" class="auth-error"></div>
+                    <button id="resetBtn" onclick="submitReset()">Réinitialiser</button>
                 </div>
             </div>
         </div>
@@ -1398,9 +1422,84 @@
         document.getElementById('authTabLogin').classList.toggle('active', tab === 'login');
         document.getElementById('authTabRegister').classList.toggle('active', tab === 'register');
         document.getElementById('authPasswordConfirm').style.display = tab === 'register' ? 'block' : 'none';
+        document.getElementById('authEmail').style.display           = tab === 'register' ? 'block' : 'none';
+        document.getElementById('forgotLink').style.display          = tab === 'login'    ? 'block' : 'none';
         document.getElementById('authBtn').innerText = tab === 'login' ? 'CONNEXION' : "S'INSCRIRE";
         document.getElementById('authPassword').autocomplete = tab === 'login' ? 'current-password' : 'new-password';
         document.getElementById('authError').innerText = '';
+    }
+
+    function showForgot() {
+        document.getElementById('authBodyMain').style.display   = 'none';
+        document.getElementById('authBodyForgot').style.display = 'block';
+        document.getElementById('authBodyReset').style.display  = 'none';
+        document.getElementById('authTabs').style.display       = 'none';
+        document.getElementById('forgotError').innerText = '';
+        setTimeout(() => document.getElementById('forgotEmail').focus(), 50);
+    }
+
+    function showLogin() {
+        document.getElementById('authBodyMain').style.display   = 'block';
+        document.getElementById('authBodyForgot').style.display = 'none';
+        document.getElementById('authBodyReset').style.display  = 'none';
+        document.getElementById('authTabs').style.display       = 'flex';
+        switchAuthTab('login');
+        if (window.history.replaceState) window.history.replaceState({}, '', '/');
+    }
+
+    async function submitForgot() {
+        const email   = document.getElementById('forgotEmail').value.trim();
+        const errorEl = document.getElementById('forgotError');
+        const btn     = document.getElementById('forgotBtn');
+        errorEl.className = 'auth-error'; errorEl.innerText = '';
+        if (!email) { errorEl.innerText = 'Saisis ton adresse email'; return; }
+        btn.disabled = true; btn.innerText = '...';
+        try {
+            await fetch('/api/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            errorEl.className = 'auth-success';
+            errorEl.innerText = '✅ Si cet email est enregistré, tu recevras un lien dans quelques minutes.';
+            btn.innerText = 'Envoyé';
+        } catch(e) {
+            errorEl.innerText = 'Erreur de connexion, réessaie.';
+            btn.disabled = false; btn.innerText = 'Envoyer le lien';
+        }
+    }
+
+    let _resetToken = null;
+
+    async function submitReset() {
+        const pwd     = document.getElementById('resetPassword').value;
+        const pwd2    = document.getElementById('resetPasswordConfirm').value;
+        const errorEl = document.getElementById('resetError');
+        const btn     = document.getElementById('resetBtn');
+        errorEl.className = 'auth-error'; errorEl.innerText = '';
+        if (pwd.length < 6) { errorEl.innerText = 'Minimum 6 caractères'; return; }
+        if (pwd !== pwd2)   { errorEl.innerText = 'Les mots de passe ne correspondent pas'; return; }
+        btn.disabled = true; btn.innerText = '...';
+        try {
+            const res  = await fetch('/api/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: _resetToken, newPassword: pwd })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                errorEl.innerText = data.error;
+                btn.disabled = false; btn.innerText = 'Réinitialiser'; return;
+            }
+            localStorage.setItem('sckt_token', data.token);
+            localStorage.setItem('sckt_pseudo', data.pseudo);
+            errorEl.className = 'auth-success';
+            errorEl.innerText = '✅ Mot de passe mis à jour !';
+            setTimeout(() => onAuthSuccess(data.pseudo), 800);
+        } catch(e) {
+            errorEl.innerText = 'Erreur de connexion, réessaie.';
+            btn.disabled = false; btn.innerText = 'Réinitialiser';
+        }
     }
 
     async function submitAuth() {
@@ -1416,16 +1515,23 @@
         if (!pseudo || pseudo.length < 3)  { errorEl.innerText = 'Pseudo : minimum 3 caractères'; return; }
         if (!password || password.length < 6) { errorEl.innerText = 'Mot de passe : minimum 6 caractères'; return; }
         if (currentAuthTab === 'register' && password !== confirm) { errorEl.innerText = 'Les mots de passe ne correspondent pas'; return; }
+        if (currentAuthTab === 'register') {
+            const email = document.getElementById('authEmail').value.trim();
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errorEl.innerText = 'Adresse email invalide'; return; }
+        }
 
         btn.disabled = true;
         btn.innerText = '...';
 
         try {
             const endpoint = currentAuthTab === 'login' ? '/api/login' : '/api/register';
+            const body = currentAuthTab === 'register'
+                ? { pseudo, password, email: document.getElementById('authEmail').value.trim() }
+                : { pseudo, password };
             const res  = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pseudo, password })
+                body: JSON.stringify(body)
             });
             const data = await res.json();
 
@@ -1481,8 +1587,18 @@
         }
     });
 
-    // Vérification auto au chargement
-    checkExistingToken();
+    // Vérification auto au chargement — reset via lien email
+    const _urlResetToken = new URLSearchParams(window.location.search).get('reset');
+    if (_urlResetToken) {
+        _resetToken = _urlResetToken;
+        document.getElementById('authBodyMain').style.display   = 'none';
+        document.getElementById('authBodyForgot').style.display = 'none';
+        document.getElementById('authBodyReset').style.display  = 'block';
+        document.getElementById('authTabs').style.display       = 'none';
+        history.replaceState(null, '', window.location.pathname);
+    } else {
+        checkExistingToken();
+    }
 
     // ═══════════════════════════════════════════════════════════════
     // LOBBY HOST / JOIN

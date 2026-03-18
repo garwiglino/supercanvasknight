@@ -1586,7 +1586,7 @@
         errorEl.innerText = '';
 
         if (!pseudo || pseudo.length < 3)  { errorEl.innerText = 'Pseudo : minimum 3 caractères'; return; }
-        if (!password || password.length < 6) { errorEl.innerText = 'Mot de passe : minimum 6 caractères'; return; }
+        if (currentAuthTab === 'register' && (!password || password.length < 6)) { errorEl.innerText = 'Mot de passe : minimum 6 caractères'; return; }
         if (currentAuthTab === 'register' && password !== confirm) { errorEl.innerText = 'Les mots de passe ne correspondent pas'; return; }
         if (currentAuthTab === 'register') {
             const email = document.getElementById('authEmail').value.trim();

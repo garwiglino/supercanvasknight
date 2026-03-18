@@ -7482,17 +7482,21 @@
             if (this.windupTimer > 0) {
                 this.windupTimer--;
                 if (this.windupTimer === 0 && this.state === 'ATTACK') {
-                    // Coup : dégâts si le joueur est encore à portée
-                    if (Math.abs((player.x + 25) - (this.x + 25)) < 80 &&
-                        Math.abs(player.y - this.y) < 55 && player.hp > 0) {
-                        if (gameMode !== 'guest') {
-                            player.takeDamage(20, this.facingRight ? 1 : -1, this);
-                        }
-                        if (socket && socket.connected && roomCode && gameMode === 'host') {
-                            socket.emit('game-event', { type: 'enemy-attack-player', damage: 20, dir: this.facingRight ? 1 : -1 });
-                        }
+                    const _atkDir = this.facingRight ? 1 : -1;
+                    // Touche le joueur HOST uniquement s'il est à portée
+                    if (gameMode !== 'guest' &&
+                        Math.abs((player.x + 25) - (this.x + 25)) < 80 &&
+                        Math.abs(player.y - this.y) < 55 && player.hp > 0 && !player.downed) {
+                        player.takeDamage(20, _atkDir, this);
                     }
-                    this.attackTimer = 42; // cooldown post-coup
+                    // Touche le joueur GUEST uniquement s'il est à portée (host seul)
+                    if (gameMode === 'host' && socket && socket.connected && roomCode &&
+                        remotePlayer.visible && !remotePlayer.downed &&
+                        Math.abs((remotePlayer.x + 25) - (this.x + 25)) < 80 &&
+                        Math.abs(remotePlayer.y - this.y) < 55) {
+                        socket.emit('game-event', { type: 'enemy-attack-player', damage: 20, dir: _atkDir });
+                    }
+                    this.attackTimer = 42;
                 }
             }
 
@@ -7517,8 +7521,13 @@
             }
 
             if (this.state !== 'STUNNED') {
-                let distToPlayer = Math.abs((player.x + player.width/2) - (this.x + this.width/2));
-                let playerIsAlive = player.hp > 0;
+                // Cible le joueur le plus proche (host ou guest en coop)
+                const _sGuestOk = gameMode === 'host' && roomCode && remotePlayer.visible && !remotePlayer.downed;
+                const _sDH = Math.abs((player.x + player.width / 2) - (this.x + this.width / 2));
+                const _sDG = _sGuestOk ? Math.abs((remotePlayer.x + 25) - (this.x + this.width / 2)) : Infinity;
+                const _tgt = (_sDG < _sDH) ? remotePlayer : player;
+                let distToPlayer = Math.abs((_tgt.x + (_tgt === player ? player.width / 2 : 25)) - (this.x + this.width / 2));
+                let playerIsAlive = _tgt === player ? (player.hp > 0 && !player.downed) : true;
                 let intendedVx = 0;
 
                 if (this.behaviorTimer > 0) this.behaviorTimer--;
@@ -7527,7 +7536,7 @@
                     intendedVx = this.vx;
                 } else if (this.state === 'ATTACK') {
                     intendedVx = 0;
-                    this.facingRight = player.x > this.x;
+                    this.facingRight = _tgt.x > this.x;
                     if (this.attackTimer === 0 && this.windupTimer === 0) {
                         // Combo : enchaîner une 2e attaque avec ~45% de chance si encore à portée
                         if (this.comboCount < 2 && distToPlayer < 80 && Math.random() < 0.45) {
@@ -7548,13 +7557,13 @@
                     }
                 } else if (this.state === 'BACKSTEP') {
                     // Recule à l'opposé du joueur
-                    this.facingRight = player.x > this.x;
+                    this.facingRight = _tgt.x > this.x;
                     intendedVx = this.facingRight ? -this.speed * 1.2 : this.speed * 1.2;
                     if (this.behaviorTimer === 0) this.state = 'PATROL';
                 } else if (this.state === 'HESITATE') {
                     // Sur place, attend avant de décider
                     intendedVx = 0;
-                    this.facingRight = player.x > this.x;
+                    this.facingRight = _tgt.x > this.x;
                     if (this.behaviorTimer === 0) {
                         // Décision aléatoire : attaquer, reculer ou continuer à chasser
                         const roll = Math.random();
@@ -7568,19 +7577,19 @@
                             this.state = 'CHASE';
                         }
                     }
-                } else if (distToPlayer < 70 && Math.abs(player.y - this.y) < 50 && playerIsAlive) {
+                } else if (distToPlayer < 70 && Math.abs(_tgt.y - this.y) < 50 && playerIsAlive) {
                     if (this.attackTimer === 0 && this.windupTimer === 0 && this.behaviorTimer === 0) {
                         const roll = Math.random();
                         if (roll < 0.55) {
                             // Attaque directe
                             this.state = 'ATTACK';
-                            this.facingRight = player.x > this.x;
+                            this.facingRight = _tgt.x > this.x;
                             this.windupTimer = PARRY_WINDOW_SKEL;
                         } else if (roll < 0.78) {
                             // Hésitation : reste à portée mais attend un peu
                             this.state = 'HESITATE';
                             this.behaviorTimer = 12 + Math.floor(Math.random() * 18);
-                            this.facingRight = player.x > this.x;
+                            this.facingRight = _tgt.x > this.x;
                         } else {
                             // Backstep surprise : recule au lieu d'attaquer
                             this.state = 'BACKSTEP';
@@ -7588,10 +7597,10 @@
                         }
                     }
                     intendedVx = 0;
-                } else if (distToPlayer < 350 && Math.abs(player.y - this.y) < 100 && playerIsAlive) {
+                } else if (distToPlayer < 350 && Math.abs(_tgt.y - this.y) < 100 && playerIsAlive) {
                     if (this.state !== 'BACKSTEP' && this.state !== 'HESITATE') {
                         this.state = 'CHASE';
-                        this.facingRight = player.x > this.x;
+                        this.facingRight = _tgt.x > this.x;
                         intendedVx = this.facingRight ? this.speed * 1.5 : -this.speed * 1.5;
                     }
                 } else {
@@ -7999,14 +8008,17 @@
             if (this.windupTimer > 0) {
                 this.windupTimer--;
                 if (this.windupTimer === 0 && this.state === 'ATTACK') {
-                    if (Math.abs((player.x + 19) - (this.x + 19)) < 68 &&
-                        Math.abs(player.y - this.y) < 50 && player.hp > 0) {
-                        if (gameMode !== 'guest') {
-                            player.takeDamage(12, this.facingRight ? 1 : -1, this);
-                        }
-                        if (socket && socket.connected && roomCode && gameMode === 'host') {
-                            socket.emit('game-event', { type: 'enemy-attack-player', damage: 12, dir: this.facingRight ? 1 : -1, enemyType: 'goblin' });
-                        }
+                    const _atkDirG = this.facingRight ? 1 : -1;
+                    if (gameMode !== 'guest' &&
+                        Math.abs((player.x + 19) - (this.x + 19)) < 68 &&
+                        Math.abs(player.y - this.y) < 50 && player.hp > 0 && !player.downed) {
+                        player.takeDamage(12, _atkDirG, this);
+                    }
+                    if (gameMode === 'host' && socket && socket.connected && roomCode &&
+                        remotePlayer.visible && !remotePlayer.downed &&
+                        Math.abs((remotePlayer.x + 19) - (this.x + 19)) < 68 &&
+                        Math.abs(remotePlayer.y - this.y) < 50) {
+                        socket.emit('game-event', { type: 'enemy-attack-player', damage: 12, dir: _atkDirG, enemyType: 'goblin' });
                     }
                     this.attackTimer = 30;
                 }
@@ -8033,8 +8045,13 @@
             }
 
             if (this.state !== 'STUNNED') {
-                let distToPlayer = Math.abs((player.x + player.width / 2) - (this.x + this.width / 2));
-                let playerIsAlive = player.hp > 0;
+                // Cible le joueur le plus proche (host ou guest en coop)
+                const _gGuestOk = gameMode === 'host' && roomCode && remotePlayer.visible && !remotePlayer.downed;
+                const _gDH = Math.abs((player.x + player.width / 2) - (this.x + this.width / 2));
+                const _gDG = _gGuestOk ? Math.abs((remotePlayer.x + 25) - (this.x + this.width / 2)) : Infinity;
+                const _tgtG = (_gDG < _gDH) ? remotePlayer : player;
+                let distToPlayer = Math.abs((_tgtG.x + (_tgtG === player ? player.width / 2 : 25)) - (this.x + this.width / 2));
+                let playerIsAlive = _tgtG === player ? (player.hp > 0 && !player.downed) : true;
                 let intendedVx = 0;
 
                 if (this.behaviorTimer > 0) this.behaviorTimer--;
@@ -8043,7 +8060,7 @@
                     intendedVx = this.vx;
                 } else if (this.state === 'ATTACK') {
                     intendedVx = 0;
-                    this.facingRight = player.x > this.x;
+                    this.facingRight = _tgtG.x > this.x;
                     if (this.attackTimer === 0 && this.windupTimer === 0) {
                         // Goblin plus agressif : combo jusqu'à 3 coups, 55% de chance
                         if (this.comboCount < 3 && distToPlayer < 65 && Math.random() < 0.55) {
@@ -8062,12 +8079,12 @@
                         }
                     }
                 } else if (this.state === 'BACKSTEP') {
-                    this.facingRight = player.x > this.x;
+                    this.facingRight = _tgtG.x > this.x;
                     intendedVx = this.facingRight ? -this.speed * 1.4 : this.speed * 1.4;
                     if (this.behaviorTimer === 0) this.state = 'PATROL';
                 } else if (this.state === 'HESITATE') {
                     intendedVx = 0;
-                    this.facingRight = player.x > this.x;
+                    this.facingRight = _tgtG.x > this.x;
                     if (this.behaviorTimer === 0) {
                         const roll = Math.random();
                         if (roll < 0.55 && distToPlayer < 58) {
@@ -8080,27 +8097,27 @@
                             this.state = 'CHASE';
                         }
                     }
-                } else if (distToPlayer < 58 && Math.abs(player.y - this.y) < 45 && playerIsAlive) {
+                } else if (distToPlayer < 58 && Math.abs(_tgtG.y - this.y) < 45 && playerIsAlive) {
                     if (this.attackTimer === 0 && this.windupTimer === 0 && this.behaviorTimer === 0) {
                         const roll = Math.random();
                         if (roll < 0.60) {
                             this.state = 'ATTACK';
-                            this.facingRight = player.x > this.x;
+                            this.facingRight = _tgtG.x > this.x;
                             this.windupTimer = PARRY_WINDOW_GOB;
                         } else if (roll < 0.80) {
                             this.state = 'HESITATE';
                             this.behaviorTimer = 8 + Math.floor(Math.random() * 14);
-                            this.facingRight = player.x > this.x;
+                            this.facingRight = _tgtG.x > this.x;
                         } else {
                             this.state = 'BACKSTEP';
                             this.behaviorTimer = 12 + Math.floor(Math.random() * 12);
                         }
                     }
                     intendedVx = 0;
-                } else if (distToPlayer < 300 && Math.abs(player.y - this.y) < 90 && playerIsAlive) {
+                } else if (distToPlayer < 300 && Math.abs(_tgtG.y - this.y) < 90 && playerIsAlive) {
                     if (this.state !== 'BACKSTEP' && this.state !== 'HESITATE') {
                         this.state = 'CHASE';
-                        this.facingRight = player.x > this.x;
+                        this.facingRight = _tgtG.x > this.x;
                         intendedVx = this.facingRight ? this.speed * 1.7 : -this.speed * 1.7;
                     }
                 } else {

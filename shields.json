@@ -1,0 +1,13 @@
+{
+  "shields": {
+    "wooden_shield": {
+      "id": "wooden_shield",
+      "name": "Bouclier en Bois",
+      "icon": "🛡️",
+      "xpRequired": 0,
+      "blockFactor": 0.5,
+      "maxDurability": 100,
+      "description": "Un bouclier rudimentaire taillé dans du bois de chêne. Absorbe la moitié des dégâts reçus mais se dégrade rapidement sous les coups répétés."
+    }
+  }
+}

@@ -1327,6 +1327,7 @@
                     <div id="tab-inventory" class="menu-tab active" onclick="showTab('inventory')">INVENTAIRE (I)</div>
                     <div id="tab-quests" class="menu-tab" onclick="showTab('quests')">QUÊTES (Q)</div>
                     <div id="tab-weapons" class="menu-tab" onclick="showTab('weapons')">⚔️ ARMES (P)</div>
+                    <div id="tab-shields" class="menu-tab" onclick="showTab('shields')">🛡️ BOUCLIER (7)</div>
                     <div class="menu-tab close-tab" onclick="toggleMenu()">❌</div>
                 </div>
                 <div id="content-inventory" class="menu-content">
@@ -1336,6 +1337,9 @@
                     <!-- Rempli en JS -->
                 </div>
                 <div id="content-weapons" class="menu-content" style="display: none;">
+                    <!-- Rempli en JS -->
+                </div>
+                <div id="content-shields" class="menu-content" style="display: none;">
                     <!-- Rempli en JS -->
                 </div>
             </div>
@@ -1361,6 +1365,7 @@
                     <div class="opt-bind-row"><span class="opt-bind-label">Sauter</span><button class="opt-bind-key" onclick="startRebind('up',this)"></button></div>
                     <div class="opt-section-title">Combat</div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Attaquer</span><button class="opt-bind-key" onclick="startRebind('attack',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Bloquer</span><button class="opt-bind-key" onclick="startRebind('block',this)"></button></div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Dash</span><button class="opt-bind-key" onclick="startRebind('dash',this)"></button></div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Capacité</span><button class="opt-bind-key" onclick="startRebind('ability',this)"></button></div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Interagir</span><button class="opt-bind-key" onclick="startRebind('interact',this)"></button></div>
@@ -1369,6 +1374,7 @@
                     <div class="opt-bind-row"><span class="opt-bind-label">Inventaire</span><button class="opt-bind-key" onclick="startRebind('menu',this)"></button></div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Quêtes</span><button class="opt-bind-key" onclick="startRebind('quests',this)"></button></div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Armes</span><button class="opt-bind-key" onclick="startRebind('weapons',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Bouclier</span><button class="opt-bind-key" onclick="startRebind('shield',this)"></button></div>
                 </div>
                 <div id="opt-content-sound" class="opt-content" style="display:none">
                     <div class="opt-section-title">Volume</div>
@@ -3077,6 +3083,11 @@
         if (document.getElementById('weaponBadge')) drawSkinPreview();
     }).catch(() => { /* fallback silencieux sur les valeurs hardcodées */ });
 
+    let SHIELD_DATA = {};
+    fetch('/shields.json').then(r => r.json()).then(data => {
+        SHIELD_DATA = data.shields || {};
+    }).catch(() => {});
+
     // --- GESTIONNAIRE D'ASSETS DYNAMIQUE ---
     const itemDatabase = {
         "potion": { "name": "Potion de Soin", "type": "heal", "value": 35, "iconPath": "./art/potion.svg", "iconScale": 1.0 },
@@ -3645,13 +3656,13 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, interact: false };
+    const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, interact: false, block: false };
 
     // ── Keybinds remappables ───────────────────────────────────────
     const KEYBINDS_DEFAULT = {
         right: 'KeyD', left: 'KeyA', up: 'Space',
-        attack: 'Digit0', dash: 'ShiftLeft', ability: 'KeyR',
-        interact: 'KeyE', chat: 'KeyT', menu: 'KeyI', quests: 'KeyQ', weapons: 'KeyP'
+        attack: 'Digit0', block: 'Digit9', dash: 'ShiftLeft', ability: 'KeyR',
+        interact: 'KeyE', chat: 'KeyT', menu: 'KeyI', quests: 'KeyQ', weapons: 'KeyP', shield: 'Digit7'
     };
     let _keybinds = { ...KEYBINDS_DEFAULT };
     (() => {
@@ -3787,7 +3798,7 @@
         }
         if (_ingameMenuOpen) return;
 
-        if (gameState === 'MENU' && !isKey(e,'menu') && !isKey(e,'quests') && !isKey(e,'weapons') && e.code !== 'Escape') return;
+        if (gameState === 'MENU' && !isKey(e,'menu') && !isKey(e,'quests') && !isKey(e,'weapons') && !isKey(e,'shield') && e.code !== 'Escape') return;
 
         // Empêcher les actions de jeu si on écrit son pseudo
         if (document.activeElement.tagName === 'INPUT') {
@@ -3803,6 +3814,7 @@
         if (e.code === 'ArrowLeft' || isKey(e,'left')) keys.left = true;
         if (e.code === 'ArrowUp' || isKey(e,'up')) keys.up = true;
         if (e.code === 'Numpad0' || isKey(e,'attack')) keys.attack = true;
+        if (isKey(e,'block')) keys.block = true;
         if (e.code === 'ShiftRight' || isKey(e,'dash')) keys.dash = true;
         if (isKey(e,'ability')) keys.ability = true;
         if (e.code === 'Numpad8' || e.code === 'Digit8') { keys.weaponWheel = true; e.preventDefault(); }
@@ -3815,6 +3827,7 @@
         if (isKey(e,'menu')) toggleMenu('inventory');
         if (isKey(e,'quests')) toggleMenu('quests');
         if (isKey(e,'weapons')) toggleMenu('weapons');
+        if (isKey(e,'shield')) toggleMenu('shields');
         if (e.code === 'Escape' && gameState === 'MENU') toggleMenu();
 
         if (isKey(e,'chat') && gameState === 'PLAYING' && (gameMode === 'host' || gameMode === 'guest')) {
@@ -3828,6 +3841,7 @@
         if (e.code === 'ArrowLeft' || isKey(e,'left')) keys.left = false;
         if (e.code === 'ArrowUp' || isKey(e,'up')) keys.up = false;
         if (e.code === 'Numpad0' || isKey(e,'attack')) keys.attack = false;
+        if (isKey(e,'block')) keys.block = false;
         if (e.code === 'ShiftRight' || isKey(e,'dash')) keys.dash = false;
         if (isKey(e,'ability')) keys.ability = false;
         if (e.code === 'Numpad8' || e.code === 'Digit8') keys.weaponWheel = false;
@@ -4021,7 +4035,7 @@
             menuScreen.style.display = 'flex';
             menuScreen.classList.remove('hidden');
             
-            keys.right = false; keys.left = false; keys.up = false; keys.attack = false; keys.weaponWheel = false;
+            keys.right = false; keys.left = false; keys.up = false; keys.attack = false; keys.weaponWheel = false; keys.block = false;
             if (player._wheelOpen) { player._wheelOpen = false; player._wheelHeld = false; }
 
             showTab(tab);
@@ -4033,7 +4047,7 @@
     }
 
     function showTab(tab) {
-        ['inventory','quests','weapons'].forEach(t => {
+        ['inventory','quests','weapons','shields'].forEach(t => {
             document.getElementById('tab-' + t).classList.remove('active');
             document.getElementById('content-' + t).style.display = 'none';
         });
@@ -4043,6 +4057,7 @@
         if (tab === 'inventory') renderInventory();
         if (tab === 'quests') renderQuests();
         if (tab === 'weapons') renderWeapons();
+        if (tab === 'shields') renderShields();
     }
 
     function initQuests() {
@@ -4141,6 +4156,95 @@
             <kbd>8</kbd> tap = switch rapide &nbsp;|&nbsp; maintenir <kbd>8</kbd> = roue d'armes (◀▶ pour naviguer)
         </div>`;
         container.innerHTML = html;
+    }
+
+    function renderShields() {
+        const container = document.getElementById('content-shields');
+        if (!container) return;
+
+        const equippedId = player.equippedShield;
+        const equippedWep = player._equippedWeaponId ? player._equippedWeaponId() : null;
+        const isTwoHanded = equippedWep ? (WEAPON_DATA[equippedWep]?.twoHanded ?? false) : false;
+
+        let html = '';
+
+        if (isTwoHanded) {
+            html += `<div style="text-align:center;color:#E57373;background:rgba(229,115,115,0.08);border:1px solid rgba(229,115,115,0.3);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:14px;">
+                ⚠️ Arme à deux mains équipée — impossible de porter un bouclier.
+            </div>`;
+        }
+
+        // Bouclier équipé
+        if (equippedId) {
+            const sd = SHIELD_DATA[equippedId] || {};
+            const durPct = Math.round((player.blockDurability / player.blockMaxDurability) * 100);
+            html += `
+            <div class="weapon-slot-card equipped">
+                <div class="weapon-slot-icon">${sd.icon || '🛡️'}</div>
+                <div class="weapon-slot-info">
+                    <div class="weapon-slot-name">${sd.name || equippedId}</div>
+                    <div class="weapon-slot-class">Blocage ${Math.round((sd.blockFactor||0.5)*100)}% · Durabilité ${durPct}%</div>
+                    <span class="weapon-slot-badge equipped-badge">✓ Équipé</span>
+                </div>
+                <div class="weapon-slot-actions">
+                    <button class="btn-sec" onclick="menuUnequipShield()" style="font-size:11px!important;padding:5px 10px!important;">🗑️ Retirer</button>
+                </div>
+            </div>`;
+        } else {
+            html += `<p style="text-align:center;color:#888;margin-top:20px;margin-bottom:20px;">Aucun bouclier équipé.</p>`;
+        }
+
+        // Boucliers disponibles (non équipés)
+        const available = Object.values(SHIELD_DATA).filter(sd => sd.id !== equippedId);
+        if (available.length > 0) {
+            html += `<div style="margin-top:8px;color:#5a7a9a;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Disponibles</div>`;
+            available.forEach(sd => {
+                const xpReq = sd.xpRequired || 0;
+                const canEquip = player.xp >= xpReq && !isTwoHanded;
+                const lockMsg = isTwoHanded ? 'Arme 2 mains' : (player.xp < xpReq ? `${xpReq} XP requis` : '');
+                html += `
+                <div class="weapon-slot-card backpack" style="${!canEquip ? 'opacity:0.5;' : ''}">
+                    <div class="weapon-slot-icon">${sd.icon || '🛡️'}</div>
+                    <div class="weapon-slot-info">
+                        <div class="weapon-slot-name">${sd.name}</div>
+                        <div class="weapon-slot-class">Blocage ${Math.round((sd.blockFactor||0.5)*100)}% · Durabilité max ${sd.maxDurability}</div>
+                        ${lockMsg ? `<span class="weapon-slot-badge back-badge">${lockMsg}</span>` : ''}
+                    </div>
+                    <div class="weapon-slot-actions">
+                        ${canEquip ? `<button onclick="menuEquipShield('${sd.id}')">🛡️ Équiper</button>` : ''}
+                    </div>
+                </div>`;
+            });
+        }
+
+        html += `<div class="weapon-hint">
+            <kbd>9</kbd> maintenu = bloquer (arme 1 main requise) &nbsp;|&nbsp; <kbd>7</kbd> = ouvrir cet onglet
+        </div>`;
+        container.innerHTML = html;
+    }
+
+    function menuEquipShield(id) {
+        const sd = SHIELD_DATA[id];
+        if (!sd) return;
+        const equippedWep = player._equippedWeaponId ? player._equippedWeaponId() : null;
+        if (equippedWep && (WEAPON_DATA[equippedWep]?.twoHanded ?? false)) {
+            showNotification('⚠️ Arme à deux mains — impossible d\'équiper un bouclier.', '#E52521');
+            return;
+        }
+        player.equippedShield = id;
+        player.blockMaxDurability = sd.maxDurability;
+        player.blockDurability = sd.maxDurability;
+        renderShields();
+        showNotification(`${sd.icon || '🛡️'} ${sd.name} équipé !`, '#FBD000');
+    }
+
+    function menuUnequipShield() {
+        player.equippedShield = null;
+        player.isBlocking = false;
+        player.blockDurability = 0;
+        player.blockMaxDurability = 0;
+        renderShields();
+        showNotification('🛡️ Bouclier retiré.', '#7a8ba0');
     }
 
     function menuEquipWeapon(slot) {
@@ -4655,6 +4759,51 @@
         rc.restore();
     }
 
+    function drawShield(rc, drawX, bodyY, W, H, facingRight, blocking) {
+        rc.save();
+        // Main libre = gauche si facingRight, droite sinon
+        const sideX = facingRight ? drawX - 4 : drawX + W + 4;
+        const sideY = bodyY + H * 0.4;
+        rc.translate(sideX, sideY);
+        if (!facingRight) rc.scale(-1, 1); // miroir pour que le bouclier reste visuel côté off-hand
+
+        if (blocking) {
+            // En blocage : bouclier étendu vers l'avant (côté face du joueur)
+            rc.translate(W * 0.7, 0);
+            rc.rotate(-Math.PI / 10);
+        } else {
+            // Au repos : bouclier plaqué derrière, légèrement incliné
+            rc.rotate(Math.PI / 8);
+        }
+
+        // Corps du bouclier en bois
+        rc.fillStyle = '#7b4f1a';
+        rc.beginPath();
+        rc.roundRect(-9, -16, 18, 32, 4);
+        rc.fill();
+        // Bord métal
+        rc.strokeStyle = '#4a3010';
+        rc.lineWidth = 2;
+        rc.stroke();
+        // Renforts horizontaux
+        rc.strokeStyle = '#5c3d0f';
+        rc.lineWidth = 1.5;
+        rc.beginPath();
+        rc.moveTo(-7, -10); rc.lineTo(7, -10);
+        rc.moveTo(-7,  10); rc.lineTo(7,  10);
+        rc.stroke();
+        // Boss central en métal
+        rc.fillStyle = '#a08040';
+        rc.beginPath();
+        rc.arc(0, 0, 4, 0, Math.PI * 2);
+        rc.fill();
+        rc.strokeStyle = '#6b5020';
+        rc.lineWidth = 1;
+        rc.stroke();
+
+        rc.restore();
+    }
+
     function drawWeapon(rc, weapon, isAttacking, comboStep, progress, skin) {
         const trim = skin?.trim || '#DAA520';
         const armor0 = skin?.armor ? skin.armor[0] : '#ccc';
@@ -4900,6 +5049,15 @@
             this.comboResetTimer = 0;
             this.isAttacking = false;
             this.jumpsLeft = this._hasDoubleJump ? 2 : 1;
+            // Si arme 2 mains : retirer le bouclier automatiquement
+            const newWid = this.weapons[slot];
+            if (newWid && (WEAPON_DATA[newWid]?.twoHanded ?? false) && this.equippedShield) {
+                this.equippedShield = null;
+                this.isBlocking = false;
+                this.blockDurability = 0;
+                this.blockMaxDurability = 0;
+                showNotification('🛡️ Bouclier retiré (arme 2 mains)', '#7a8ba0');
+            }
         }
 
         // ── Switch rapide entre les 2 armes ──
@@ -5013,6 +5171,13 @@
             this.shieldActive = false;   // Séraphin
             this.projectiles = [];       // Rôdeur
             this.traps = [];             // Chasseresse
+
+            // ── BOUCLIER ─────────────────────────────────────────────────
+            if (this.equippedShield === undefined) this.equippedShield = null;
+            if (this.blockMaxDurability === undefined) this.blockMaxDurability = 0;
+            if (this.blockDurability === undefined) this.blockDurability = 0;
+            this.isBlocking = false;
+            this.lastBlockKey = false;
             
             this.respawn();
         }
@@ -5045,8 +5210,25 @@
         }
         
         takeDamage(amount, knockbackDir) {
-            if (this.hurtTimer > 0) return; 
-            
+            if (this.hurtTimer > 0) return;
+
+            // ── BLOCAGE : réduction des dégâts et usure du bouclier ──────
+            if (this.isBlocking && this.equippedShield && this.blockDurability > 0) {
+                const sd = SHIELD_DATA[this.equippedShield];
+                const factor = sd?.blockFactor ?? 0.5;
+                const blocked = amount * factor;
+                amount = Math.round(amount * (1 - factor));
+                this.blockDurability = Math.max(0, this.blockDurability - blocked);
+                this.vx = 0; // pas de recul en blocage
+                SFX.hit('stone');
+                if (this.blockDurability <= 0) {
+                    showNotification('🛡️ Bouclier brisé !', '#E52521');
+                    this.equippedShield = null;
+                    this.isBlocking = false;
+                    this.blockMaxDurability = 0;
+                }
+            }
+
             this.hp -= amount;
             this.hurtTimer = 40; 
             this.vy = -4; 
@@ -5441,7 +5623,26 @@
                 }
             }
 
-            let justPressedAttack = keys.attack && !this.lastAttackKey;
+            // ── BLOCAGE ───────────────────────────────────────────────────
+            this.lastBlockKey = keys.block;
+            if (this.equippedShield && this.blockDurability > 0) {
+                const equippedWep = this._equippedWeaponId();
+                const is2H = equippedWep ? (WEAPON_DATA[equippedWep]?.twoHanded ?? false) : false;
+                if (keys.block && !this.isAttacking && !is2H) {
+                    this.isBlocking = true;
+                    this.vx = 0;
+                } else {
+                    this.isBlocking = false;
+                }
+                // Régénération lente hors blocage
+                if (!this.isBlocking && this.blockDurability < this.blockMaxDurability) {
+                    this.blockDurability = Math.min(this.blockMaxDurability, this.blockDurability + 0.25);
+                }
+            } else {
+                this.isBlocking = false;
+            }
+
+            let justPressedAttack = keys.attack && !this.lastAttackKey && !this.isBlocking;
             this.lastAttackKey = keys.attack;
 
             if (justPressedAttack && !this.isAttacking) {
@@ -5687,6 +5888,11 @@
                 renderCtx.fillText(this.pseudo,   drawX + this.width/2, bodyY - 34);
             }
 
+            // ── BOUCLIER DERRIÈRE (au repos, main libre côté dos) ────────────
+            if (this.equippedShield && !this.isBlocking) {
+                drawShield(renderCtx, drawX, bodyY, this.width, this.height, this.facingRight, false);
+            }
+
             // ── CAPE (physique Verlet — même système que les cheveux) ────────
             drawCapeStrands(renderCtx, this.skin, drawX, bodyY, this.width, this.height, this.facingRight, this.vy, this.vx, this.grounded, isMoving);
 
@@ -5827,6 +6033,11 @@
             }
             renderCtx.restore();
 
+            // ── BOUCLIER DEVANT (en blocage) ──────────────────────────────────
+            if (this.equippedShield && this.isBlocking) {
+                drawShield(renderCtx, drawX, bodyY, this.width, this.height, this.facingRight, true);
+            }
+
             // ── ROUE D'ARMES (rendu canvas au-dessus du personnage) ───────────
             if (this._wheelOpen && this.weapons && this.weapons.length > 0) {
                 const _wcx = drawX + this.width / 2;
@@ -5882,6 +6093,23 @@
                     }
                 });
                 renderCtx.restore();
+            }
+
+            // ── JAUGE DE BLOCAGE (au-dessus de la barre de vie) ─────────────
+            if (this.equippedShield && this.isBlocking) {
+                const gW = this.width + 10;
+                const gX = this.x - 5;
+                const gY = this.y - 32;
+                renderCtx.fillStyle = 'rgba(0,0,0,0.7)';
+                renderCtx.fillRect(gX, gY, gW, 5);
+                const durPct = this.blockDurability / this.blockMaxDurability;
+                const shieldColor = durPct > 0.5 ? '#4fc3f7' : durPct > 0.25 ? '#FBD000' : '#E52521';
+                renderCtx.fillStyle = shieldColor;
+                renderCtx.fillRect(gX + 1, gY + 1, Math.max(0, (gW - 2) * durPct), 3);
+                renderCtx.fillStyle = shieldColor;
+                renderCtx.font = 'bold 9px "Rajdhani", sans-serif';
+                renderCtx.textAlign = 'center';
+                renderCtx.fillText('🛡️', this.x + this.width / 2, gY - 1);
             }
 
             // Barre de vie
@@ -8284,6 +8512,17 @@
         player.skin = SKINS[currentSkinIndex];
         player.weapons = [player.skin.weapon || 'sword'];
         player.equippedSlot = 0;
+        // Bouclier en bois de base (uniquement si arme 1 main)
+        const _startWep = player.skin.weapon || 'sword';
+        if (!(WEAPON_DATA[_startWep]?.twoHanded ?? false)) {
+            player.equippedShield = 'wooden_shield';
+            player.blockMaxDurability = SHIELD_DATA['wooden_shield']?.maxDurability ?? 100;
+            player.blockDurability = player.blockMaxDurability;
+        } else {
+            player.equippedShield = null;
+            player.blockDurability = 0;
+            player.blockMaxDurability = 0;
+        }
         player.reset();
         player.pseudo = localStorage.getItem('sckt_pseudo') || document.getElementById('pseudoInput').value || "Héros";
         const hudPseudo = document.getElementById('hud-pseudo');

@@ -1455,10 +1455,10 @@
         if (!email) { errorEl.innerText = 'Saisis ton adresse email'; return; }
         btn.disabled = true; btn.innerText = '...';
         try {
-            await fetch('/api/forgot-password', {
+            await fetch('/api/password-reset', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
+                body: JSON.stringify({ action: 'forgot', email })
             });
             errorEl.className = 'auth-success';
             errorEl.innerText = '✅ Si cet email est enregistré, tu recevras un lien dans quelques minutes.';
@@ -1481,10 +1481,10 @@
         if (pwd !== pwd2)   { errorEl.innerText = 'Les mots de passe ne correspondent pas'; return; }
         btn.disabled = true; btn.innerText = '...';
         try {
-            const res  = await fetch('/api/reset-password', {
+            const res  = await fetch('/api/password-reset', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: _resetToken, newPassword: pwd })
+                body: JSON.stringify({ action: 'reset', token: _resetToken, newPassword: pwd })
             });
             const data = await res.json();
             if (!res.ok) {

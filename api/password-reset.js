@@ -6,9 +6,7 @@ const redis = new Redis({
     token: process.env.UPSTASH_REDIS_KV_REST_API__KV_REST_API_TOKEN,
 });
 
-export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).end();
-
+async function handleForgot(req, res) {
     const { email } = req.body ?? {};
     if (!email || typeof email !== 'string') {
         return res.status(400).json({ error: 'Email requis' });
@@ -70,4 +68,45 @@ export default async function handler(req, res) {
     });
 
     return res.status(200).json({ ok: true });
+}
+
+async function handleReset(req, res) {
+    const { token, newPassword } = req.body ?? {};
+    if (!token || !newPassword) {
+        return res.status(400).json({ error: 'Paramètres manquants' });
+    }
+    if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'Mot de passe trop court (6 caractères minimum)' });
+    }
+
+    const pseudo = await redis.get(`reset:${token}`);
+    if (!pseudo) {
+        return res.status(400).json({ error: 'Lien invalide ou expiré' });
+    }
+
+    const userKey = `user:${pseudo.toLowerCase()}`;
+    const raw = await redis.get(userKey);
+    if (!raw) return res.status(404).json({ error: 'Utilisateur introuvable' });
+
+    const user = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    const salt = process.env.AUTH_SALT ?? 'sckt_default_salt_change_me';
+    const hash = crypto.createHash('sha256').update(newPassword + salt).digest('hex');
+
+    user.hash = hash;
+    await redis.set(userKey, JSON.stringify(user));
+    await redis.del(`reset:${token}`);
+
+    const sessionToken = crypto.randomBytes(32).toString('hex');
+    await redis.set(`token:${sessionToken}`, user.pseudo, { ex: 604800 });
+
+    return res.status(200).json({ ok: true, token: sessionToken, pseudo: user.pseudo });
+}
+
+export default async function handler(req, res) {
+    if (req.method !== 'POST') return res.status(405).end();
+
+    const { action } = req.body ?? {};
+    if (action === 'forgot') return handleForgot(req, res);
+    if (action === 'reset')  return handleReset(req, res);
+    return res.status(400).json({ error: 'Action invalide' });
 }

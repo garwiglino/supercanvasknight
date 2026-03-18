@@ -6096,11 +6096,24 @@
 
             // ── ARME (drawWeapon) ─────────────────────────────────────────────
             renderCtx.save();
-            const _handX = this.facingRight ? drawX + this.width/2 + 10 : drawX + this.width/2 - 10;
-            const _handY = bodyY + this.height * (_wp==='hammer' ? 0.45 : _wp==='bow' ? 0.4 : 0.55);
+            const _isParrying = this.parryAnim > 0 && (_wp === 'sword' || _wp === 'hammer');
+            const _pE = _isParrying ? Math.sin((1 - this.parryAnim / 10) * Math.PI) : 0;
+            // En parade : main avancée vers l'avant + légèrement remontée
+            const _parryHandOffX = _isParrying ? (this.facingRight ? 1 : -1) * _pE * 12 : 0;
+            const _parryHandOffY = _isParrying ? -_pE * 8 : 0;
+            const _handX = (this.facingRight ? drawX + this.width/2 + 10 : drawX + this.width/2 - 10) + _parryHandOffX;
+            const _handY = bodyY + this.height * (_wp==='hammer' ? 0.45 : _wp==='bow' ? 0.4 : 0.55) + _parryHandOffY;
             renderCtx.translate(_handX, _handY);
             if (!this.facingRight) renderCtx.scale(-1, 1);
-            {
+            if (_isParrying) {
+                // Épée : lame ramenée horizontalement en garde croisée (block haut)
+                // Marteau : marteau balancé vers l'extérieur en parade horizontale
+                const _parryRot = _wp === 'sword'
+                    ? (-Math.PI / 6) + _pE * (Math.PI * 0.65)   // idle → croix horizontale
+                    : (-Math.PI * 0.15) - _pE * (Math.PI * 0.5); // idle → balayage horizontal
+                renderCtx.rotate(_parryRot);
+                drawWeapon(renderCtx, _wp, false, 0, 0, this.skin);
+            } else {
                 const dur = this._attackDuration || 10;
                 const _prog = this.isAttacking ? (1 - this.attackTimer / dur) : 0;
                 drawWeapon(renderCtx, _wp, this.isAttacking, this.comboStep, _prog, this.skin);
@@ -6541,8 +6554,8 @@
     // ── Coups critiques ───────────────────────────────────────────────────
     const CRIT_CHANCE        = 0.15; // 15 % de chance
     const CRIT_MULTIPLIER    = 2.0;
-    const PARRY_WINDOW_SKEL  = 18;  // frames de fenêtre de parade — squelette
-    const PARRY_WINDOW_GOB   = 14;  // frames de fenêtre de parade — goblin
+    const PARRY_WINDOW_SKEL  = 10;  // frames de fenêtre de parade — squelette
+    const PARRY_WINDOW_GOB   = 8;   // frames de fenêtre de parade — goblin
     const PARRY_STUN_FRAMES  = 200; // durée étourdissement (~3.3 s)
     const PARRY_RANGE        = 105; // portée de parade (px)
 
@@ -7120,15 +7133,21 @@
 
             // ── TÉLÉGRAPHE D'ATTAQUE (!) ──────────────────────────────────
             if (this.windupTimer > 0) {
-                const _blink = Math.floor(Date.now() / 80) % 2 === 0;
+                const _blink = Math.floor(Date.now() / 60) % 2 === 0;
                 if (_blink) {
-                    const _alpha = this.windupTimer / PARRY_WINDOW_SKEL;
+                    const _cx = this.x + this.width / 2, _cy = this.y - 38;
                     ctx.save();
-                    ctx.globalAlpha = 0.5 + _alpha * 0.5;
+                    ctx.globalAlpha = 0.92;
+                    ctx.fillStyle = '#B71C1C';
+                    ctx.beginPath(); ctx.arc(_cx, _cy, 13, 0, Math.PI * 2); ctx.fill();
                     ctx.fillStyle = '#FF5252';
-                    ctx.font = 'bold 16px sans-serif';
+                    ctx.beginPath(); ctx.arc(_cx, _cy, 11, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 20px sans-serif';
                     ctx.textAlign = 'center';
-                    ctx.fillText('!', this.x + this.width / 2, this.y - 26);
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('!', _cx, _cy + 1);
+                    ctx.textBaseline = 'alphabetic';
                     ctx.restore();
                 }
             }
@@ -7598,15 +7617,21 @@
 
             // ── TÉLÉGRAPHE D'ATTAQUE (!) ──────────────────────────────────
             if (this.windupTimer > 0) {
-                const _blink = Math.floor(Date.now() / 70) % 2 === 0;
+                const _blink = Math.floor(Date.now() / 55) % 2 === 0;
                 if (_blink) {
-                    const _alpha = this.windupTimer / PARRY_WINDOW_GOB;
+                    const _cx = this.x + this.width / 2, _cy = this.y - 36;
                     ctx.save();
-                    ctx.globalAlpha = 0.5 + _alpha * 0.5;
+                    ctx.globalAlpha = 0.92;
+                    ctx.fillStyle = '#B71C1C';
+                    ctx.beginPath(); ctx.arc(_cx, _cy, 12, 0, Math.PI * 2); ctx.fill();
                     ctx.fillStyle = '#FF5252';
-                    ctx.font = 'bold 14px sans-serif';
+                    ctx.beginPath(); ctx.arc(_cx, _cy, 10, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 18px sans-serif';
                     ctx.textAlign = 'center';
-                    ctx.fillText('!', this.x + this.width / 2, this.y - 26);
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('!', _cx, _cy + 1);
+                    ctx.textBaseline = 'alphabetic';
                     ctx.restore();
                 }
             }

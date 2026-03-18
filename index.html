@@ -1366,6 +1366,7 @@
                     <div class="opt-section-title">Combat</div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Attaquer</span><button class="opt-bind-key" onclick="startRebind('attack',this)"></button></div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Bloquer</span><button class="opt-bind-key" onclick="startRebind('block',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Parade</span><button class="opt-bind-key" onclick="startRebind('parry',this)"></button></div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Dash</span><button class="opt-bind-key" onclick="startRebind('dash',this)"></button></div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Capacité</span><button class="opt-bind-key" onclick="startRebind('ability',this)"></button></div>
                     <div class="opt-bind-row"><span class="opt-bind-label">Interagir</span><button class="opt-bind-key" onclick="startRebind('interact',this)"></button></div>
@@ -1882,6 +1883,11 @@
                 }
             }
 
+            // ── Attaque ennemie sur le joueur guest ──────────────────────
+            if (event.type === 'enemy-attack-player' && gameMode === 'guest' && player && player.hp > 0) {
+                player.takeDamage(event.damage, event.dir);
+            }
+
             // ── Pièce collectée par le partenaire ────────────────────────
             if (event.type === 'coin-collected') {
                 const c = coins[event.index];
@@ -1948,7 +1954,7 @@
         // Sync ennemis depuis le host (lookup par id stable)
         socket.on('enemy-sync', (data) => {
             if (gameMode !== 'guest') return;
-            data.forEach(({ id, x, y, hp, state, facingRight, vx, vy, hurtTimer, attackTimer, grounded }) => {
+            data.forEach(({ id, x, y, hp, state, facingRight, vx, vy, hurtTimer, attackTimer, windupTimer, stunnedTimer, grounded }) => {
                 const e = enemies.find(en => en.id === id);
                 if (!e || e.state === 'DEAD') return;
                 e.targetX      = x;
@@ -1960,6 +1966,8 @@
                 e.vy           = vy;
                 e.hurtTimer    = hurtTimer ?? 0;
                 e.attackTimer  = attackTimer ?? 0;
+                e.windupTimer  = windupTimer ?? 0;
+                e.stunnedTimer = stunnedTimer ?? 0;
                 e.grounded     = grounded ?? false;
             });
         });
@@ -3656,13 +3664,14 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, interact: false, block: false };
+    const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, interact: false, block: false, parry: false };
 
     // ── Keybinds remappables ───────────────────────────────────────
     const KEYBINDS_DEFAULT = {
         right: 'KeyD', left: 'KeyA', up: 'Space',
         attack: 'Digit0', block: 'Digit9', dash: 'ShiftLeft', ability: 'KeyR',
-        interact: 'KeyE', chat: 'KeyT', menu: 'KeyI', quests: 'KeyQ', weapons: 'KeyP', shield: 'Digit7'
+        interact: 'KeyE', chat: 'KeyT', menu: 'KeyI', quests: 'KeyQ', weapons: 'KeyP', shield: 'Digit7',
+        parry: 'Numpad2'
     };
     let _keybinds = { ...KEYBINDS_DEFAULT };
     (() => {
@@ -3815,6 +3824,7 @@
         if (e.code === 'ArrowUp' || isKey(e,'up')) keys.up = true;
         if (e.code === 'Numpad0' || isKey(e,'attack')) keys.attack = true;
         if (isKey(e,'block')) keys.block = true;
+        if (isKey(e,'parry')) keys.parry = true;
         if (e.code === 'ShiftRight' || isKey(e,'dash')) keys.dash = true;
         if (isKey(e,'ability')) keys.ability = true;
         if (e.code === 'Numpad8' || e.code === 'Digit8') { keys.weaponWheel = true; e.preventDefault(); }
@@ -3842,6 +3852,7 @@
         if (e.code === 'ArrowUp' || isKey(e,'up')) keys.up = false;
         if (e.code === 'Numpad0' || isKey(e,'attack')) keys.attack = false;
         if (isKey(e,'block')) keys.block = false;
+        if (isKey(e,'parry')) keys.parry = false;
         if (e.code === 'ShiftRight' || isKey(e,'dash')) keys.dash = false;
         if (isKey(e,'ability')) keys.ability = false;
         if (e.code === 'Numpad8' || e.code === 'Digit8') keys.weaponWheel = false;
@@ -4245,6 +4256,27 @@
         player.blockMaxDurability = 0;
         renderShields();
         showNotification('🛡️ Bouclier retiré.', '#7a8ba0');
+    }
+
+    function triggerParry(enemy) {
+        enemy.windupTimer = 0;
+        enemy.attackTimer = 0;
+        enemy.state = 'STUNNED';
+        enemy.stunnedTimer = PARRY_STUN_FRAMES;
+        enemy.hp = 1; // mort au premier coup
+        const dir = enemy.x > player.x ? 1 : -1;
+        enemy.vx = dir * 5;
+        enemy.vy = -3;
+        // VFX : étincelles bleu-gris
+        const sx = (player.x + player.width / 2 + enemy.x + enemy.width / 2) / 2;
+        const sy = (player.y + player.height * 0.4 + enemy.y + enemy.height * 0.4) / 2;
+        for (let i = 0; i < 10; i++) {
+            const a = (i / 10) * Math.PI * 2;
+            player.abilityVfx.push({ x: sx, y: sy, vx: Math.cos(a) * 5, vy: Math.sin(a) * 4 - 1, life: 20, maxLife: 20, color: i % 2 === 0 ? '#90CAF9' : '#CFD8DC', r: 2 + (i % 3), grav: 0.2 });
+        }
+        SFX.hit('stone');
+        triggerShake(4, 6);
+        showNotification('⚡ Parade !', '#90CAF9');
     }
 
     function menuEquipWeapon(slot) {
@@ -5178,7 +5210,11 @@
             if (this.blockDurability === undefined) this.blockDurability = 0;
             this.isBlocking = false;
             this.lastBlockKey = false;
-            
+            // ── PARADE ────────────────────────────────────────────────────
+            this.parryCooldown = 0;
+            this.parryAnim = 0;
+            this.lastParryKey = false;
+
             this.respawn();
         }
 
@@ -5656,6 +5692,28 @@
                 }
             } else {
                 this.isBlocking = false;
+            }
+
+            // ── PARADE ─────────────────────────────────────────────────────
+            if (this.parryCooldown > 0) this.parryCooldown--;
+            if (this.parryAnim > 0) this.parryAnim--;
+            const _justParry = keys.parry && !this.lastParryKey;
+            this.lastParryKey = keys.parry;
+            const _parryWepId = this._equippedWeaponId();
+            const _canParryWep = !_parryWepId || (_parryWepId !== 'bow' && _parryWepId !== 'staff');
+            if (_justParry && !this.isBlocking && !this.isAttacking && this.parryCooldown === 0 && _canParryWep) {
+                let _parried = false;
+                for (const _pe of enemies) {
+                    if (_pe.state !== 'DEAD' && _pe.state !== 'DYING' && _pe.state !== 'STUNNED' && (_pe.windupTimer ?? 0) > 0) {
+                        if (Math.abs((this.x + this.width / 2) - (_pe.x + _pe.width / 2)) < PARRY_RANGE) {
+                            triggerParry(_pe);
+                            _parried = true;
+                            break;
+                        }
+                    }
+                }
+                this.parryAnim = 10;
+                this.parryCooldown = _parried ? 15 : 8;
             }
 
             let justPressedAttack = keys.attack && !this.lastAttackKey && !this.isBlocking;
@@ -6136,6 +6194,23 @@
                 renderCtx.fillRect(this.x + 1, this.y - 21, ((this.width-2)*this.hp)/this.maxHp, 4);
             }
 
+            // ── FLASH DE PARADE ──────────────────────────────────────────────
+            if (this.parryAnim > 0) {
+                const _pAlpha = this.parryAnim / 10;
+                const _pX = this.facingRight ? drawX + this.width : drawX;
+                renderCtx.save();
+                renderCtx.globalAlpha = _pAlpha * 0.55;
+                renderCtx.fillStyle = '#90CAF9';
+                renderCtx.beginPath();
+                renderCtx.arc(_pX, bodyY + this.height * 0.4, 22 - (10 - this.parryAnim) * 1.5, 0, Math.PI * 2);
+                renderCtx.fill();
+                renderCtx.globalAlpha = _pAlpha * 0.9;
+                renderCtx.strokeStyle = '#E3F2FD';
+                renderCtx.lineWidth = 2;
+                renderCtx.stroke();
+                renderCtx.restore();
+            }
+
             // ── AURA BOUCLIER SÉRAPHIN ────────────────────────────────────────
             if (this.shieldActive && this.abilityTimer > 0) {
                 const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 80);
@@ -6464,8 +6539,12 @@
     let _enemyIdCounter = 0; // ID stable indépendant de la position dans le tableau
 
     // ── Coups critiques ───────────────────────────────────────────────────
-    const CRIT_CHANCE      = 0.15; // 15 % de chance
-    const CRIT_MULTIPLIER  = 2.0;
+    const CRIT_CHANCE        = 0.15; // 15 % de chance
+    const CRIT_MULTIPLIER    = 2.0;
+    const PARRY_WINDOW_SKEL  = 18;  // frames de fenêtre de parade — squelette
+    const PARRY_WINDOW_GOB   = 14;  // frames de fenêtre de parade — goblin
+    const PARRY_STUN_FRAMES  = 200; // durée étourdissement (~3.3 s)
+    const PARRY_RANGE        = 105; // portée de parade (px)
 
     // ── Chiffres de dégâts flottants ──────────────────────────────────────
     let damageNumbers = [];
@@ -6639,6 +6718,8 @@
             this.hp = this.maxHp;
             this.hurtTimer = 0;
             this.attackTimer = 0;
+            this.windupTimer = 0;
+            this.stunnedTimer = 0;
             this.state = 'PATROL';
             this.currentPlatform = null;
             this.deathTimer = 0;
@@ -6721,86 +6802,108 @@
                     }
                 }
 
-                // ── Dégâts de l'ennemi sur le joueur guest (état reçu du host) ──
-                if (this.state === 'ATTACK' && this.attackTimer === 1 &&
-                        Math.abs((player.x+25)-(this.x+25)) < 70 &&
-                        Math.abs(player.y - this.y) < 50 && player.hp > 0) {
-                    player.takeDamage(20, this.facingRight ? 1 : -1, this);
-                }
+                // ── Dégâts ennemis sur joueur guest : gérés via socket 'enemy-attack-player' ──
                 return;
+            }
+
+            // ── ÉTAT ÉTOURDI (STUNNED) ─────────────────────────────────────
+            if (this.state === 'STUNNED') {
+                if (this.stunnedTimer > 0) this.stunnedTimer--;
+                else { this.state = 'PATROL'; if (this.hp <= 1) this.hp = 8; }
+                this.vy += this.gravity; if (this.vy > 15) this.vy = 15;
+                this.y += this.vy; this.vx *= 0.80; this.x += this.vx;
+                this.grounded = false;
+                for (let p of platforms) {
+                    if (this.x < p.x + p.width && this.x + this.width > p.x &&
+                        this.y < p.y + p.height && this.y + this.height > p.y && this.vy > 0) {
+                        this.y = p.y - this.height; this.grounded = true; this.vy = 0;
+                    }
+                }
+                // Le joueur peut tuer l'ennemi étourdi (hp=1 → mort au premier coup)
+                // → géré par la section hit detection en bas, on ne return pas
             }
 
             if (this.hurtTimer > 0) this.hurtTimer--;
             if (this.attackTimer > 0) this.attackTimer--;
 
-            this.vy += this.gravity;
-            if (this.vy > 15) this.vy = 15;
-            this.y += this.vy;
-            this.grounded = false;
-            
-            let deathY = levelDeadZone;
-            if (this.y > deathY) {
-                this.state = 'DEAD';
-                return;
+            // ── WINDUP : compte à rebours avant que le coup parte ──────────
+            if (this.windupTimer > 0) {
+                this.windupTimer--;
+                if (this.windupTimer === 0 && this.state === 'ATTACK') {
+                    // Coup : dégâts si le joueur est encore à portée
+                    if (Math.abs((player.x + 25) - (this.x + 25)) < 80 &&
+                        Math.abs(player.y - this.y) < 55 && player.hp > 0) {
+                        player.takeDamage(20, this.facingRight ? 1 : -1, this);
+                        if (socket && socket.connected && roomCode && gameMode === 'host') {
+                            socket.emit('game-event', { type: 'enemy-attack-player', damage: 20, dir: this.facingRight ? 1 : -1 });
+                        }
+                    }
+                    this.attackTimer = 42; // cooldown post-coup
+                }
             }
-            
-            this.currentPlatform = null;
-            for (let p of platforms) {
-                if (this.x < p.x + p.width && this.x + this.width > p.x &&
-                    this.y < p.y + p.height && this.y + this.height > p.y) {
-                    if (this.vy > 0) {
-                        this.y = p.y - this.height;
-                        this.grounded = true;
-                        this.vy = 0;
-                        this.currentPlatform = p; 
+
+            if (this.state !== 'STUNNED') {
+                this.vy += this.gravity;
+                if (this.vy > 15) this.vy = 15;
+                this.y += this.vy;
+                this.grounded = false;
+
+                if (this.y > levelDeadZone) { this.state = 'DEAD'; return; }
+
+                this.currentPlatform = null;
+                for (let p of platforms) {
+                    if (this.x < p.x + p.width && this.x + this.width > p.x &&
+                        this.y < p.y + p.height && this.y + this.height > p.y) {
+                        if (this.vy > 0) {
+                            this.y = p.y - this.height; this.grounded = true; this.vy = 0;
+                            this.currentPlatform = p;
+                        }
                     }
                 }
             }
 
-            let distToPlayer = Math.abs((player.x + player.width/2) - (this.x + this.width/2));
-            let playerIsAlive = player.hp > 0;
-            let intendedVx = 0;
-            
-            if (this.hurtTimer > 20) {
-                intendedVx = this.vx;
-            } else if (distToPlayer < 70 && Math.abs(player.y - this.y) < 50 && playerIsAlive) {
-                this.state = 'ATTACK';
-                this.facingRight = player.x > this.x;
-                intendedVx = 0; 
-                
-                if (this.attackTimer === 0) {
-                    this.attackTimer = 60;
-                    player.takeDamage(20, this.facingRight ? 1 : -1, this);
-                }
-            } else if (distToPlayer < 350 && Math.abs(player.y - this.y) < 100 && playerIsAlive) {
-                this.state = 'CHASE';
-                this.facingRight = player.x > this.x;
-                intendedVx = this.facingRight ? this.speed * 1.5 : -this.speed * 1.5;
-            } else {
-                this.state = 'PATROL';
-                if (this.x < this.minX) this.facingRight = true;
-                if (this.x > this.maxX) this.facingRight = false;
-                intendedVx = this.facingRight ? this.speed : -this.speed;
-            }
+            if (this.state !== 'STUNNED') {
+                let distToPlayer = Math.abs((player.x + player.width/2) - (this.x + this.width/2));
+                let playerIsAlive = player.hp > 0;
+                let intendedVx = 0;
 
-            if (this.grounded && this.currentPlatform && this.hurtTimer <= 20) {
-                let nextX = this.x + intendedVx;
-                let platformLeft = this.currentPlatform.x;
-                let platformRight = this.currentPlatform.x + this.currentPlatform.width;
-
-                if (nextX < platformLeft) {
+                if (this.hurtTimer > 20) {
+                    intendedVx = this.vx;
+                } else if (this.state === 'ATTACK') {
+                    // En train d'attaquer (windup ou cooldown) : sur place
                     intendedVx = 0;
-                    this.x = platformLeft; 
-                    if (this.state === 'PATROL') this.facingRight = true; 
-                } else if (nextX + this.width > platformRight) {
+                    this.facingRight = player.x > this.x;
+                    if (this.attackTimer === 0 && this.windupTimer === 0) {
+                        this.state = 'PATROL'; // prêt à réengager
+                    }
+                } else if (distToPlayer < 70 && Math.abs(player.y - this.y) < 50 && playerIsAlive) {
+                    if (this.attackTimer === 0 && this.windupTimer === 0) {
+                        this.state = 'ATTACK';
+                        this.facingRight = player.x > this.x;
+                        this.windupTimer = PARRY_WINDOW_SKEL; // démarre le windup
+                    }
                     intendedVx = 0;
-                    this.x = platformRight - this.width; 
-                    if (this.state === 'PATROL') this.facingRight = false; 
+                } else if (distToPlayer < 350 && Math.abs(player.y - this.y) < 100 && playerIsAlive) {
+                    this.state = 'CHASE';
+                    this.facingRight = player.x > this.x;
+                    intendedVx = this.facingRight ? this.speed * 1.5 : -this.speed * 1.5;
+                } else {
+                    this.state = 'PATROL';
+                    if (this.x < this.minX) this.facingRight = true;
+                    if (this.x > this.maxX) this.facingRight = false;
+                    intendedVx = this.facingRight ? this.speed : -this.speed;
                 }
-            }
 
-            this.vx = intendedVx;
-            this.x += this.vx;
+                if (this.grounded && this.currentPlatform && this.hurtTimer <= 20) {
+                    let nextX = this.x + intendedVx;
+                    let pL = this.currentPlatform.x, pR = this.currentPlatform.x + this.currentPlatform.width;
+                    if (nextX < pL) { intendedVx = 0; this.x = pL; if (this.state === 'PATROL') this.facingRight = true; }
+                    else if (nextX + this.width > pR) { intendedVx = 0; this.x = pR - this.width; if (this.state === 'PATROL') this.facingRight = false; }
+                }
+
+                this.vx = intendedVx;
+                this.x += this.vx;
+            }
             
             // --- GESTION DES DEGÂTS ET GENERATION DU SANG ---
             if (player.attackHitbox && !player.hasHit.has(this)) {
@@ -6808,7 +6911,12 @@
                     this.x + this.width > player.attackHitbox.x &&
                     this.y < player.attackHitbox.y + player.attackHitbox.height &&
                     this.y + this.height > player.attackHitbox.y) {
-                    
+                    // Frappe pendant le windup → annule l'attaque
+                    if (this.state === 'ATTACK' && this.windupTimer > 0) {
+                        this.windupTimer = 0;
+                        this.attackTimer = 0;
+                        this.state = 'PATROL';
+                    }
                     const _wdmg2 = WEAPON_CONFIG[player._equippedWeaponId?.()??player.skin?.weapon??'sword']?.dmg || [15,15,15,25];
                     const _baseDmg = (_wdmg2[player.comboStep] || 15) + (player.bonusDamage || 0);
                     const isCrit = Math.random() < CRIT_CHANCE;
@@ -7009,6 +7117,37 @@
                 ctx.fillStyle = '#ff0000';
                 ctx.fillRect(this.x + 1, this.y - 21, ((this.width - 2) * this.hp) / this.maxHp, 4);
             }
+
+            // ── TÉLÉGRAPHE D'ATTAQUE (!) ──────────────────────────────────
+            if (this.windupTimer > 0) {
+                const _blink = Math.floor(Date.now() / 80) % 2 === 0;
+                if (_blink) {
+                    const _alpha = this.windupTimer / PARRY_WINDOW_SKEL;
+                    ctx.save();
+                    ctx.globalAlpha = 0.5 + _alpha * 0.5;
+                    ctx.fillStyle = '#FF5252';
+                    ctx.font = 'bold 16px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('!', this.x + this.width / 2, this.y - 26);
+                    ctx.restore();
+                }
+            }
+
+            // ── SPIRALE ÉTOURDISSEMENT ────────────────────────────────────
+            if (this.state === 'STUNNED') {
+                const _t = Date.now() / 200;
+                ctx.save();
+                for (let i = 0; i < 3; i++) {
+                    const _a = _t + (i / 3) * Math.PI * 2;
+                    const _sx = this.x + this.width / 2 + Math.cos(_a) * 14;
+                    const _sy = this.y - 20 + Math.sin(_a) * 5;
+                    ctx.fillStyle = i === 0 ? '#FFD700' : i === 1 ? '#FFF176' : '#FFAB00';
+                    ctx.beginPath();
+                    ctx.arc(_sx, _sy, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
         }
     }
 
@@ -7034,6 +7173,8 @@
             this.hp = this.maxHp;
             this.hurtTimer = 0;
             this.attackTimer = 0;
+            this.windupTimer = 0;
+            this.stunnedTimer = 0;
             this.deathTimer = 0;
             this.state = 'PATROL';
             this.currentPlatform = null;
@@ -7112,72 +7253,102 @@
                     }
                 }
 
-                if (this.state === 'ATTACK' && this.attackTimer === 1 &&
-                    Math.abs((player.x + 19) - (this.x + 19)) < 60 &&
-                    Math.abs(player.y - this.y) < 45 && player.hp > 0) {
-                    player.takeDamage(12, this.facingRight ? 1 : -1, this);
-                }
+                // ── Dégâts goblin sur joueur guest : gérés via socket 'enemy-attack-player' ──
                 return;
+            }
+
+            // ── ÉTAT ÉTOURDI ──────────────────────────────────────────────
+            if (this.state === 'STUNNED') {
+                if (this.stunnedTimer > 0) this.stunnedTimer--;
+                else { this.state = 'PATROL'; if (this.hp <= 1) this.hp = 6; }
+                this.vy += this.gravity; if (this.vy > 15) this.vy = 15;
+                this.y += this.vy; this.vx *= 0.80; this.x += this.vx;
+                this.grounded = false;
+                for (let p of platforms) {
+                    if (this.x < p.x + p.width && this.x + this.width > p.x &&
+                        this.y < p.y + p.height && this.y + this.height > p.y && this.vy > 0) {
+                        this.y = p.y - this.height; this.grounded = true; this.vy = 0;
+                    }
+                }
             }
 
             if (this.hurtTimer > 0) this.hurtTimer--;
             if (this.attackTimer > 0) this.attackTimer--;
 
-            this.vy += this.gravity;
-            if (this.vy > 15) this.vy = 15;
-            this.y += this.vy;
-            this.grounded = false;
+            // ── WINDUP ─────────────────────────────────────────────────────
+            if (this.windupTimer > 0) {
+                this.windupTimer--;
+                if (this.windupTimer === 0 && this.state === 'ATTACK') {
+                    if (Math.abs((player.x + 19) - (this.x + 19)) < 68 &&
+                        Math.abs(player.y - this.y) < 50 && player.hp > 0) {
+                        player.takeDamage(12, this.facingRight ? 1 : -1, this);
+                        if (socket && socket.connected && roomCode && gameMode === 'host') {
+                            socket.emit('game-event', { type: 'enemy-attack-player', damage: 12, dir: this.facingRight ? 1 : -1 });
+                        }
+                    }
+                    this.attackTimer = 30;
+                }
+            }
 
-            if (this.y > levelDeadZone) { this.state = 'DEAD'; return; }
+            if (this.state !== 'STUNNED') {
+                this.vy += this.gravity;
+                if (this.vy > 15) this.vy = 15;
+                this.y += this.vy;
+                this.grounded = false;
 
-            this.currentPlatform = null;
-            for (let p of platforms) {
-                if (this.x < p.x + p.width && this.x + this.width > p.x &&
-                    this.y < p.y + p.height && this.y + this.height > p.y) {
-                    if (this.vy > 0) {
-                        this.y = p.y - this.height;
-                        this.grounded = true;
-                        this.vy = 0;
-                        this.currentPlatform = p;
+                if (this.y > levelDeadZone) { this.state = 'DEAD'; return; }
+
+                this.currentPlatform = null;
+                for (let p of platforms) {
+                    if (this.x < p.x + p.width && this.x + this.width > p.x &&
+                        this.y < p.y + p.height && this.y + this.height > p.y) {
+                        if (this.vy > 0) {
+                            this.y = p.y - this.height; this.grounded = true; this.vy = 0;
+                            this.currentPlatform = p;
+                        }
                     }
                 }
             }
 
-            let distToPlayer = Math.abs((player.x + player.width / 2) - (this.x + this.width / 2));
-            let playerIsAlive = player.hp > 0;
-            let intendedVx = 0;
+            if (this.state !== 'STUNNED') {
+                let distToPlayer = Math.abs((player.x + player.width / 2) - (this.x + this.width / 2));
+                let playerIsAlive = player.hp > 0;
+                let intendedVx = 0;
 
-            if (this.hurtTimer > 18) {
-                intendedVx = this.vx;
-            } else if (distToPlayer < 58 && Math.abs(player.y - this.y) < 45 && playerIsAlive) {
-                this.state = 'ATTACK';
-                this.facingRight = player.x > this.x;
-                intendedVx = 0;
-                if (this.attackTimer === 0) {
-                    this.attackTimer = 42;
-                    player.takeDamage(12, this.facingRight ? 1 : -1, this);
+                if (this.hurtTimer > 18) {
+                    intendedVx = this.vx;
+                } else if (this.state === 'ATTACK') {
+                    intendedVx = 0;
+                    this.facingRight = player.x > this.x;
+                    if (this.attackTimer === 0 && this.windupTimer === 0) this.state = 'PATROL';
+                } else if (distToPlayer < 58 && Math.abs(player.y - this.y) < 45 && playerIsAlive) {
+                    if (this.attackTimer === 0 && this.windupTimer === 0) {
+                        this.state = 'ATTACK';
+                        this.facingRight = player.x > this.x;
+                        this.windupTimer = PARRY_WINDOW_GOB;
+                    }
+                    intendedVx = 0;
+                } else if (distToPlayer < 300 && Math.abs(player.y - this.y) < 90 && playerIsAlive) {
+                    this.state = 'CHASE';
+                    this.facingRight = player.x > this.x;
+                    intendedVx = this.facingRight ? this.speed * 1.7 : -this.speed * 1.7;
+                } else {
+                    this.state = 'PATROL';
+                    if (this.x < this.minX) this.facingRight = true;
+                    if (this.x > this.maxX) this.facingRight = false;
+                    intendedVx = this.facingRight ? this.speed : -this.speed;
                 }
-            } else if (distToPlayer < 300 && Math.abs(player.y - this.y) < 90 && playerIsAlive) {
-                this.state = 'CHASE';
-                this.facingRight = player.x > this.x;
-                intendedVx = this.facingRight ? this.speed * 1.7 : -this.speed * 1.7;
-            } else {
-                this.state = 'PATROL';
-                if (this.x < this.minX) this.facingRight = true;
-                if (this.x > this.maxX) this.facingRight = false;
-                intendedVx = this.facingRight ? this.speed : -this.speed;
-            }
 
-            if (this.grounded && this.currentPlatform && this.hurtTimer <= 18) {
-                let nextX = this.x + intendedVx;
-                let pL = this.currentPlatform.x;
-                let pR = this.currentPlatform.x + this.currentPlatform.width;
-                if (nextX < pL) { intendedVx = 0; this.x = pL; if (this.state === 'PATROL') this.facingRight = true; }
-                else if (nextX + this.width > pR) { intendedVx = 0; this.x = pR - this.width; if (this.state === 'PATROL') this.facingRight = false; }
-            }
+                if (this.grounded && this.currentPlatform && this.hurtTimer <= 18) {
+                    let nextX = this.x + intendedVx;
+                    let pL = this.currentPlatform.x, pR = this.currentPlatform.x + this.currentPlatform.width;
+                    if (nextX < pL) { intendedVx = 0; this.x = pL; if (this.state === 'PATROL') this.facingRight = true; }
+                    else if (nextX + this.width > pR) { intendedVx = 0; this.x = pR - this.width; if (this.state === 'PATROL') this.facingRight = false; }
+                }
 
-            this.vx = intendedVx;
-            this.x += this.vx;
+                this.vx = intendedVx;
+                this.x += this.vx;
+            }
 
             // ── Collision avec le joueur → dégâts ──
             if (player.attackHitbox && !player.hasHit.has(this)) {
@@ -7185,7 +7356,10 @@
                     this.x + this.width > player.attackHitbox.x &&
                     this.y < player.attackHitbox.y + player.attackHitbox.height &&
                     this.y + this.height > player.attackHitbox.y) {
-
+                    // Frappe pendant windup → annule l'attaque
+                    if (this.state === 'ATTACK' && this.windupTimer > 0) {
+                        this.windupTimer = 0; this.attackTimer = 0; this.state = 'PATROL';
+                    }
                     const _wdmg2 = WEAPON_CONFIG[player._equippedWeaponId?.() ?? player.skin?.weapon ?? 'sword']?.dmg || [15, 15, 15, 25];
                     const _baseDmgG = (_wdmg2[player.comboStep] || 15) + (player.bonusDamage || 0);
                     const isCritG = Math.random() < CRIT_CHANCE;
@@ -7420,6 +7594,37 @@
                 ctx.fillRect(this.x, this.y - 22, this.width, 6);
                 ctx.fillStyle = '#22cc44';
                 ctx.fillRect(this.x + 1, this.y - 21, ((this.width - 2) * this.hp) / this.maxHp, 4);
+            }
+
+            // ── TÉLÉGRAPHE D'ATTAQUE (!) ──────────────────────────────────
+            if (this.windupTimer > 0) {
+                const _blink = Math.floor(Date.now() / 70) % 2 === 0;
+                if (_blink) {
+                    const _alpha = this.windupTimer / PARRY_WINDOW_GOB;
+                    ctx.save();
+                    ctx.globalAlpha = 0.5 + _alpha * 0.5;
+                    ctx.fillStyle = '#FF5252';
+                    ctx.font = 'bold 14px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('!', this.x + this.width / 2, this.y - 26);
+                    ctx.restore();
+                }
+            }
+
+            // ── SPIRALE ÉTOURDISSEMENT ────────────────────────────────────
+            if (this.state === 'STUNNED') {
+                const _t = Date.now() / 180;
+                ctx.save();
+                for (let i = 0; i < 3; i++) {
+                    const _a = _t + (i / 3) * Math.PI * 2;
+                    const _sx = this.x + this.width / 2 + Math.cos(_a) * 12;
+                    const _sy = this.y - 18 + Math.sin(_a) * 4;
+                    ctx.fillStyle = i === 0 ? '#FFD700' : i === 1 ? '#FFF176' : '#FFAB00';
+                    ctx.beginPath();
+                    ctx.arc(_sx, _sy, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
             }
         }
     }
@@ -8100,6 +8305,7 @@
                     id: e.id, x: e.x, y: e.y, hp: e.hp, state: e.state,
                     facingRight: e.facingRight, vx: e.vx, vy: e.vy,
                     hurtTimer: e.hurtTimer, attackTimer: e.attackTimer,
+                    windupTimer: e.windupTimer ?? 0, stunnedTimer: e.stunnedTimer ?? 0,
                     grounded: e.grounded
                 })));
                 socket.emit('coin-sync', coins.map((c, i) => ({ i, x: c.x, y: c.y, alive: !c.collected })));

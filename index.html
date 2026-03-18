@@ -1937,6 +1937,20 @@
             if (event.type === 'enemy-hit' && gameMode === 'host') {
                 const e = enemies.find(en => en.id === event.id);
                 if (e && e.state !== 'DEAD' && e.hurtTimer === 0) {
+                    // Vérifier blocage ennemi (frappe de face depuis le guest)
+                    if (e.blockTimer > 0) {
+                        const _faceDir = e.facingRight ? 1 : -1;
+                        if (event.dir === _faceDir) {
+                            // Bloc ! Notifier le guest pour l'effet visuel
+                            socket.emit('game-event', { type: 'enemy-block-vfx',
+                                x: e.facingRight ? e.x + e.width + 4 : e.x - 4,
+                                y: e.y + e.height * 0.35, dir: event.dir });
+                            e.blockTimer = 0;
+                            e.blockCooldown = 300 + Math.floor(Math.random() * 120);
+                            // Ne pas appliquer les dégâts
+                            return; // sort du handler
+                        }
+                    }
                     e.hp -= event.damage;
                     e.hurtTimer = 30;
                     e.vx = event.dir * 8;
@@ -1992,6 +2006,21 @@
             // ── Fin de niveau déclenchée par le partenaire ───────────────
             if (event.type === 'level-complete' && gameState === 'PLAYING') {
                 endGame(event.won);
+            }
+
+            // ── Bloc ennemi confirmé par l'hôte → VFX étincelles guest ──
+            if (event.type === 'enemy-block-vfx') {
+                SFX.hit('stone');
+                for (let _bi = 0; _bi < 8; _bi++) {
+                    const _ba = (_bi / 8) * Math.PI + (event.dir > 0 ? 0 : Math.PI);
+                    player.abilityVfx.push({ x: event.x, y: event.y,
+                        vx: Math.cos(_ba) * (3 + Math.random() * 3),
+                        vy: Math.sin(_ba) * 3 - 1,
+                        life: 14, maxLife: 14,
+                        color: _bi % 2 === 0 ? '#FFF176' : '#FFB300', r: 3, grav: 0.3 });
+                }
+                player.vx = -event.dir * 5;
+                player.vy = -2.5;
             }
 
             // ── XP partagé (hôte → guest) ───────────────────────────
@@ -2081,7 +2110,7 @@
         // Sync ennemis depuis le host (lookup par id stable)
         socket.on('enemy-sync', (data) => {
             if (gameMode !== 'guest') return;
-            data.forEach(({ id, x, y, hp, state, facingRight, vx, vy, hurtTimer, attackTimer, windupTimer, stunnedTimer, grounded }) => {
+            data.forEach(({ id, x, y, hp, state, facingRight, vx, vy, hurtTimer, attackTimer, windupTimer, stunnedTimer, grounded, blockTimer }) => {
                 const e = enemies.find(en => en.id === id);
                 if (!e || e.state === 'DEAD') return;
                 e.targetX      = x;
@@ -2096,6 +2125,7 @@
                 e.windupTimer  = windupTimer ?? 0;
                 e.stunnedTimer = stunnedTimer ?? 0;
                 e.grounded     = grounded ?? false;
+                e.blockTimer   = blockTimer ?? 0;
             });
         });
 
@@ -7456,6 +7486,8 @@
             this.deathTimer = 0;
             this.targetX = x;
             this.targetY = y;
+            this.blockTimer = 0;
+            this.blockCooldown = 0;
         }
 
         update(platforms, player) {
@@ -7556,6 +7588,20 @@
 
             if (this.hurtTimer > 0) this.hurtTimer--;
             if (this.attackTimer > 0) this.attackTimer--;
+
+            // ── BLOCAGE ENNEMI ─────────────────────────────────────────────
+            if (this.blockCooldown > 0) this.blockCooldown--;
+            if (this.blockTimer > 0) {
+                this.blockTimer--;
+                this.vx = 0; // immobile en posture de bloc
+            } else if (this.blockCooldown === 0 && this.windupTimer === 0 &&
+                this.state !== 'ATTACK' && this.state !== 'STUNNED' && this.state !== 'DYING') {
+                const _bDist = Math.hypot((player.x+25)-(this.x+25), (player.y+25)-(this.y+25));
+                if (_bDist < 220 && Math.random() < 0.004) {
+                    this.blockTimer    = 80 + Math.floor(Math.random() * 50);  // 1.3–2.2s
+                    this.blockCooldown = 420 + Math.floor(Math.random() * 180); // 7–10s
+                }
+            }
 
             // ── WINDUP : compte à rebours avant que le coup parte ──────────
             if (this.windupTimer > 0) {
@@ -7717,6 +7763,34 @@
                         this.attackTimer = 0;
                         this.state = 'PATROL';
                     }
+                    // ── Vérification blocage ennemi ──────────────────────────
+                    let _skelBlocked = false;
+                    if (this.blockTimer > 0) {
+                        // Attaque de face ? (joueur frappe dans le sens du regard ennemi)
+                        const _atkDir  = player.facingRight ? 1 : -1;
+                        const _faceDir = this.facingRight  ? 1 : -1;
+                        if (_atkDir === _faceDir) {
+                            _skelBlocked = true;
+                            SFX.hit('stone');
+                            const _bx = this.facingRight ? this.x + this.width + 4 : this.x - 4;
+                            const _by = this.y + this.height * 0.35;
+                            for (let _bi = 0; _bi < 8; _bi++) {
+                                const _ba = (_bi / 8) * Math.PI + (this.facingRight ? 0 : Math.PI);
+                                player.abilityVfx.push({ x: _bx, y: _by,
+                                    vx: Math.cos(_ba) * (3 + Math.random() * 3),
+                                    vy: Math.sin(_ba) * 3 - 1,
+                                    life: 14, maxLife: 14,
+                                    color: _bi % 2 === 0 ? '#FFF176' : '#FFB300', r: 3, grav: 0.3 });
+                            }
+                            player.vx = -_atkDir * 5;
+                            player.vy = -2.5;
+                            player.hasHit.add(this);
+                            this.blockTimer = 0;
+                            this.blockCooldown = 300 + Math.floor(Math.random() * 120);
+                        }
+                        // Si par derrière : le bloc ne tient pas → dommages normaux
+                    }
+                    if (!_skelBlocked) {
                     const _wdmg2 = WEAPON_CONFIG[player._equippedWeaponId?.()??player.skin?.weapon??'sword']?.dmg || [15,15,15,25];
                     const _baseDmg = (_wdmg2[player.comboStep] || 15) + (player.bonusDamage || 0);
                     const isCrit = Math.random() < CRIT_CHANCE;
@@ -7782,6 +7856,7 @@
                             });
                         }
                     }
+                    } // fin if (!_skelBlocked)
                 }
             }
         }
@@ -7870,40 +7945,53 @@
             ctx.fillRect(drawX + pupilOffsetX + (this.facingRight?4:2), bodyY + 8, 2, 2);
 
             ctx.save();
-            let handX = this.facingRight ? drawX + this.width / 2 + 10 : drawX + this.width / 2 - 10;
-            let handY = bodyY + this.height * 0.55;
+            // En posture de bloc : bras tendu vers l'avant
+            const _isBlocking = this.blockTimer > 0;
+            let handX = _isBlocking
+                ? (this.facingRight ? drawX + this.width + 2 : drawX - 2)
+                : (this.facingRight ? drawX + this.width / 2 + 10 : drawX + this.width / 2 - 10);
+            let handY = bodyY + this.height * 0.5;
 
             ctx.translate(handX, handY);
-            if (!this.facingRight) ctx.scale(-1, 1); 
+            if (!this.facingRight) ctx.scale(-1, 1);
 
-            ctx.fillStyle = '#5c4033'; 
+            ctx.fillStyle = '#5c4033';
             ctx.beginPath();
             ctx.roundRect(-25, -15, 12, 35, 4);
             ctx.fill();
-            ctx.strokeStyle = '#3d2b22'; 
+            ctx.strokeStyle = '#3d2b22';
             ctx.lineWidth = 2;
             ctx.strokeRect(-25, -15, 12, 35);
             ctx.fillStyle = '#786657';
             ctx.fillRect(-22, -10, 3, 3);
             ctx.fillRect(-22, 12, 3, 3);
 
-            if (this.state === 'ATTACK') {
+            if (_isBlocking) {
+                // Épée à l'horizontale devant le squelette
+                ctx.rotate(Math.PI / 2);
+                // Lueur de blocage (pulsante)
+                const _bp = 0.4 + 0.3 * Math.sin(Date.now() / 80);
+                ctx.globalAlpha = _bp;
+                ctx.fillStyle = '#FFF176';
+                ctx.beginPath(); ctx.roundRect(-5, -34, 10, 38, 3); ctx.fill();
+                ctx.globalAlpha = 1;
+            } else if (this.state === 'ATTACK') {
                 let attackProgress = this.attackTimer / 60;
-                if (attackProgress > 0.8) ctx.rotate(-Math.PI/2); 
-                else if (attackProgress > 0.5) ctx.rotate(Math.PI/4); 
-                else ctx.rotate(Math.PI/6); 
+                if (attackProgress > 0.8) ctx.rotate(-Math.PI / 2);
+                else if (attackProgress > 0.5) ctx.rotate(Math.PI / 4);
+                else ctx.rotate(Math.PI / 6);
             } else {
-                ctx.rotate(Math.PI / 8); 
+                ctx.rotate(Math.PI / 8);
             }
-            
-            ctx.fillStyle = '#708090'; 
-            ctx.fillRect(-3, -30, 6, 30); 
-            ctx.fillStyle = '#111'; 
+
+            ctx.fillStyle = '#708090';
+            ctx.fillRect(-3, -30, 6, 30);
+            ctx.fillStyle = '#111';
             ctx.fillRect(-3, -20, 3, 3);
-            
-            ctx.fillStyle = '#4a3d31'; 
+
+            ctx.fillStyle = '#4a3d31';
             ctx.fillRect(-10, 0, 20, 4);
-            ctx.fillStyle = '#2c231a'; 
+            ctx.fillStyle = '#2c231a';
             ctx.fillRect(-3, 4, 6, 8);
 
             ctx.restore();
@@ -9195,7 +9283,7 @@
                     facingRight: e.facingRight, vx: e.vx, vy: e.vy,
                     hurtTimer: e.hurtTimer, attackTimer: e.attackTimer,
                     windupTimer: e.windupTimer ?? 0, stunnedTimer: e.stunnedTimer ?? 0,
-                    grounded: e.grounded
+                    grounded: e.grounded, blockTimer: e.blockTimer ?? 0
                 })));
                 socket.emit('coin-sync', coins.map((c, i) => ({ i, x: c.x, y: c.y, alive: !c.collected })));
                 socket.emit('item-sync', items.map(it => ({ netId: it.netId, x: it.x, y: it.y, itemId: it.itemId, collected: it.collected })));

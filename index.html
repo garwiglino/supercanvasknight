@@ -3074,6 +3074,14 @@
                 'sfx/weapons/sword/sword_woosh_4.wav',
                 'sfx/weapons/sword/sword_woosh_5.wav',
             ],
+            'weapon.hammer.swing': [
+                'sfx/weapons/hammer/hammer_woosh_1.mp3',
+                'sfx/weapons/hammer/hammer_woosh_2.mp3',
+                'sfx/weapons/hammer/hammer_woosh_3.mp3',
+                'sfx/weapons/hammer/hammer_woosh_4.mp3',
+                'sfx/weapons/hammer/hammer_woosh_5.mp3',
+                'sfx/weapons/hammer/hammer_woosh_6.mp3',
+            ],
             'hit.flesh': [
                 'sfx/hit/flesh/sword_flesh_1.wav',
                 'sfx/hit/flesh/sword_flesh_2.wav',
@@ -3085,6 +3093,13 @@
                 'sfx/hit/flesh/sword_flesh_8.wav',
                 'sfx/hit/flesh/sword_flesh_9.wav',
                 'sfx/hit/flesh/sword_flesh_10.wav',
+            ],
+            'hit.flesh.hammer': [
+                'sfx/hit/flesh/hammer_flesh_1.wav',
+                'sfx/hit/flesh/hammer_flesh_2.wav',
+                'sfx/hit/flesh/hammer_flesh_3.wav',
+                'sfx/hit/flesh/hammer_flesh_4.wav',
+                'sfx/hit/flesh/hammer_flesh_5.wav',
             ],
             // ── Footsteps par surface ─────────────────────────────────
             // Ajouter les fichiers WAV dans sfx/footsteps/<surface>/
@@ -3113,7 +3128,7 @@
 
         // Cooldown anti-spam par clé (ms) pour éviter le stacking audio
         const _lastPlayed = {};
-        const COOLDOWN = { 'hit.flesh': 40, 'weapon.sword.swing': 0, 'pain.goblin': 400 };
+        const COOLDOWN = { 'hit.flesh': 40, 'hit.flesh.hammer': 40, 'weapon.sword.swing': 0, 'weapon.hammer.swing': 0, 'pain.goblin': 400 };
 
         let _masterVolume = (() => {
             const saved = parseInt(localStorage.getItem('sckt_sfx_volume'));
@@ -7282,7 +7297,7 @@
                         this.vy = -4;
                         player.abilityCharge = Math.min(player.abilityMaxCharge, player.abilityCharge + 1);
                         triggerShake(4, 6);
-                        SFX.hit('flesh');
+                        SFX.hit(player._equippedWeaponId() === 'hammer' ? 'flesh.hammer' : 'flesh');
 
                         const hitX = this.x + this.width / 2;
                         const hitY = this.y + this.height / 2;
@@ -7492,7 +7507,7 @@
                     this.vy = -4;
                     player.hasHit.add(this);
                     triggerShake(isCrit ? 7 : 4, isCrit ? 9 : 6);
-                    SFX.hit('flesh');
+                    SFX.hit(player._equippedWeaponId() === 'hammer' ? 'flesh.hammer' : 'flesh');
                     player.abilityCharge = Math.min(player.abilityMaxCharge, player.abilityCharge + 1);
 
                     let hitX = this.x + this.width / 2;
@@ -7800,7 +7815,7 @@
                         this.vy = -5;
                         player.abilityCharge = Math.min(player.abilityMaxCharge, player.abilityCharge + 1);
                         triggerShake(3, 5);
-                        SFX.hit('flesh');
+                        SFX.hit(player._equippedWeaponId() === 'hammer' ? 'flesh.hammer' : 'flesh');
 
                         const hitX = this.x + this.width / 2;
                         const hitY = this.y + this.height / 2;
@@ -7997,7 +8012,7 @@
                     this.vy = -5;
                     player.hasHit.add(this);
                     triggerShake(isCritG ? 6 : 3, isCritG ? 8 : 5);
-                    SFX.hit('flesh');
+                    SFX.hit(player._equippedWeaponId() === 'hammer' ? 'flesh.hammer' : 'flesh');
                     SFX.pain('goblin');
                     player.abilityCharge = Math.min(player.abilityMaxCharge, player.abilityCharge + 1);
 
@@ -9343,7 +9358,7 @@
     function startGame() {
         if (document.activeElement) document.activeElement.blur();
         cancelAnimationFrame(animationId);
-        MusicPlayer.stop();
+        MusicPlayer.play('music/default.mp3');
         keys.right = false; keys.left = false; keys.up = false; keys.attack = false;
 
         startScreen.classList.add('hidden');

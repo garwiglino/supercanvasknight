@@ -488,6 +488,13 @@
 
         /* ── Consommables HUD ── */
         .hud-consumables-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:1px; }
+        /* ── Effets actifs ── */
+        #hud-active-effects { display:flex; flex-direction:column; gap:4px; margin-top:2px; }
+        .hud-effect-bar { display:flex; align-items:center; gap:5px; }
+        .hud-eff-icon { font-size:13px; line-height:1; }
+        .hud-eff-bg { flex:1; height:5px; background:rgba(0,0,0,0.45); border-radius:3px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); }
+        .hud-eff-fill { height:100%; border-radius:3px; transition:width 0.1s linear; }
+        .hud-eff-time { font-size:10px; color:#aaa; min-width:20px; text-align:right; font-family:'Rajdhani',sans-serif; font-weight:700; }
         .hud-consumable {
             display:flex; align-items:center; gap:4px;
             background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.13);
@@ -998,6 +1005,8 @@
             </div>
             <!-- Consommables -->
             <div id="hud-consumables" class="hud-consumables-row"></div>
+            <!-- Effets temporaires actifs -->
+            <div id="hud-active-effects"></div>
             <!-- Ligne infos : vies + pièces + ability -->
             <div class="hud-info-row">
                 <span id="livesDisplay">❤️❤️❤️</span>
@@ -4149,6 +4158,22 @@
         }
     }
 
+    function updateActiveEffectsHUD() {
+        const el = document.getElementById('hud-active-effects');
+        if (!el || !player) return;
+        el.innerHTML = '';
+        if (!player.activeEffects || player.activeEffects.length === 0) return;
+        for (const eff of player.activeEffects) {
+            const pct = Math.max(0, (eff.remaining / eff.total) * 100).toFixed(1);
+            const sec = Math.ceil(eff.remaining / 60);
+            const color = eff.effectType === 'damage' ? '#FF6D00' : '#4CAF50';
+            const div = document.createElement('div');
+            div.className = 'hud-effect-bar';
+            div.innerHTML = `<span class="hud-eff-icon">${eff.icon}</span><div class="hud-eff-bg"><div class="hud-eff-fill" style="width:${pct}%;background:${color};"></div></div><span class="hud-eff-time">${sec}s</span>`;
+            el.appendChild(div);
+        }
+    }
+
     function updateConsumableHUD() {
         const strip = document.getElementById('hud-consumables');
         if (!strip || !player) return;
@@ -4413,11 +4438,58 @@
                 }
             }
             else if (dbItem.type === 'damage') {
-                player.bonusDamage += dbItem.value;
+                const duration = dbItem.duration || 0;
+                if (duration > 0) {
+                    // Rafraîchit si déjà actif, sinon empile
+                    const existing = player.activeEffects.find(e => e.key === key);
+                    if (existing) {
+                        existing.remaining = duration;
+                        existing.total = duration;
+                    } else {
+                        player.bonusDamage += dbItem.value;
+                        player.activeEffects.push({ key, name: dbItem.name, icon: dbItem.icon || '⚡', effectType: 'damage', value: dbItem.value, remaining: duration, total: duration });
+                    }
+                } else {
+                    player.bonusDamage += dbItem.value;
+                }
                 player.inventory[key].count--;
+                player.forceVfxTimer = 48;
+                // ── VFX force ────────────────────────────────────────────
+                const _fcx = player.x + player.width / 2;
+                const _fcy = player.y + player.height * 0.5;
+                const _forceColors = ['#FF6D00','#FFAB40','#FFD740','#FF9100','#FFCC02'];
+                for (let i = 0; i < 20; i++) {
+                    const a = (i / 20) * Math.PI * 2;
+                    player.abilityVfx.push({
+                        x: _fcx + Math.cos(a) * (10 + Math.random() * 8),
+                        y: _fcy + Math.sin(a) * 8,
+                        vx: Math.cos(a) * (0.6 + Math.random() * 1.8),
+                        vy: -2.5 - Math.random() * 3,
+                        life: 36 + Math.floor(Math.random() * 16),
+                        maxLife: 52,
+                        color: _forceColors[i % _forceColors.length],
+                        r: 2.5 + Math.random() * 3,
+                        grav: -0.04
+                    });
+                }
+                // Éclairs centraux
+                for (let i = 0; i < 8; i++) {
+                    player.abilityVfx.push({
+                        x: _fcx + (Math.random() - 0.5) * player.width * 1.2,
+                        y: player.y + Math.random() * player.height,
+                        vx: (Math.random() - 0.5) * 3,
+                        vy: -4 - Math.random() * 3,
+                        life: 30,
+                        maxLife: 30,
+                        color: '#FFD740',
+                        r: 3 + Math.random() * 2,
+                        grav: -0.06
+                    });
+                }
                 renderInventory();
                 updateConsumableHUD();
-                showNotification(`Dégâts augmentés de ${dbItem.value} !`, "#E52521");
+                updateActiveEffectsHUD();
+                showNotification(`⚡ Dégâts +${dbItem.value}${duration > 0 ? ` (${duration/60}s)` : ''} !`, "#FF6D00");
             }
         }
     }
@@ -5322,6 +5394,9 @@
             this.parryAnim = 0;
             this.lastParryKey = false;
             this.healVfxTimer = 0;
+            this.forceVfxTimer = 0;
+            this.activeEffects = [];
+            this._effectHudTimer = 0;
 
             this.respawn();
         }
@@ -5428,7 +5503,7 @@
                 });
             }
             // Limite optionnelle de 100 taches pour éviter de surcharger la mémoire
-            if (this.bloodStains.length > 100) this.bloodStains.shift();
+            if (this.bloodStains.length > 200) this.bloodStains.shift();
             
             this.updateUI();
             
@@ -5807,6 +5882,23 @@
             if (this.parryCooldown > 0) this.parryCooldown--;
             if (this.parryAnim > 0) this.parryAnim--;
             if (this.healVfxTimer > 0) this.healVfxTimer--;
+            if (this.forceVfxTimer > 0) this.forceVfxTimer--;
+            // ── Effets temporaires actifs ──────────────────────────────
+            if (this.activeEffects && this.activeEffects.length > 0) {
+                for (let i = this.activeEffects.length - 1; i >= 0; i--) {
+                    const eff = this.activeEffects[i];
+                    eff.remaining--;
+                    if (eff.remaining <= 0) {
+                        if (eff.effectType === 'damage') this.bonusDamage = Math.max(0, this.bonusDamage - eff.value);
+                        this.activeEffects.splice(i, 1);
+                        showNotification(`${eff.icon} ${eff.name} expiré`, '#888');
+                        updateActiveEffectsHUD();
+                    }
+                }
+                // Mise à jour HUD effets (throttlé)
+                this._effectHudTimer = (this._effectHudTimer || 0) + 1;
+                if (this._effectHudTimer % 6 === 0) updateActiveEffectsHUD();
+            }
             const _justParry = keys.parry && !this.lastParryKey;
             this.lastParryKey = keys.parry;
             const _parryWepId = this._equippedWeaponId();
@@ -6163,7 +6255,12 @@
             }
 
             // ── TACHES DE SANG ────────────────────────────────────────────────
-            if (this.bloodStains) {
+            if (this.bloodStains && this.bloodStains.length > 0) {
+                renderCtx.save();
+                // Clip au body du joueur pour que les stains ne débordent pas
+                renderCtx.beginPath();
+                renderCtx.rect(drawX, bodyY, this.width, this.height + 2);
+                renderCtx.clip();
                 this.bloodStains.forEach(stain => {
                     const img = assets.images['init_blood'];
                     renderCtx.save();
@@ -6175,6 +6272,7 @@
                     else { renderCtx.fillStyle='#800000'; renderCtx.beginPath(); renderCtx.arc(0,0,8,0,Math.PI*2); renderCtx.fill(); }
                     renderCtx.restore();
                 });
+                renderCtx.restore();
             }
 
             // ── YEUX (idle blinking/look-around) — passés à drawHelmet via redraw ─
@@ -6360,6 +6458,51 @@
                     renderCtx.textAlign = 'center';
                     renderCtx.textBaseline = 'middle';
                     renderCtx.fillText('+', _hcx, bodyY - 12 - _ca * 6);
+                }
+                renderCtx.restore();
+            }
+
+            // ── VFX DE FORCE ─────────────────────────────────────────────────
+            if (this.forceVfxTimer > 0) {
+                const _ft  = this.forceVfxTimer;
+                const _fp  = 1 - _ft / 48;
+                const _fcx = drawX + this.width / 2;
+                const _fcy = bodyY + this.height * 0.5;
+                renderCtx.save();
+                // Glow orange
+                renderCtx.globalAlpha = (_ft / 48) * 0.30;
+                const _fgrd = renderCtx.createRadialGradient(_fcx, _fcy, 2, _fcx, _fcy, this.height * 0.8);
+                _fgrd.addColorStop(0, '#FF6D00');
+                _fgrd.addColorStop(1, 'rgba(255,109,0,0)');
+                renderCtx.fillStyle = _fgrd;
+                renderCtx.beginPath();
+                renderCtx.ellipse(_fcx, _fcy, this.width * 0.85, this.height * 0.7, 0, 0, Math.PI * 2);
+                renderCtx.fill();
+                // Anneau 1
+                renderCtx.globalAlpha = (_ft / 48) * 0.82;
+                renderCtx.strokeStyle = '#FF6D00';
+                renderCtx.lineWidth = 2.5;
+                renderCtx.beginPath();
+                renderCtx.arc(_fcx, _fcy, 8 + _fp * 42, 0, Math.PI * 2);
+                renderCtx.stroke();
+                // Anneau 2 décalé
+                if (_fp > 0.15) {
+                    renderCtx.globalAlpha = (_ft / 48) * 0.45;
+                    renderCtx.strokeStyle = '#FFAB40';
+                    renderCtx.lineWidth = 1.5;
+                    renderCtx.beginPath();
+                    renderCtx.arc(_fcx, _fcy, 4 + (_fp - 0.15) * 30, 0, Math.PI * 2);
+                    renderCtx.stroke();
+                }
+                // Symbole ⚡
+                if (_ft > 28) {
+                    const _ca = (_ft - 28) / 20;
+                    renderCtx.globalAlpha = _ca * 0.95;
+                    renderCtx.fillStyle = '#FFD740';
+                    renderCtx.font = `bold ${16 + Math.round(_ca * 5)}px Rajdhani, sans-serif`;
+                    renderCtx.textAlign = 'center';
+                    renderCtx.textBaseline = 'middle';
+                    renderCtx.fillText('⚡', _fcx, bodyY - 14 - _ca * 7);
                 }
                 renderCtx.restore();
             }
@@ -7183,7 +7326,7 @@
                             rotation: Math.random() * Math.PI * 2
                         });
                     }
-                    if (player.bloodStains.length > 100) player.bloodStains.shift();
+                    if (player.bloodStains.length > 200) player.bloodStains.shift();
 
                     if (this.hp <= 0) {
                         if (isCrit) {
@@ -7688,7 +7831,7 @@
                             rotation: Math.random() * Math.PI * 2
                         });
                     }
-                    if (player.bloodStains.length > 100) player.bloodStains.shift();
+                    if (player.bloodStains.length > 200) player.bloodStains.shift();
 
                     if (this.hp <= 0) {
                         triggerShake(isCritG ? 11 : 8, isCritG ? 14 : 10);
@@ -9028,8 +9171,9 @@
         initQuests();
         buildLevel();
 
-        // Reset quick slots HUD
+        // Reset HUDs consommables
         updateConsumableHUD();
+        updateActiveEffectsHUD();
 
         // Appliquer la configuration choisie
         // Forcer la réinitialisation de l'inventaire d'armes au démarrage d'une partie

@@ -6,9 +6,10 @@
       "icon": "🧪",
       "type": "heal",
       "value": 35,
+      "duration": 0,
       "iconPath": "./art/potion.svg",
       "iconScale": 1.0,
-      "description": "Restaure 35 points de vie instantanément. Indispensable dans les combats prolongés."
+      "description": "Restaure 35 points de vie instantanément."
     },
     "force": {
       "id": "force",
@@ -16,9 +17,10 @@
       "icon": "⚡",
       "type": "damage",
       "value": 15,
+      "duration": 480,
       "iconPath": "./art/force.svg",
       "iconScale": 1.3,
-      "description": "Augmente les dégâts de 15 points pour le reste de la partie. Ne se cumule pas."
+      "description": "Augmente les dégâts de 15 points pendant 8 secondes."
     }
   }
 }

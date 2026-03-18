@@ -1170,7 +1170,7 @@
                                     <button onclick="sendDM()" style="padding:10px 16px !important;font-size:16px !important;">➤</button>
                                 </div>
                                 <div id="socialActions" class="social-actions" style="display:none">
-                                    <button onclick="inviteSelected()">⚔️ Inviter en partie</button>
+                                    <button id="inviteOrRejoinBtn" onclick="inviteSelected()">⚔️ Inviter en partie</button>
                                     <button class="btn-sec" onclick="inviteToSalon()">🏰 Salon</button>
                                     <button class="unfriend-btn" onclick="unfriendSelected()">🚫 Retirer</button>
                                 </div>
@@ -1195,6 +1195,7 @@
 
         <!-- ── ÉCRAN LOBBY HOST/JOIN ──────────────────────────────────── -->
         <div id="lobbyScreen" class="screen hidden">
+            <button class="btn-sec" onclick="backToMode()" style="position:absolute;top:12px;left:14px;font-size:14px;padding:7px 14px;">◀ Hub</button>
             <h1>⚔️ Mode de Jeu</h1>
 
             <!-- Choix initial -->
@@ -1498,6 +1499,8 @@
 
     let _guestReady        = false; // hôte : savoir si le guest est prêt
     let _guestClickedReady = false; // guest : a-t-il déjà cliqué PRÊT ?
+    let _rejoinInfo            = null;  // guest : { pseudo (host), roomCode } pour pouvoir rejoindre
+    let _lastKnownHostPseudo   = null;  // guest : pseudo du host du lobby en cours
 
     function initSocket() {
         socket = io(SOCKET_SERVER, {
@@ -1619,11 +1622,26 @@
 
         socket.on('peer-joined', ({ pseudo, skinIndex }) => {
             showNotification(`⚔️ ${pseudo} a rejoint la partie !`, '#00e5ff');
+
             // Race condition fix : si le guest avait cliqué PRÊT avant que
             // le host rejoigne la room socket, on re-envoie l'event maintenant.
             if (gameMode === 'guest' && _guestClickedReady) {
                 const myPseudo = localStorage.getItem('sckt_pseudo') || 'Invité';
                 socket.emit('game-event', { type: 'guest-ready', pseudo: myPseudo });
+            }
+
+            // Mémoriser le pseudo de l'hôte (côté guest) pour éventuel rejoin
+            if (gameMode === 'guest' && roomCode) {
+                _lastKnownHostPseudo = pseudo;
+            }
+
+            // Hôte en salle d'attente : un guest vient de (re)joindre
+            if (gameMode === 'host' && !document.getElementById('lobbyScreen').classList.contains('hidden')) {
+                document.getElementById('hostStatus').innerHTML =
+                    `<span style="color:#4CAF50;font-size:18px;font-weight:bold;">✅ ${pseudo} a rejoint !</span>`;
+                document.querySelector('#hostPanel .lobby-btn-row').innerHTML =
+                    `<button onclick="proceedToCharSelection()">COMMENCER ▶</button>
+                     <button class="btn-sec" onclick="cancelLobby()">ANNULER</button>`;
             }
         });
 
@@ -1644,16 +1662,16 @@
                 // Continue en solo
                 setTimeout(() => showNotification('⚔️ Vous continuez en solo', '#FBD000'), 500);
             }
-            // Déco pendant la sélection de personnage (hôte)
+            // Déco pendant la sélection de personnage (hôte → reste en attente)
             if (gameState === 'START' && gameMode === 'host') {
-                _guestReady = false;
-                showNotification(`${name} a quitté. Retour au menu…`, '#E52521');
-                setTimeout(() => { if (gameState === 'START') backToMode(); }, 1800);
+                _guestReady = false; _guestClickedReady = false;
+                showNotification(`${name} s'est déconnecté. Retour en salle d'attente…`, '#FBD000');
+                backToLobbyWaiting();
             }
-            // Déco pendant la sélection de personnage (guest)
+            // Déco pendant la sélection de personnage (guest → retour hub)
             if (gameState === 'START' && gameMode === 'guest') {
                 _guestClickedReady = false;
-                showNotification(`${name} a quitté. Retour au menu…`, '#E52521');
+                showNotification(`${name} s'est déconnecté. Retour au menu…`, '#E52521');
                 setTimeout(() => { if (gameState === 'START') backToMode(); }, 1800);
             }
         });
@@ -1765,10 +1783,18 @@
             }
 
             // ── Partenaire a quitté l'écran de sélection ────────────────
-            if (event.type === 'coop-abort' && gameState === 'START') {
-                showNotification('⚠️ Votre partenaire a quitté. Retour au menu…', '#E52521');
-                _guestClickedReady = false; _guestReady = false;
-                setTimeout(() => { if (gameState === 'START') backToMode(); }, 1800);
+            if (event.type === 'coop-abort') {
+                if (event.role === 'guest' && gameMode === 'host') {
+                    // Guest parti → hôte reste en attente
+                    _guestReady = false; _guestClickedReady = false;
+                    showNotification('⚠️ L\'invité a quitté. Retour en salle d\'attente…', '#FBD000');
+                    backToLobbyWaiting();
+                } else if (event.role === 'host' && gameMode === 'guest') {
+                    // Hôte parti → guest retourne au hub
+                    _guestClickedReady = false;
+                    showNotification('⚠️ L\'hôte a quitté la partie. Retour au menu…', '#E52521');
+                    setTimeout(() => backToMode(), 1800);
+                }
             }
 
             // ── Guest prêt (reçu par l'hôte) ────────────────────────────
@@ -2091,16 +2117,101 @@
     function backFromStart() {
         document.getElementById('startScreen').classList.add('hidden');
         if (gameMode === 'guest' || gameMode === 'host') {
-            // Prévenir le partenaire qu'on part
+            // Prévenir le partenaire en indiquant qui part
             if (socket && socket.connected) {
-                socket.emit('game-event', { type: 'coop-abort' });
+                socket.emit('game-event', { type: 'coop-abort', role: gameMode });
+            }
+            // Si guest, libérer la place dans Redis pour qu'un autre puisse rejoindre
+            if (gameMode === 'guest' && roomCode) {
+                const token = localStorage.getItem('sckt_token');
+                fetch('/api/leave-room', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: roomCode, token })
+                }).catch(() => {});
+                // Mémoriser pour pouvoir rejoindre depuis le panel social
+                _rejoinInfo = { pseudo: _lastKnownHostPseudo, roomCode };
             }
             _guestClickedReady = false;
             _guestReady = false;
-            backToMode(); // reset roomCode/gameMode + showHub
+            backToMode();
         } else {
             backToMode();
         }
+    }
+
+    // Hôte : retourner en salle d'attente quand le guest quitte (sans fermer la partie)
+    function backToLobbyWaiting() {
+        // Reset start screen coop zone
+        const coopZone = document.getElementById('coopReadyZone');
+        if (coopZone) coopZone.style.display = 'none';
+        const startBtn = document.getElementById('startBtn');
+        if (startBtn) { startBtn.style.display = ''; startBtn.disabled = true; }
+        const hostStatus2 = document.getElementById('hostGuestStatus');
+        if (hostStatus2) hostStatus2.style.display = 'none';
+        // Afficher lobby screen → panel host en attente
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById('lobbyScreen').classList.remove('hidden');
+        document.getElementById('lobbyChoice').style.display = 'none';
+        document.getElementById('hostPanel').style.display = 'block';
+        document.getElementById('hostStatus').innerHTML =
+            `<div class="lobby-dot"></div><div class="lobby-dot"></div><div class="lobby-dot"></div>
+             <span>En attente d'un joueur...</span>`;
+        document.querySelector('#hostPanel .lobby-btn-row').innerHTML =
+            `<button class="btn-sec" onclick="cancelLobby()">ANNULER</button>`;
+    }
+
+    // Guest : rejoindre le dernier lobby connu
+    async function rejoinLobby() {
+        if (!_rejoinInfo || !_rejoinInfo.roomCode) return;
+        const token = localStorage.getItem('sckt_token');
+        const btn = document.getElementById('inviteOrRejoinBtn');
+        if (btn) { btn.disabled = true; btn.textContent = '…'; }
+        try {
+            const res = await fetch('/api/join-room', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: _rejoinInfo.roomCode, token })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                showNotification(`Ce lobby n'est plus disponible : ${data.error}`, '#E52521');
+                _rejoinInfo = null;
+                _updateInviteBtn();
+                if (btn) { btn.disabled = false; }
+                return;
+            }
+            roomCode = _rejoinInfo.roomCode;
+            gameMode = 'guest';
+            _rejoinInfo = null;
+            proceedToCharSelection();
+        } catch(e) {
+            showNotification('Erreur de connexion', '#E52521');
+            if (btn) { btn.disabled = false; btn.textContent = '🔁 Rejoindre'; }
+        }
+    }
+
+    // Met à jour le bouton inviter/rejoindre selon _rejoinInfo + _selectedUser
+    function _updateInviteBtn() {
+        const btn = document.getElementById('inviteOrRejoinBtn');
+        if (!btn) return;
+        if (_rejoinInfo && _rejoinInfo.pseudo && _selectedUser === _rejoinInfo.pseudo) {
+            btn.textContent = '🔁 Rejoindre';
+            btn.onclick = rejoinLobby;
+        } else {
+            btn.textContent = '⚔️ Inviter en partie';
+            btn.onclick = inviteSelected;
+        }
+    }
+
+    // Navigation retour selon l'écran de lobby visible
+    function handleLobbyEsc() {
+        const joinPanel = document.getElementById('joinPanel');
+        const hostPanel = document.getElementById('hostPanel');
+        const lobbyChoice = document.getElementById('lobbyChoice');
+        if (joinPanel && joinPanel.style.display !== 'none') { backToLobbyChoice(); return; }
+        if (hostPanel && hostPanel.style.display !== 'none') { cancelLobby(); return; }
+        if (lobbyChoice && lobbyChoice.style.display !== 'none') { backToMode(); return; }
     }
 
     function logout() {
@@ -2216,6 +2327,7 @@
         document.getElementById('chatInputRow').style.display = 'flex';
         const isFriend = _friends.some(f => f.toLowerCase() === pseudo.toLowerCase());
         document.getElementById('socialActions').style.display = isFriend ? 'flex' : 'none';
+        _updateInviteBtn();
         renderFriendsList();
         renderChat();
         loadFriendCard(pseudo);
@@ -2345,6 +2457,7 @@
 
     async function inviteSelected() {
         if (!_selectedUser || !socket?.connected) return;
+        _rejoinInfo = null; _lastKnownHostPseudo = null;
         const token = localStorage.getItem('sckt_token');
         try {
             const res  = await fetch('/api/create-room', {
@@ -2425,7 +2538,7 @@
             <h4>⚔️ Invitation de ${from}</h4>
             <p>${label}</p>
             <div class="invite-notif-btns">
-                <button onclick="acceptInvite('${roomCode}','${type}');this.closest('.invite-notif').remove()">Accepter</button>
+                <button onclick="acceptInvite('${roomCode}','${type}','${from.replace(/'/g,"\\'")}');this.closest('.invite-notif').remove()">Accepter</button>
                 <button class="btn-sec" onclick="this.closest('.invite-notif').remove()">Refuser</button>
             </div>`;
         document.body.appendChild(el);
@@ -2454,7 +2567,10 @@
         }
     }
 
-    function acceptInvite(code, type) {
+    function acceptInvite(code, type, fromPseudo) {
+        if (type !== 'salon' && fromPseudo) {
+            _lastKnownHostPseudo = fromPseudo;
+        }
         backToMode();
         if (type === 'salon') {
             setTimeout(() => enterSalon(), 50);
@@ -3538,10 +3654,20 @@
             return;
         }
 
-        // Menu en jeu (ESC) — toggle sans stopper le jeu
-        if (e.code === 'Escape' && gameState === 'PLAYING') {
-            if (_ingameMenuOpen) closeIngameMenu(); else openIngameMenu();
-            e.preventDefault(); return;
+        // Navigation Escape selon l'écran visible
+        if (e.code === 'Escape') {
+            if (gameState === 'PLAYING') {
+                if (_ingameMenuOpen) closeIngameMenu(); else openIngameMenu();
+                e.preventDefault(); return;
+            }
+            const startEl = document.getElementById('startScreen');
+            if (startEl && !startEl.classList.contains('hidden')) {
+                backFromStart(); e.preventDefault(); return;
+            }
+            const lobbyEl = document.getElementById('lobbyScreen');
+            if (lobbyEl && !lobbyEl.classList.contains('hidden')) {
+                handleLobbyEsc(); e.preventDefault(); return;
+            }
         }
         if (_ingameMenuOpen) return;
 
@@ -8029,6 +8155,7 @@
         const lbtn2 = document.getElementById('levelBtn');
         if (lbtn2) lbtn2.style.display = '';
         _guestReady = false; _guestClickedReady = false;
+        _rejoinInfo = null; _lastKnownHostPseudo = null;
 
         score = 0;
         lives = 3;

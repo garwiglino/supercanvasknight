@@ -7592,7 +7592,27 @@
             // ── BLOCAGE ENNEMI ─────────────────────────────────────────────
             if (this.blockCooldown > 0) this.blockCooldown--;
             if (this.blockTimer > 0) {
-                this.blockTimer--;
+                const _bDist2   = Math.abs((player.x + 25) - (this.x + 25));
+                const _facingMe = (player.facingRight && player.x < this.x) ||
+                                  (!player.facingRight && player.x > this.x);
+                const _underThreat = _bDist2 < 130 && _facingMe && player.isAttacking;
+
+                if (_underThreat) {
+                    // Prolonger le bloc tant que le joueur attaque de face
+                    if (this.blockTimer < 15) this.blockTimer = 15;
+                    this.blockSustainFrames = (this.blockSustainFrames ?? 0) + 1;
+                    // Après ~3s de garde soutenue : briser et contre-attaquer
+                    if (this.blockSustainFrames > 180 && this.windupTimer === 0 && this.attackTimer === 0) {
+                        this.blockTimer = 0;
+                        this.blockCooldown = 220;
+                        this.blockSustainFrames = 0;
+                        this.state = 'ATTACK';
+                        this.windupTimer = 18;
+                    }
+                } else {
+                    this.blockSustainFrames = 0;
+                    this.blockTimer--;
+                }
                 this.vx = 0; // immobile en posture de bloc
             } else if (this.blockCooldown === 0 && this.windupTimer === 0 &&
                 this.state !== 'ATTACK' && this.state !== 'STUNNED' && this.state !== 'DYING') {

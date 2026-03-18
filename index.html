@@ -7595,7 +7595,7 @@
                 const _bDist2   = Math.abs((player.x + 25) - (this.x + 25));
                 const _facingMe = (player.facingRight && player.x < this.x) ||
                                   (!player.facingRight && player.x > this.x);
-                const _underThreat = _bDist2 < 130 && _facingMe && player.isAttacking;
+                const _underThreat = _bDist2 < 130 && _facingMe && (player.isAttacking || player.attackHitbox);
 
                 if (_underThreat) {
                     // Prolonger le bloc tant que le joueur attaque de face
@@ -7620,14 +7620,14 @@
                 // Blocage réactif : le joueur attaque face à l'ennemi
                 const _playerFacingMe = (player.facingRight  && player.x < this.x) ||
                                         (!player.facingRight && player.x > this.x);
-                if (_bDist < 140 && player.isAttacking && _playerFacingMe && Math.random() < 0.12) {
+                if (_bDist < 140 && (player.isAttacking || player.attackHitbox) && _playerFacingMe && Math.random() < 0.50) {
                     // Réaction à l'attaque imminente
-                    this.blockTimer    = 50 + Math.floor(Math.random() * 30);  // 0.8–1.3s
-                    this.blockCooldown = 180 + Math.floor(Math.random() * 90); // 3–4.5s
-                } else if (_bDist < 160 && Math.random() < 0.008) {
-                    // Garde préventive occasionnelle
-                    this.blockTimer    = 65 + Math.floor(Math.random() * 35);  // 1.1–1.7s
-                    this.blockCooldown = 280 + Math.floor(Math.random() * 100); // 4.6–6.3s
+                    this.blockTimer    = 55 + Math.floor(Math.random() * 30);
+                    this.blockCooldown = 180 + Math.floor(Math.random() * 90);
+                } else if (_bDist < 160 && _playerFacingMe && Math.random() < 0.018) {
+                    // Garde préventive
+                    this.blockTimer    = 65 + Math.floor(Math.random() * 35);
+                    this.blockCooldown = 250 + Math.floor(Math.random() * 100);
                 }
             }
 
@@ -8111,6 +8111,9 @@
             this.currentPlatform = null;
             this.targetX = x;
             this.targetY = y;
+            this.blockTimer = 0;
+            this.blockCooldown = 0;
+            this.blockSustainFrames = 0;
         }
 
         update(platforms, player) {
@@ -8205,6 +8208,42 @@
 
             if (this.hurtTimer > 0) this.hurtTimer--;
             if (this.attackTimer > 0) this.attackTimer--;
+
+            // ── BLOCAGE GOBELIN ────────────────────────────────────────────
+            if (this.blockCooldown > 0) this.blockCooldown--;
+            if (this.blockTimer > 0) {
+                const _gbDist   = Math.abs((player.x + 19) - (this.x + 19));
+                const _gbFacing = (player.facingRight && player.x < this.x) ||
+                                  (!player.facingRight && player.x > this.x);
+                const _gbThreat = _gbDist < 110 && _gbFacing && (player.isAttacking || player.attackHitbox);
+                if (_gbThreat) {
+                    if (this.blockTimer < 12) this.blockTimer = 12;
+                    this.blockSustainFrames = (this.blockSustainFrames ?? 0) + 1;
+                    if (this.blockSustainFrames > 160 && this.windupTimer === 0 && this.attackTimer === 0) {
+                        this.blockTimer = 0;
+                        this.blockCooldown = 200;
+                        this.blockSustainFrames = 0;
+                        this.state = 'ATTACK';
+                        this.windupTimer = 14;
+                    }
+                } else {
+                    this.blockSustainFrames = 0;
+                    this.blockTimer--;
+                }
+                this.vx = 0;
+            } else if (this.blockCooldown === 0 && this.windupTimer === 0 &&
+                this.state !== 'ATTACK' && this.state !== 'STUNNED' && this.state !== 'DYING') {
+                const _gbDist2 = Math.abs((player.x + 19) - (this.x + 19));
+                const _gbFace2 = (player.facingRight && player.x < this.x) ||
+                                 (!player.facingRight && player.x > this.x);
+                if (_gbDist2 < 120 && (player.isAttacking || player.attackHitbox) && _gbFace2 && Math.random() < 0.45) {
+                    this.blockTimer    = 45 + Math.floor(Math.random() * 25);
+                    this.blockCooldown = 160 + Math.floor(Math.random() * 80);
+                } else if (_gbDist2 < 140 && _gbFace2 && Math.random() < 0.015) {
+                    this.blockTimer    = 55 + Math.floor(Math.random() * 30);
+                    this.blockCooldown = 220 + Math.floor(Math.random() * 90);
+                }
+            }
 
             // ── WINDUP ─────────────────────────────────────────────────────
             if (this.windupTimer > 0) {

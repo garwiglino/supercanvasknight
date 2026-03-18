@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Politique de Confidentialité — Super Canvas Knight</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap');
+        :root {
+            --bg-dark: #080c14;
+            --bg-mid: #0d1526;
+            --gold: #FBD000;
+            --accent: #2980b9;
+            --text: #e8ecf4;
+            --text-muted: #7a8ba0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg-dark);
+            color: var(--text);
+            font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+            font-size: 16px;
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+        header {
+            background: linear-gradient(135deg, #0d1526, #111a2e);
+            border-bottom: 1px solid rgba(251,208,0,0.2);
+            padding: 28px 24px;
+            text-align: center;
+        }
+        header .logo {
+            font-family: 'Cinzel', serif;
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--gold);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+        header p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        main {
+            max-width: 760px;
+            margin: 48px auto;
+            padding: 0 24px 80px;
+        }
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 26px;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+        .last-updated {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 40px;
+        }
+        h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 36px 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(41,128,185,0.25);
+        }
+        p { color: #b8c8dc; margin-bottom: 12px; }
+        ul { color: #b8c8dc; padding-left: 20px; margin-bottom: 12px; }
+        ul li { margin-bottom: 6px; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-btn {
+            display: inline-block;
+            margin-top: 48px;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #1a2540, #1e2d4a);
+            border: 1px solid rgba(41,128,185,0.4);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: linear-gradient(135deg, #1e2d4a, #243558); text-decoration: none; }
+        .highlight-box {
+            background: rgba(41,128,185,0.07);
+            border: 1px solid rgba(41,128,185,0.2);
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin: 16px 0;
+            color: #b8c8dc;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a class="logo" href="/">⚔️ Super Canvas Knight</a>
+        <p>supercanvasknight.com</p>
+    </header>
+
+    <main>
+        <h1>Politique de Confidentialité</h1>
+        <p class="last-updated">Dernière mise à jour : mars 2026</p>
+
+        <h2>1. Qui sommes-nous ?</h2>
+        <p>Super Canvas Knight est un jeu en ligne développé et exploité de manière indépendante. Le site est accessible à l'adresse <strong>supercanvasknight.com</strong>.</p>
+        <p>Pour toute question relative à vos données personnelles, contactez-nous à : <a href="mailto:contact@supercanvasknight.com">contact@supercanvasknight.com</a></p>
+
+        <h2>2. Données collectées</h2>
+        <p>Lors de votre inscription, nous collectons les informations suivantes :</p>
+        <ul>
+            <li><strong>Pseudo</strong> — identifiant public affiché dans le jeu</li>
+            <li><strong>Adresse email</strong> — utilisée uniquement pour la récupération de mot de passe</li>
+            <li><strong>Mot de passe</strong> — stocké sous forme de hash (SHA-256 + salt), jamais en clair</li>
+            <li><strong>Date d'inscription</strong></li>
+        </ul>
+        <p>Nous ne collectons pas de données de paiement, d'adresse postale, ni de données sensibles.</p>
+
+        <h2>3. Utilisation des données</h2>
+        <p>Vos données sont utilisées exclusivement pour :</p>
+        <ul>
+            <li>L'authentification à votre compte</li>
+            <li>L'affichage de votre profil dans le jeu</li>
+            <li>L'envoi d'emails transactionnels (réinitialisation de mot de passe uniquement)</li>
+        </ul>
+        <p>Nous ne vendons pas, ne louons pas et ne partageons pas vos données avec des tiers à des fins commerciales.</p>
+
+        <h2>4. Stockage des données</h2>
+        <div class="highlight-box">
+            Vos données sont stockées sur <strong>Upstash Redis</strong> (infrastructure cloud sécurisée, région EU). Les sessions actives sont conservées 7 jours. Les tokens de réinitialisation de mot de passe expirent après 1 heure.
+        </div>
+        <p>Les emails transactionnels sont envoyés via <strong>Resend</strong> (service tiers). Votre adresse email peut être conservée dans les logs de ce service conformément à leur politique de confidentialité.</p>
+
+        <h2>5. Cookies et stockage local</h2>
+        <p>Ce site n'utilise pas de cookies de tracking ou publicitaires.</p>
+        <p>Nous utilisons le <strong>localStorage</strong> de votre navigateur pour stocker votre token de session (nécessaire au bon fonctionnement du jeu). Ce stockage est strictement fonctionnel et ne contient aucune donnée personnelle autre que votre pseudo et token de session.</p>
+
+        <h2>6. Vos droits (RGPD)</h2>
+        <p>Conformément au Règlement Général sur la Protection des Données (RGPD), vous disposez des droits suivants :</p>
+        <ul>
+            <li><strong>Droit d'accès</strong> — connaître les données que nous détenons sur vous</li>
+            <li><strong>Droit de rectification</strong> — corriger vos données</li>
+            <li><strong>Droit à l'effacement</strong> — supprimer votre compte et toutes vos données</li>
+            <li><strong>Droit à la portabilité</strong> — recevoir vos données dans un format lisible</li>
+        </ul>
+        <p>Pour exercer ces droits, contactez-nous à <a href="mailto:contact@supercanvasknight.com">contact@supercanvasknight.com</a>. Nous répondrons dans un délai maximum de 30 jours.</p>
+
+        <h2>7. Sécurité</h2>
+        <p>Nous mettons en œuvre des mesures techniques adaptées pour protéger vos données : hashage des mots de passe, connexions HTTPS, tokens de session à durée limitée. Cependant, aucun système n'est infaillible et nous ne pouvons garantir une sécurité absolue.</p>
+
+        <h2>8. Mineurs</h2>
+        <p>Ce jeu est accessible à tous publics. Nous ne collectons pas sciemment des données sur des enfants de moins de 13 ans. Si vous êtes parent et pensez que votre enfant a créé un compte, contactez-nous pour le supprimer.</p>
+
+        <h2>9. Modifications</h2>
+        <p>Cette politique peut être mise à jour. En cas de modification substantielle, nous en informerons les utilisateurs via une notification dans le jeu. La date de dernière mise à jour est indiquée en haut de cette page.</p>
+
+        <a class="back-btn" href="/">← Retour au jeu</a>
+    </main>
+</body>
+</html>

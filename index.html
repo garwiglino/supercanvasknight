@@ -8371,5 +8371,68 @@
     ctx.restore();
 
 </script>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- BANDEAU COOKIES                                                 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div id="cookieBanner" style="
+    display:none;
+    position:fixed;
+    bottom:0; left:0; right:0;
+    z-index:9999;
+    background:rgba(8,12,20,0.97);
+    border-top:1px solid rgba(41,128,185,0.35);
+    backdrop-filter:blur(12px);
+    padding:16px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    font-family:'Rajdhani','Segoe UI',sans-serif;
+">
+    <p style="margin:0;color:#b8c8dc;font-size:15px;line-height:1.5;flex:1;min-width:220px;">
+        ⚔️ Ce site utilise le <strong style="color:#e8ecf4">localStorage</strong> pour ta session de jeu (aucun cookie de tracking).
+        <a href="/privacy.html" target="_blank" style="color:#2980b9;text-decoration:none;margin-left:6px;">Politique de confidentialité</a>
+    </p>
+    <div style="display:flex;gap:10px;flex-shrink:0;">
+        <button onclick="acceptCookies()" style="
+            padding:10px 24px;
+            background:linear-gradient(135deg,#1a6fa8,#2980b9);
+            border:none;border-radius:8px;
+            color:#fff;font-family:'Rajdhani',sans-serif;
+            font-size:15px;font-weight:700;letter-spacing:1px;
+            cursor:pointer;
+        ">Accepter</button>
+        <button onclick="declineCookies()" style="
+            padding:10px 20px;
+            background:rgba(255,255,255,0.05);
+            border:1px solid rgba(255,255,255,0.15);border-radius:8px;
+            color:#7a8ba0;font-family:'Rajdhani',sans-serif;
+            font-size:14px;font-weight:600;letter-spacing:1px;
+            cursor:pointer;
+        ">Refuser</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const consent = localStorage.getItem('sckt_cookie_consent');
+        if (!consent) {
+            document.getElementById('cookieBanner').style.display = 'flex';
+        }
+    })();
+
+    function acceptCookies() {
+        localStorage.setItem('sckt_cookie_consent', 'accepted');
+        document.getElementById('cookieBanner').style.display = 'none';
+    }
+
+    function declineCookies() {
+        // On informe mais on ne peut pas bloquer le localStorage fonctionnel
+        localStorage.setItem('sckt_cookie_consent', 'declined');
+        document.getElementById('cookieBanner').style.display = 'none';
+    }
+</script>
+
 </body>
 </html>

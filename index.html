@@ -5885,44 +5885,52 @@
             const fr = this.facingRight;
             const drawX = this.x + attackOffsetX;
             const bodyY = this.y - bodyBob + attackOffsetY;
-            const W = this.width; // 38
-            const H = this.height; // 42
+            const W = this.width; // 38 — hitbox width
+
+            // ── Proportions : grande tête, petit corps ──
+            const headX = drawX - 5;   // tête 10px plus large que la hitbox
+            const headW = W + 10;      // 48px
+            const headH = 20;
+            const headY = bodyY;
+
+            const torsoX = drawX + 8;  // corps très étroit, centré
+            const torsoW = W - 16;     // 22px
+            const torsoY = bodyY + 18;
+            const torsoH = 12;
+
+            const legY = torsoY + torsoH - 2;
 
             ctx.save();
 
-            // ── Jambes ──
+            // ── Jambes (fines, sous le torse étroit) ──
             ctx.fillStyle = '#5a3d18';
-            ctx.fillRect(drawX + 4 + walkAnim * 0.7, bodyY + H - 10, 11, 14);
-            ctx.fillRect(drawX + W - 15 - walkAnim * 0.7, bodyY + H - 10, 11, 14);
+            ctx.fillRect(torsoX + 1 + walkAnim * 0.6, legY, 8, 12);
+            ctx.fillRect(torsoX + torsoW - 9 - walkAnim * 0.6, legY, 8, 12);
             // Pieds
             ctx.fillStyle = '#3a2510';
-            ctx.fillRect(drawX + 2 + walkAnim * 0.7, bodyY + H + 2, 14, 6);
-            ctx.fillRect(drawX + W - 16 - walkAnim * 0.7, bodyY + H + 2, 14, 6);
+            ctx.fillRect(torsoX - 1 + walkAnim * 0.6, legY + 10, 11, 5);
+            ctx.fillRect(torsoX + torsoW - 10 - walkAnim * 0.6, legY + 10, 11, 5);
 
-            // ── Corps (armure cuir) ──
+            // ── Corps / torse (cuir, étroit) ──
             ctx.fillStyle = '#5c4218';
-            ctx.fillRect(drawX + 3, bodyY + 14, W - 6, H - 20);
-            // Reflet latéral
+            ctx.fillRect(torsoX, torsoY, torsoW, torsoH);
             ctx.fillStyle = '#7a5a20';
-            ctx.fillRect(drawX + 4, bodyY + 15, 5, H - 24);
-            // Bande horizontale (renfort)
+            ctx.fillRect(torsoX + 1, torsoY + 1, 4, torsoH - 2); // reflet
             ctx.fillStyle = '#3e2c0e';
-            ctx.fillRect(drawX + 3, bodyY + 24, W - 6, 3);
-            // Rivets carrés
+            ctx.fillRect(torsoX, torsoY + 6, torsoW, 2);          // renfort
+            // Rivets
             ctx.fillStyle = '#c8a030';
-            ctx.fillRect(drawX + 6, bodyY + 17, 3, 3);
-            ctx.fillRect(drawX + W - 9, bodyY + 17, 3, 3);
-            ctx.fillRect(drawX + 6, bodyY + 28, 3, 3);
-            ctx.fillRect(drawX + W - 9, bodyY + 28, 3, 3);
+            ctx.fillRect(torsoX + 2, torsoY + 2, 3, 3);
+            ctx.fillRect(torsoX + torsoW - 5, torsoY + 2, 3, 3);
 
-            // ── Bras (peau verte, blocs plats) ──
+            // ── Bras (peau verte, fins blocs) ──
             ctx.fillStyle = '#3d7a2e';
-            ctx.fillRect(fr ? drawX - 5 : drawX + W - 4, bodyY + 15, 9, 16);
-            ctx.fillRect(fr ? drawX + W - 4 : drawX - 5, bodyY + 15, 9, 16);
+            ctx.fillRect(fr ? torsoX - 7 : torsoX + torsoW - 2, torsoY, 8, 14); // bras arrière
+            ctx.fillRect(fr ? torsoX + torsoW - 2 : torsoX - 7, torsoY, 8, 14); // bras avant
 
-            // ── Dague ──
+            // ── Dague (ancrée sur le bras avant) ──
             ctx.save();
-            ctx.translate(fr ? drawX + W + 3 : drawX - 5, bodyY + 24);
+            ctx.translate(fr ? torsoX + torsoW + 4 : torsoX - 9, torsoY + 8);
             if (!fr) ctx.scale(-1, 1);
             if (this.state === 'ATTACK') {
                 ctx.rotate(this.attackTimer / 42 > 0.7 ? -Math.PI / 2 : Math.PI / 6);
@@ -5930,83 +5938,78 @@
                 ctx.rotate(Math.PI / 8);
             }
             ctx.fillStyle = '#9ab0c0';
-            ctx.fillRect(-2, -20, 5, 20);          // lame
+            ctx.fillRect(-2, -20, 5, 20);
             ctx.fillStyle = '#c0d0dc';
-            ctx.fillRect(-1, -20, 2, 16);           // reflet lame
+            ctx.fillRect(-1, -20, 2, 16);
             ctx.fillStyle = '#8b6914';
-            ctx.fillRect(-5, 0, 11, 3);             // garde
+            ctx.fillRect(-5, 0, 11, 3);
             ctx.fillStyle = '#5c3d0e';
-            ctx.fillRect(-2, 3, 4, 8);              // poignée
+            ctx.fillRect(-2, 3, 4, 8);
             ctx.restore();
 
-            // ── Oreilles pointues (triangles derrière la tête) ──
+            // ── Oreilles (ancrées aux bords de la tête large) ──
             ctx.fillStyle = '#3d7a2e';
             ctx.beginPath();
-            ctx.moveTo(drawX + 5, bodyY + 2);
-            ctx.lineTo(drawX - 9, bodyY - 7);
-            ctx.lineTo(drawX + 5, bodyY + 12);
+            ctx.moveTo(headX + 5, headY + 3);
+            ctx.lineTo(headX - 9, headY - 8);
+            ctx.lineTo(headX + 5, headY + 14);
             ctx.closePath(); ctx.fill();
             ctx.beginPath();
-            ctx.moveTo(drawX + W - 5, bodyY + 2);
-            ctx.lineTo(drawX + W + 9, bodyY - 7);
-            ctx.lineTo(drawX + W - 5, bodyY + 12);
+            ctx.moveTo(headX + headW - 5, headY + 3);
+            ctx.lineTo(headX + headW + 9, headY - 8);
+            ctx.lineTo(headX + headW - 5, headY + 14);
             ctx.closePath(); ctx.fill();
-            // Intérieur oreilles (teinte rosée, même principe que les joueurs)
+            // Intérieur oreilles
             ctx.fillStyle = '#a04040';
             ctx.beginPath();
-            ctx.moveTo(drawX + 5, bodyY + 4);
-            ctx.lineTo(drawX - 3, bodyY - 2);
-            ctx.lineTo(drawX + 5, bodyY + 10);
+            ctx.moveTo(headX + 5, headY + 5);
+            ctx.lineTo(headX - 3, headY - 2);
+            ctx.lineTo(headX + 5, headY + 12);
             ctx.closePath(); ctx.fill();
             ctx.beginPath();
-            ctx.moveTo(drawX + W - 5, bodyY + 4);
-            ctx.lineTo(drawX + W + 3, bodyY - 2);
-            ctx.lineTo(drawX + W - 5, bodyY + 10);
+            ctx.moveTo(headX + headW - 5, headY + 5);
+            ctx.lineTo(headX + headW + 3, headY - 2);
+            ctx.lineTo(headX + headW - 5, headY + 12);
             ctx.closePath(); ctx.fill();
 
-            // ── Tête (bloc plat, peau verte) ──
-            ctx.fillStyle = '#2e6e1e'; // ombre
-            ctx.fillRect(drawX, bodyY + 1, W, 16);
-            ctx.fillStyle = '#4a9c36'; // peau principale
-            ctx.fillRect(drawX + 1, bodyY, W - 2, 15);
-            // Reflet haut
+            // ── Tête (bloc large, peau verte) ──
+            ctx.fillStyle = '#2e6e1e';
+            ctx.fillRect(headX, headY + 2, headW, headH);
+            ctx.fillStyle = '#4a9c36';
+            ctx.fillRect(headX + 1, headY, headW - 2, headH - 1);
             ctx.fillStyle = '#5ab840';
-            ctx.fillRect(drawX + 3, bodyY + 1, 5, 4);
+            ctx.fillRect(headX + 4, headY + 1, 6, 4); // reflet
 
-            // ── Yeux — slot sombre + iris jaune + highlight (même style que Skeleton/players) ──
-            const slotW = 26;
-            const slotH = 7;
-            const slotX = fr ? drawX + W - 5 - slotW : drawX + 5;
-            const slotY = bodyY + 4;
-            // Slot noir
+            // ── Yeux (slot sombre + iris jaune + highlight — même style que Skeleton/players) ──
+            const slotW = 30;
+            const slotH = 8;
+            const slotX = fr ? headX + headW - 6 - slotW : headX + 6;
+            const slotY = bodyY + 6;
             ctx.fillStyle = '#111';
             ctx.fillRect(slotX, slotY, slotW, slotH);
-            // Iris jaune
             ctx.fillStyle = '#e8c000';
             const irisX = slotX + (fr ? slotW * 0.35 : slotW * 0.05);
             ctx.fillRect(irisX, slotY + 1, slotW * 0.55, slotH - 2);
-            // Pupille verticale (sombre)
             ctx.fillStyle = '#1a1000';
             ctx.fillRect(irisX + (fr ? slotW * 0.22 : slotW * 0.1), slotY + 1, 3, slotH - 2);
-            // Highlight pixel blanc
             ctx.fillStyle = '#fff';
             ctx.fillRect(slotX + (fr ? slotW * 0.6 : slotW * 0.1), slotY + 1, 3, 3);
 
-            // ── Sourcils (blocs pixel anguleux) ──
+            // ── Sourcils (blocs pixel) ──
             ctx.fillStyle = '#1a3d10';
             if (fr) {
-                ctx.fillRect(slotX, slotY - 3, 10, 2);
-                ctx.fillRect(slotX + 14, slotY - 2, 10, 2);
+                ctx.fillRect(slotX, slotY - 3, 11, 2);
+                ctx.fillRect(slotX + 16, slotY - 2, 12, 2);
             } else {
-                ctx.fillRect(slotX + slotW - 10, slotY - 3, 10, 2);
-                ctx.fillRect(slotX + 2, slotY - 2, 10, 2);
+                ctx.fillRect(slotX + slotW - 11, slotY - 3, 11, 2);
+                ctx.fillRect(slotX + 2, slotY - 2, 12, 2);
             }
 
-            // ── Petite corne (bloc simple, top centre) ──
+            // ── Corne (bloc, top centre de la tête) ──
             ctx.fillStyle = '#c8a030';
-            ctx.fillRect(drawX + W / 2 - 2, bodyY - 5, 4, 6);
+            ctx.fillRect(headX + headW / 2 - 2, headY - 6, 4, 7);
             ctx.fillStyle = '#e8c060';
-            ctx.fillRect(drawX + W / 2 - 1, bodyY - 5, 2, 4);
+            ctx.fillRect(headX + headW / 2 - 1, headY - 6, 2, 5);
 
             ctx.restore();
 

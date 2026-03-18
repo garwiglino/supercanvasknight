@@ -43,7 +43,7 @@
       "description": "Arme dévastatrice mais lente. Chaque coup est lourd et punitif. La longue pause entre les frappes est une vulnérabilité — mais le 4e coup peut tuer un ennemi d'un seul swing. Le double saut compense le manque de mobilité.",
       "drawId": "hammer",
       "speed": 4.2,
-      "jumpStrength": -13,
+      "jumpStrength": -15,
       "attackDuration": 14,
       "comboWindow": 95,
       "gravity": 0.90,

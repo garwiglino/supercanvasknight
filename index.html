@@ -486,57 +486,23 @@
             font-size: 16px; font-weight: bold; text-shadow: 1px 1px 0 #000;
         }
 
-        /* ── Accès rapide consommables — menu inventaire ── */
-        .inv-quick-header { font-family:'Rajdhani',sans-serif; font-size:13px; color:#7ecb7e; font-weight:700; letter-spacing:.8px; text-transform:uppercase; margin-bottom:8px; }
-        .inv-quick-header kbd { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:4px; padding:1px 5px; font-size:11px; }
-        .inv-quick-slots { display:flex; gap:12px; margin-bottom:6px; }
-        .inv-qs-slot {
-            width:78px; min-height:78px; border:2px dashed rgba(76,175,80,0.35);
-            background:rgba(10,30,12,0.55); border-radius:10px;
-            display:flex; flex-direction:column; align-items:center; justify-content:center;
-            position:relative; transition:.18s; cursor:default;
+        /* ── Consommables HUD ── */
+        .hud-consumables-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:1px; }
+        .hud-consumable {
+            display:flex; align-items:center; gap:4px;
+            background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.13);
+            border-radius:7px; padding:3px 7px 3px 5px;
+            font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700;
+            transition:.2s;
         }
-        .inv-qs-slot.qs-menu-active { border-color:#FBD000; border-style:solid; background:rgba(40,35,5,0.65); }
-        .inv-qs-slot.dragover { border-color:#4CAF50; border-style:solid; background:rgba(20,60,22,0.70); }
-        .inv-qs-item { display:flex; flex-direction:column; align-items:center; cursor:grab; }
-        .inv-qs-item:active { cursor:grabbing; }
-        .qs-menu-count { font-size:12px; font-weight:700; color:#7ecb7e; margin-top:2px; }
-        .qs-menu-num {
-            position:absolute; top:4px; left:6px;
-            font-size:10px; font-weight:700; color:rgba(180,220,180,0.55);
-            font-family:'Rajdhani',sans-serif;
+        .hud-consumable-empty { opacity:.32; filter:grayscale(0.6); }
+        .hud-cons-icon { font-size:15px; line-height:1; }
+        .hud-cons-count { color:#b9f6ca; font-size:12px; min-width:18px; text-align:center; }
+        .hud-cons-key {
+            font-size:9px; font-weight:800; color:rgba(255,255,255,0.45);
+            background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+            border-radius:3px; padding:0 3px; letter-spacing:.3px;
         }
-        .inv-qs-slot.qs-menu-active .qs-menu-num { color:#FBD000; }
-        .qs-menu-empty { font-size:11px; color:rgba(180,200,180,0.35); font-family:'Rajdhani',sans-serif; }
-        .qs-clear-btn {
-            position:absolute; top:3px; right:4px;
-            background:none; border:none; color:rgba(220,80,80,0.6);
-            font-size:10px; cursor:pointer; padding:0; line-height:1;
-        }
-        .qs-clear-btn:hover { color:#e74c3c; }
-
-        /* ── Quick slots HUD en jeu (bas-droite) ── */
-        #quick-slots-hud {
-            position:absolute; bottom:16px; right:16px;
-            display:flex; gap:8px; z-index:50; pointer-events:none;
-            font-family:'Rajdhani',sans-serif;
-        }
-        .qs-hud-slot {
-            width:48px; height:52px;
-            background:rgba(6,10,20,0.80); border:2px solid rgba(76,175,80,0.30);
-            border-radius:8px; display:flex; flex-direction:column;
-            align-items:center; justify-content:center; position:relative;
-            backdrop-filter:blur(6px); transition:.15s;
-        }
-        .qs-hud-slot.qs-hud-active { border-color:#FBD000; background:rgba(40,35,0,0.82); }
-        .qs-hud-slot.qs-hud-empty { opacity:.38; }
-        .qs-hud-icon { font-size:20px; line-height:1; }
-        .qs-hud-count { font-size:11px; font-weight:700; color:#7ecb7e; line-height:1; margin-top:1px; }
-        .qs-hud-num {
-            position:absolute; top:2px; left:5px;
-            font-size:9px; font-weight:700; color:rgba(180,220,180,0.55);
-        }
-        .qs-hud-slot.qs-hud-active .qs-hud-num { color:#FBD000; }
         .quest-item { background: #1a252f; border: 2px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
         .quest-item h3 { margin: 0 0 5px 0; color: #FBD000; font-size: 22px; }
         .quest-item p { margin: 0 0 15px 0; font-size: 16px; color: #ccc; }
@@ -1030,6 +996,8 @@
                     <div id="xp-fill" class="bar-fill"></div>
                 </div>
             </div>
+            <!-- Consommables -->
+            <div id="hud-consumables" class="hud-consumables-row"></div>
             <!-- Ligne infos : vies + pièces + ability -->
             <div class="hud-info-row">
                 <span id="livesDisplay">❤️❤️❤️</span>
@@ -1045,9 +1013,6 @@
             <!-- Liste joueurs (visible uniquement en coop) -->
             <div id="hud-player-list" style="display:none;"></div>
         </div>
-
-        <!-- Quick slots consommables (bas-droite) -->
-        <div id="quick-slots-hud"></div>
 
         <!-- ── ÉDITEUR CARTE DE PROFIL (overlay) ─────────────────────── -->
         <div id="cardEditorOverlay" class="card-editor-overlay hidden">
@@ -4173,124 +4138,57 @@
         }
     }
 
-    // ── Drag & drop state ──────────────────────────────────────────────
-    let _dragState = { id: null, fromType: null, fromIndex: null };
-
-    function _dragStartItem(id, ev) {
-        _dragState = { id, fromType: 'inventory', fromIndex: null };
-        ev.dataTransfer.effectAllowed = 'move';
-    }
-    function _dragStartQuickSlot(i, ev) {
-        _dragState = { id: player.quickSlots[i], fromType: 'quickslot', fromIndex: i };
-        ev.dataTransfer.effectAllowed = 'move';
-    }
-    function _dragOverQS(i, ev) {
-        ev.preventDefault();
-        document.querySelectorAll('.inv-qs-slot').forEach((el, idx) => {
-            el.classList.toggle('dragover', idx === i);
-        });
-    }
-    function _dragLeaveQS() {
-        document.querySelectorAll('.inv-qs-slot').forEach(el => el.classList.remove('dragover'));
-    }
-    function _dropOnQuickSlot(i, ev) {
-        ev.preventDefault();
-        document.querySelectorAll('.inv-qs-slot').forEach(el => el.classList.remove('dragover'));
-        if (!_dragState.id) return;
-        if (_dragState.fromType === 'quickslot' && _dragState.fromIndex !== null && _dragState.fromIndex !== i) {
-            // Swap des deux slots
-            const tmp = player.quickSlots[i];
-            player.quickSlots[i] = _dragState.id;
-            player.quickSlots[_dragState.fromIndex] = tmp;
-        } else if (_dragState.fromType === 'inventory') {
-            player.quickSlots[i] = _dragState.id;
+    function _useConsumableByType(type) {
+        if (!player || player.hp <= 0) return;
+        for (const key in player.inventory) {
+            const db = itemDatabase[key];
+            if (db && db.type === type && player.inventory[key].count > 0) {
+                useItem(key);
+                return;
+            }
         }
-        _dragState = { id: null, fromType: null, fromIndex: null };
-        renderInventory();
-        updateQuickSlotsHUD();
-    }
-    function _clearQuickSlot(i) {
-        player.quickSlots[i] = null;
-        renderInventory();
-        updateQuickSlotsHUD();
     }
 
-    // ── Met à jour le HUD en jeu (3 slots bas-droite) ─────────────────
-    function updateQuickSlotsHUD() {
-        const hud = document.getElementById('quick-slots-hud');
-        if (!hud || !player) return;
-        hud.innerHTML = '';
-        for (let i = 0; i < 3; i++) {
-            const itemId  = player.quickSlots[i];
-            const isActive = (i === player.quickSel);
-            const db      = itemId ? (itemDatabase[itemId] || {}) : null;
-            const count   = db ? (player.inventory[itemId]?.count || 0) : 0;
-            const isEmpty = !db;
-            const slot = document.createElement('div');
-            slot.className = 'qs-hud-slot' + (isActive ? ' qs-hud-active' : '') + (isEmpty ? ' qs-hud-empty' : '');
-            slot.innerHTML = `<span class="qs-hud-num">${i + 1}</span>`
-                + (db ? `<span class="qs-hud-icon">${db.icon || '📦'}</span><span class="qs-hud-count">×${count}</span>`
-                       : `<span class="qs-hud-icon" style="font-size:14px;opacity:.35">—</span>`);
-            hud.appendChild(slot);
+    function updateConsumableHUD() {
+        const strip = document.getElementById('hud-consumables');
+        if (!strip || !player) return;
+        strip.innerHTML = '';
+        for (const key in itemDatabase) {
+            const db = itemDatabase[key];
+            const count = player.inventory[key]?.count || 0;
+            const keyLabel = db.type === 'heal' ? 'F' : db.type === 'damage' ? 'G' : null;
+            if (!keyLabel) continue;
+            const el = document.createElement('div');
+            el.className = 'hud-consumable' + (count === 0 ? ' hud-consumable-empty' : '');
+            el.innerHTML = `<span class="hud-cons-icon">${db.icon || '📦'}</span><span class="hud-cons-count">×${count}</span><span class="hud-cons-key">${keyLabel}</span>`;
+            strip.appendChild(el);
         }
     }
 
     function renderInventory() {
         const grid = document.getElementById('content-inventory');
         if (!grid) return;
-
-        // ── Section accès rapide ──────────────────────────────────────
-        let qHtml = `<div class="inv-quick-header">Accès rapide <span style="color:#888;font-size:11px;">(maintenir <kbd>4</kbd> · glisser pour assigner)</span></div>`;
-        qHtml += `<div class="inv-quick-slots">`;
-        for (let i = 0; i < 3; i++) {
-            const itemId   = player.quickSlots[i];
-            const isActive = (i === player.quickSel);
-            const db       = itemId ? (itemDatabase[itemId] || {}) : null;
-            const count    = db ? (player.inventory[itemId]?.count || 0) : 0;
-            qHtml += `<div class="inv-qs-slot${isActive ? ' qs-menu-active' : ''}"
-                ondragover="_dragOverQS(${i},event)" ondragleave="_dragLeaveQS()" ondrop="_dropOnQuickSlot(${i},event)"
-                title="Slot ${i + 1}${isActive ? ' (actif)' : ''} — glisser un objet ici">
-                <span class="qs-menu-num">${i + 1}</span>`;
-            if (db) {
-                qHtml += `<div class="inv-qs-item" draggable="true" ondragstart="_dragStartQuickSlot(${i},event)">
-                    <img src="${db.iconPath}" style="max-width:38px;max-height:38px;object-fit:contain;" onerror="this.outerHTML='${db.icon || '📦'}'">
-                    <span class="qs-menu-count">×${count}</span>
-                </div>
-                <button class="qs-clear-btn" onclick="_clearQuickSlot(${i})">✕</button>`;
-            } else {
-                qHtml += `<span class="qs-menu-empty">vide</span>`;
-            }
-            qHtml += `</div>`;
-        }
-        qHtml += `</div><hr style="border:none;border-top:1px solid rgba(255,255,255,0.09);margin:10px 0 14px;">`;
-
-        // ── Inventaire ────────────────────────────────────────────────
         let hasItems = false;
-        let invHtml = '<div class="inv-grid">';
+        let html = '<div class="inv-grid">';
         for (let key in player.inventory) {
             const invItem = player.inventory[key];
             if (invItem.count > 0) {
                 hasItems = true;
                 const dbItem = itemDatabase[key] || { name: 'Objet', iconPath: '', iconScale: 1, icon: '📦' };
                 const iconHtml = `<img src="${dbItem.iconPath}" style="max-width:60px;max-height:60px;object-fit:contain;" onerror="this.outerHTML='${dbItem.icon || '📦'}'">`;
-                invHtml += `<div class="inv-slot" draggable="true"
-                    ondragstart="_dragStartItem('${key}',event)"
-                    onclick="useItem('${key}')"
-                    title="${dbItem.name} — Clic pour utiliser · glisser vers un slot rapide">
+                html += `<div class="inv-slot" onclick="useItem('${key}')" title="${dbItem.name} — Clic pour utiliser">
                     ${iconHtml}
                     <span class="item-count">${invItem.count}</span>
                 </div>`;
             }
         }
-        invHtml += '</div>';
-
+        html += '</div>';
         if (!hasItems) {
-            invHtml = '<p style="text-align:center;color:#888;font-size:15px;margin-top:16px;">Inventaire vide.</p>';
+            html = '<p style="text-align:center;color:#888;font-size:15px;margin-top:30px;">Inventaire vide.</p>';
         } else {
-            invHtml += `<p style="font-size:13px;color:#aaa;margin-top:10px;text-align:center;"><i>Clic = utiliser · glisser = assigner à un slot rapide</i></p>`;
+            html += `<p style="font-size:13px;color:#aaa;margin-top:10px;text-align:center;"><i>Clic pour utiliser · <kbd>F</kbd> = soin · <kbd>G</kbd> = force</i></p>`;
         }
-
-        grid.innerHTML = qHtml + invHtml;
+        grid.innerHTML = html;
     }
 
     function renderWeapons() {
@@ -4474,7 +4372,7 @@
                     player.inventory[key].count--;
                     player.updateUI();
                     renderInventory();
-                    updateQuickSlotsHUD();
+                    updateConsumableHUD();
                     showNotification(`Vous avez utilisé ${dbItem.name} !`, "#4CAF50");
                     // ── VFX de soin ─────────────────────────────────────────
                     player.healVfxTimer = 48;
@@ -4518,7 +4416,7 @@
                 player.bonusDamage += dbItem.value;
                 player.inventory[key].count--;
                 renderInventory();
-                updateQuickSlotsHUD();
+                updateConsumableHUD();
                 showNotification(`Dégâts augmentés de ${dbItem.value} !`, "#E52521");
             }
         }
@@ -9131,7 +9029,7 @@
         buildLevel();
 
         // Reset quick slots HUD
-        updateQuickSlotsHUD();
+        updateConsumableHUD();
 
         // Appliquer la configuration choisie
         // Forcer la réinitialisation de l'inventaire d'armes au démarrage d'une partie

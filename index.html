@@ -7099,24 +7099,21 @@
 
     function drawChatBubbles(entity) {
         if (!entity.chatBubbles || entity.chatBubbles.length === 0) return;
-        const bubbleW = 200;
-        const bubbleH = 28;
-        const gap = 6;
-        const baseY = entity.y - 48; // au-dessus de la barre de vie/nom
+        const bubbleW = 290;
+        const bubbleH = 40;
+        const gap = 8;
+        const baseY = entity.y - 56;
 
         entity.chatBubbles.forEach((b, idx) => {
             const stackY = baseY - idx * (bubbleH + gap);
             const wobbleX = Math.sin(Date.now() / 180 + b.wobblePhase) * 2.5;
-            const wobbleR = Math.sin(Date.now() / 220 + b.wobblePhase + 1) * 0.025;
+            const wobbleR = Math.sin(Date.now() / 220 + b.wobblePhase + 1) * 0.022;
 
-            // Fade
             const fadeAlpha = b.life < CHAT_FADE_FRAMES ? b.life / CHAT_FADE_FRAMES : 1;
-            // Bulles plus hautes = légèrement plus transparentes (quinconce)
-            const stackAlpha = 1 - idx * 0.18;
+            const stackAlpha = 1 - idx * 0.16;
             const alpha = fadeAlpha * stackAlpha;
 
-            // Légère alternance gauche/droite (quinconce)
-            const quincX = idx % 2 === 0 ? 0 : 10;
+            const quincX = idx % 2 === 0 ? 0 : 14;
 
             const bx = entity.x + entity.width / 2 - bubbleW / 2 + wobbleX + quincX;
             const by = stackY;
@@ -7124,7 +7121,6 @@
             ctx.save();
             ctx.globalAlpha = alpha;
 
-            // Rotation wobbly
             const cx = bx + bubbleW / 2;
             const cy = by + bubbleH / 2;
             ctx.translate(cx, cy);
@@ -7132,32 +7128,31 @@
             ctx.translate(-cx, -cy);
 
             // Fond bulle
-            ctx.fillStyle = 'rgba(15,15,25,0.82)';
+            ctx.fillStyle = 'rgba(12,12,22,0.88)';
             ctx.beginPath();
-            ctx.roundRect(bx, by, bubbleW, bubbleH, 9);
+            ctx.roundRect(bx, by, bubbleW, bubbleH, 12);
             ctx.fill();
             // Bordure
-            ctx.strokeStyle = 'rgba(255,255,255,0.22)';
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+            ctx.lineWidth = 1.5;
             ctx.stroke();
-            // Petite queue vers le bas (triangle)
+            // Queue triangle
             const tailX = bx + bubbleW / 2 - quincX;
-            ctx.fillStyle = 'rgba(15,15,25,0.82)';
+            ctx.fillStyle = 'rgba(12,12,22,0.88)';
             ctx.beginPath();
-            ctx.moveTo(tailX - 5, by + bubbleH);
-            ctx.lineTo(tailX + 5, by + bubbleH);
-            ctx.lineTo(tailX, by + bubbleH + 7);
+            ctx.moveTo(tailX - 7, by + bubbleH);
+            ctx.lineTo(tailX + 7, by + bubbleH);
+            ctx.lineTo(tailX, by + bubbleH + 10);
             ctx.closePath(); ctx.fill();
 
             // Texte
             ctx.fillStyle = '#ffffff';
-            ctx.font = '13px "Rajdhani", sans-serif';
+            ctx.font = 'bold 16px "Rajdhani", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            // Tronquer si nécessaire (sécurité)
             let displayText = b.text;
-            if (ctx.measureText(displayText).width > bubbleW - 16) {
-                while (ctx.measureText(displayText + '…').width > bubbleW - 16 && displayText.length > 0) {
+            if (ctx.measureText(displayText).width > bubbleW - 22) {
+                while (ctx.measureText(displayText + '…').width > bubbleW - 22 && displayText.length > 0) {
                     displayText = displayText.slice(0, -1);
                 }
                 displayText += '…';
@@ -7220,74 +7215,83 @@
     function drawOffscreenIndicator(remote) {
         if (!remote.visible || !remote.skin) return;
 
-        // Position canvas du remote (en coordonnées monde → écran via la caméra)
-        // La caméra est appliquée via ctx.save/translate dans le game loop
-        // On doit recalculer la position écran
         const camX = canvas.width  / 2 - player.x - player.width  / 2;
         const camY = canvas.height / 2 - player.y - player.height / 2;
 
         const screenX = remote.x + remote.width  / 2 + camX;
         const screenY = remote.y + remote.height / 2 + camY;
 
-        const margin = 28;
         const W = canvas.width, H = canvas.height;
+        const margin = 42; // rayon du cercle indicateur
 
-        const isOffscreen = screenX < 0 || screenX > W || screenY < 0 || screenY > H;
+        const isOffscreen = screenX < margin || screenX > W - margin || screenY < margin || screenY > H - margin;
         if (!isOffscreen) return;
 
-        // Clamp le point de référence sur le bord de l'écran
-        const clampedX = Math.max(margin, Math.min(W - margin, screenX));
-        const clampedY = Math.max(margin, Math.min(H - margin, screenY));
-
-        // Angle vers le remote
         const angle = Math.atan2(screenY - H / 2, screenX - W / 2);
 
-        // Position sur le bord
+        // Position sur le bord de l'écran
         let edgeX, edgeY;
         const tan = Math.tan(angle);
         if (Math.abs(Math.cos(angle)) > Math.abs(Math.sin(angle))) {
-            // Bord gauche ou droit
-            edgeX = screenX < 0 ? margin : W - margin;
+            edgeX = screenX < W / 2 ? margin : W - margin;
             edgeY = H / 2 + (edgeX - W / 2) * tan;
             edgeY = Math.max(margin, Math.min(H - margin, edgeY));
         } else {
-            // Bord haut ou bas
-            edgeY = screenY < 0 ? margin : H - margin;
+            edgeY = screenY < H / 2 ? margin : H - margin;
             edgeX = W / 2 + (edgeY - H / 2) / tan;
             edgeX = Math.max(margin, Math.min(W - margin, edgeX));
         }
 
+        const R = 28; // rayon cercle
         ctx.save();
-        ctx.globalAlpha = 0.85;
+        ctx.globalAlpha = 0.92;
 
-        // Cercle de fond
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        // Halo pulsé
+        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 300);
+        ctx.fillStyle = `rgba(80,160,255,${0.12 + pulse * 0.1})`;
         ctx.beginPath();
-        ctx.arc(edgeX, edgeY, 18, 0, Math.PI * 2);
+        ctx.arc(edgeX, edgeY, R + 8 + pulse * 4, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-        ctx.lineWidth = 1.5;
+
+        // Cercle fond
+        ctx.fillStyle = 'rgba(10,20,50,0.82)';
+        ctx.beginPath();
+        ctx.arc(edgeX, edgeY, R, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(100,180,255,0.7)';
+        ctx.lineWidth = 2.5;
         ctx.stroke();
 
-        // Flèche
+        // Flèche (plus grande)
         ctx.save();
         ctx.translate(edgeX, edgeY);
         ctx.rotate(angle);
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.moveTo(14, 0);
-        ctx.lineTo(6, -6);
-        ctx.lineTo(6, 6);
+        ctx.moveTo(R - 4, 0);
+        ctx.lineTo(R - 16, -9);
+        ctx.lineTo(R - 16, 9);
         ctx.closePath();
         ctx.fill();
         ctx.restore();
 
-        // Pseudo au-dessus
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 11px "Rajdhani", sans-serif';
+        // Pseudo sous l'indicateur
+        const pseudo = remote.pseudo || '?';
+        ctx.font = 'bold 14px "Rajdhani", sans-serif';
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(remote.pseudo || '?', edgeX, edgeY - 20);
+        // Fond pastille pseudo
+        const tw = ctx.measureText(pseudo).width + 14;
+        const labelY = edgeY + R + 6;
+        ctx.fillStyle = 'rgba(10,20,50,0.78)';
+        ctx.beginPath();
+        ctx.roundRect(edgeX - tw / 2, labelY, tw, 20, 6);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(100,180,255,0.4)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = '#cce8ff';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pseudo, edgeX, labelY + 10);
 
         ctx.restore();
     }

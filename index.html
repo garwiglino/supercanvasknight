@@ -5980,7 +5980,18 @@
                 if (this.y > levelDeadZone) this.y = platforms[0].y - 60;
                 if (this.downTimer <= 0) {
                     this.downed = false;
-                    handlePlayerDeath();
+                    if ((gameMode === 'host' || gameMode === 'guest') && remotePlayer.visible && !remotePlayer.downed) {
+                        // Partenaire encore vivant → résurrection avec PV de grâce
+                        this.hp = Math.round(this.maxHp * 0.15);
+                        this.hurtTimer = 120;
+                        this.isDying = false;
+                        this.deathTimer = 0;
+                        lives = Math.max(1, lives);
+                        player.respawn();
+                        showNotification('💀 Ranimé in extremis…', '#e08030');
+                    } else {
+                        handlePlayerDeath();
+                    }
                 }
                 return;
             }
@@ -7474,7 +7485,9 @@
                     // Coup : dégâts si le joueur est encore à portée
                     if (Math.abs((player.x + 25) - (this.x + 25)) < 80 &&
                         Math.abs(player.y - this.y) < 55 && player.hp > 0) {
-                        player.takeDamage(20, this.facingRight ? 1 : -1, this);
+                        if (gameMode !== 'guest') {
+                            player.takeDamage(20, this.facingRight ? 1 : -1, this);
+                        }
                         if (socket && socket.connected && roomCode && gameMode === 'host') {
                             socket.emit('game-event', { type: 'enemy-attack-player', damage: 20, dir: this.facingRight ? 1 : -1 });
                         }
@@ -7988,8 +8001,10 @@
                 if (this.windupTimer === 0 && this.state === 'ATTACK') {
                     if (Math.abs((player.x + 19) - (this.x + 19)) < 68 &&
                         Math.abs(player.y - this.y) < 50 && player.hp > 0) {
-                        player.takeDamage(12, this.facingRight ? 1 : -1, this);
-                            if (socket && socket.connected && roomCode && gameMode === 'host') {
+                        if (gameMode !== 'guest') {
+                            player.takeDamage(12, this.facingRight ? 1 : -1, this);
+                        }
+                        if (socket && socket.connected && roomCode && gameMode === 'host') {
                             socket.emit('game-event', { type: 'enemy-attack-player', damage: 12, dir: this.facingRight ? 1 : -1, enemyType: 'goblin' });
                         }
                     }
@@ -9026,7 +9041,7 @@
                 }
             }
             // Both downed → Game Over
-            if (player.downed && remotePlayer.visible && remotePlayer.downed) {
+            if (player.downed && remotePlayer.visible && remotePlayer.downed && roomCode) {
                 endGame(false);
             }
 
@@ -9485,11 +9500,19 @@
     function handlePlayerDeath() {
         lives--;
         if (livesDisplay) livesDisplay.innerText = `❤️ ${lives}`;
-        
+
         if (lives > 0) {
             player.respawn();
         } else {
-            endGame(false);
+            // En coop : game over seulement si le partenaire est aussi à court de vies ou à terre
+            if ((gameMode === 'host' || gameMode === 'guest') && remotePlayer.visible && !remotePlayer.downed) {
+                // Partenaire encore vivant → garder 1 vie minimum et respawn
+                lives = 1;
+                if (livesDisplay) livesDisplay.innerText = `❤️ ${lives}`;
+                player.respawn();
+            } else {
+                endGame(false);
+            }
         }
     }
 

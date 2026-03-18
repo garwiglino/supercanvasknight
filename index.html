@@ -1409,6 +1409,11 @@
                 <div id="opt-content-sound" class="opt-content" style="display:none">
                     <div class="opt-section-title">Volume</div>
                     <div class="opt-vol-row">
+                        <label>Musique</label>
+                        <input type="range" min="0" max="100" id="musicVolumeSlider" oninput="setMusicVolume(this.value)">
+                        <span class="opt-vol-val" id="musicVolumeVal">50%</span>
+                    </div>
+                    <div class="opt-vol-row">
                         <label>Effets sonores</label>
                         <input type="range" min="0" max="100" id="sfxVolumeSlider" oninput="setSfxVolume(this.value)">
                         <span class="opt-vol-val" id="sfxVolumeVal">100%</span>
@@ -2221,6 +2226,7 @@
     function showHub() {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         document.getElementById('hubScreen').classList.remove('hidden');
+        MusicPlayer.play('music/menu.mp3');
         const pseudo = localStorage.getItem('sckt_pseudo') || '?';
         document.getElementById('hubPseudo').textContent      = pseudo;
         document.getElementById('hubWelcomeName').textContent = pseudo;
@@ -3116,6 +3122,35 @@
         return { play, swing, hit, step, parry, pain, setVolume, getVolume };
     })();
 
+    // ── Musique de fond ───────────────────────────────────────────────
+    const MusicPlayer = (() => {
+        const _audio = new Audio();
+        _audio.loop = true;
+        let _vol = (() => {
+            const s = parseInt(localStorage.getItem('sckt_music_volume'));
+            return isNaN(s) ? 50 : s;
+        })();
+        _audio.volume = _vol / 100;
+
+        function play(src) {
+            if (_audio.src.endsWith(src) && !_audio.paused) return;
+            _audio.src = src;
+            _audio.volume = _vol / 100;
+            _audio.play().catch(() => {});
+        }
+        function stop() {
+            _audio.pause();
+            _audio.currentTime = 0;
+        }
+        function setVolume(v) {
+            _vol = Math.min(100, Math.max(0, parseInt(v)));
+            _audio.volume = _vol / 100;
+            localStorage.setItem('sckt_music_volume', _vol);
+        }
+        function getVolume() { return _vol; }
+        return { play, stop, setVolume, getVolume };
+    })();
+
     // Données d'affichage (nom, description, icône) — remplies depuis weapons.json
     let WEAPON_DATA = {};
 
@@ -3781,6 +3816,14 @@
         document.getElementById('optionsOverlay').classList.remove('hidden');
         showOptTab('controls');
         refreshBindLabels();
+        // Init sliders depuis localStorage
+        const sfxVol = parseInt(localStorage.getItem('sckt_sfx_volume'));
+        const sfxVal = isNaN(sfxVol) ? 100 : sfxVol;
+        document.getElementById('sfxVolumeSlider').value = sfxVal;
+        document.getElementById('sfxVolumeVal').textContent = sfxVal + '%';
+        const musVol = MusicPlayer.getVolume();
+        document.getElementById('musicVolumeSlider').value = musVol;
+        document.getElementById('musicVolumeVal').textContent = musVol + '%';
     }
 
     function closeOptions() {
@@ -3807,6 +3850,11 @@
         SFX.setVolume(v);
         document.getElementById('sfxVolumeVal').textContent = val + '%';
         localStorage.setItem('sckt_sfx_volume', val);
+    }
+
+    function setMusicVolume(val) {
+        MusicPlayer.setVolume(val);
+        document.getElementById('musicVolumeVal').textContent = val + '%';
     }
 
     // ── In-game ESC menu ──────────────────────────────────────────
@@ -9148,7 +9196,7 @@
     function startGame() {
         if (document.activeElement) document.activeElement.blur();
         cancelAnimationFrame(animationId);
-        
+        MusicPlayer.stop();
         keys.right = false; keys.left = false; keys.up = false; keys.attack = false;
 
         startScreen.classList.add('hidden');

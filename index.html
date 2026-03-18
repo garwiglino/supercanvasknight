@@ -3052,7 +3052,7 @@
         {
             // Masque-crâne intégral — orbites vides lumineuses, dents gravées sur la visière
             name: "Ombre Maudite",
-            gender: 'F', weapon: 'staff', helmet: 'skull',
+            gender: 'F', weapon: 'sword', helmet: 'skull',
             armor: ['#555566', '#2e2e44', '#0d0d1a'],
             tunic: '#3a0a4a', trim: '#b39ddb',
             cape: '#0d0014', hair: '#1a0033', hairTip: '#9c27b0',
@@ -5256,6 +5256,7 @@
     function drawWeapon(rc, weapon, isAttacking, comboStep, progress, skin) {
         const trim = skin?.trim || '#DAA520';
         const armor0 = skin?.armor ? skin.armor[0] : '#ccc';
+        const isOmbre = skin?.name === 'Ombre Maudite';
 
         if (weapon === 'sword') {
             let weaponAngle;
@@ -5270,14 +5271,21 @@
                 // Trail (save/restore isolé pour le scale scaleY)
                 rc.save();
                 rc.scale(1, scaleY);
-                let r2 = comboStep===3?255:0, g2=comboStep===3?215:255, b2=comboStep===3?0:255;
+                let r2, g2, b2;
+                if (isOmbre) {
+                    // Traîne violette/rose néon pour l'Ombre Maudite
+                    if (comboStep === 3) { r2=234; g2=128; b2=252; }
+                    else                  { r2=180; g2=0;   b2=255; }
+                } else {
+                    r2 = comboStep===3?255:0; g2=comboStep===3?215:255; b2=comboStep===3?0:255;
+                }
                 if (comboStep === 3) {
                     const gr = rc.createRadialGradient(0,0,radius*0.3,0,0,radius);
                     gr.addColorStop(0, `rgba(${r2},${g2},${b2},0)`);
                     gr.addColorStop(1, `rgba(${r2},${g2},${b2},${alpha*0.8})`);
                     rc.fillStyle = gr;
                     rc.beginPath(); rc.arc(0,0,radius,0,Math.PI*2); rc.fill();
-                    rc.fillStyle = `rgba(255,255,255,${alpha*0.4})`;
+                    rc.fillStyle = isOmbre ? `rgba(234,128,252,${alpha*0.3})` : `rgba(255,255,255,${alpha*0.4})`;
                     rc.beginPath(); rc.arc(0,0,radius*1.05,0,Math.PI*2); rc.fill();
                 } else {
                     const gr = rc.createLinearGradient(Math.cos(startAngle)*radius,Math.sin(startAngle)*radius,Math.cos(weaponAngle)*radius,Math.sin(weaponAngle)*radius);
@@ -5293,14 +5301,14 @@
             // Rotation de l'arme HORS du save/restore — elle suit vraiment le swing
             rc.rotate(weaponAngle);
             // Lame
-            rc.fillStyle = '#C8D8E8'; rc.fillRect(-3, -38, 6, 38);
-            // Affûtage (bord blanc)
-            rc.fillStyle = 'rgba(255,255,255,0.55)'; rc.fillRect(-1, -38, 2, 32);
-            // Garde
+            rc.fillStyle = isOmbre ? '#1a0033' : '#C8D8E8'; rc.fillRect(-3, -38, 6, 38);
+            // Affûtage (bord lumineux — violet néon pour Ombre, blanc pour les autres)
+            rc.fillStyle = isOmbre ? 'rgba(234,128,252,0.65)' : 'rgba(255,255,255,0.55)'; rc.fillRect(-1, -38, 2, 32);
+            // Garde (couleur trim du skin)
             rc.fillStyle = trim; rc.fillRect(-11, 0, 22, 5);
             // Poignée
-            rc.fillStyle = '#3a2a1a'; rc.fillRect(-2.5, 5, 5, 9);
-            // Pommeau
+            rc.fillStyle = isOmbre ? '#0d0011' : '#3a2a1a'; rc.fillRect(-2.5, 5, 5, 9);
+            // Pommeau (couleur trim du skin)
             rc.fillStyle = trim; rc.beginPath(); rc.arc(0, 15, 4.5, 0, Math.PI*2); rc.fill();
 
         } else if (weapon === 'hammer') {
@@ -9183,7 +9191,7 @@
         ctx.restore();
 
         // ── Indicateur hors-écran (hors du ctx.save camera) ──
-        if (remotePlayer.visible) drawOffscreenIndicator(remotePlayer);
+        if (roomCode && remotePlayer.visible) drawOffscreenIndicator(remotePlayer);
 
         animationId = requestAnimationFrame(gameLoop);
     }
@@ -9403,11 +9411,9 @@
     function drawOffscreenIndicator(remote) {
         if (!remote.visible || !remote.skin) return;
 
-        const camX = canvas.width  / 2 - player.x - player.width  / 2;
-        const camY = canvas.height / 2 - player.y - player.height / 2;
-
-        const screenX = remote.x + remote.width  / 2 + camX;
-        const screenY = remote.y + remote.height / 2 + camY;
+        // Utilise la vraie caméra (cameraX/cameraY) — identique au rendu
+        const screenX = remote.x + remote.width  / 2 - cameraX;
+        const screenY = remote.y + remote.height / 2 - cameraY;
 
         const W = canvas.width, H = canvas.height;
         const margin = 42; // rayon du cercle indicateur

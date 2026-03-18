@@ -5404,34 +5404,61 @@
             ctx.translate(this.x, this.y);
             ctx.rotate(this.rot);
             if (this.type === 'skeleton') {
-                // Casque sombre
+                // ── Casque skeleton — 54×26 centré (= this.width+4 × 26) ──
                 ctx.fillStyle = '#3d342b';
-                ctx.fillRect(-16, -12, 32, 20);
-                // Visor noir
+                ctx.beginPath(); ctx.roundRect(-27, -13, 54, 26, 6); ctx.fill();
+                // Reflet
+                ctx.fillStyle = '#4a4038';
+                ctx.fillRect(-24, -11, 10, 8);
+                // Visor sombre (30×10, centré)
                 ctx.fillStyle = '#111';
-                ctx.fillRect(-8, -7, 16, 8);
+                ctx.fillRect(-15, -4, 30, 10);
                 // Yeux rouges
                 ctx.fillStyle = '#ff2200';
-                ctx.fillRect(-4, -5, 6, 3);
+                ctx.fillRect(-6, -2, 8, 4);
+                // Highlight pixel
+                ctx.fillStyle = '#ffa0a0';
+                ctx.fillRect(-2, -2, 2, 2);
+                // Sang au col
+                ctx.fillStyle = '#cc1111';
+                ctx.fillRect(-12, 13, 24, 8);
             } else {
-                // Tête gobelin large
-                ctx.fillStyle = '#2e6e1e';
-                ctx.fillRect(-19, -13, 38, 20);
-                ctx.fillStyle = '#4a9c36';
-                ctx.fillRect(-18, -14, 36, 19);
-                // Oreilles
+                // ── Tête gobelin — 48×20 centrée (= W+10 × headH) ──
+                // Oreilles (sticking out 9px)
                 ctx.fillStyle = '#3d7a2e';
-                ctx.beginPath(); ctx.moveTo(-18,-6); ctx.lineTo(-27,-14); ctx.lineTo(-18,5); ctx.closePath(); ctx.fill();
-                ctx.beginPath(); ctx.moveTo( 18,-6); ctx.lineTo( 27,-14); ctx.lineTo( 18,5); ctx.closePath(); ctx.fill();
-                // Slot yeux
+                ctx.beginPath(); ctx.moveTo(-24,-3); ctx.lineTo(-33,-12); ctx.lineTo(-24, 8); ctx.closePath(); ctx.fill();
+                ctx.beginPath(); ctx.moveTo( 24,-3); ctx.lineTo( 33,-12); ctx.lineTo( 24, 8); ctx.closePath(); ctx.fill();
+                // Intérieur oreilles
+                ctx.fillStyle = '#a04040';
+                ctx.beginPath(); ctx.moveTo(-24,-1); ctx.lineTo(-29, -7); ctx.lineTo(-24, 6); ctx.closePath(); ctx.fill();
+                ctx.beginPath(); ctx.moveTo( 24,-1); ctx.lineTo( 29, -7); ctx.lineTo( 24, 6); ctx.closePath(); ctx.fill();
+                // Tête principale
+                ctx.fillStyle = '#2e6e1e';
+                ctx.fillRect(-24, -10, 48, 20);
+                ctx.fillStyle = '#4a9c36';
+                ctx.fillRect(-23, -11, 46, 19);
+                // Reflet
+                ctx.fillStyle = '#5ab840';
+                ctx.fillRect(-20, -9, 7, 4);
+                // Slot yeux (30×8)
                 ctx.fillStyle = '#111';
-                ctx.fillRect(-12, -8, 24, 7);
+                ctx.fillRect(-15, -4, 30, 8);
                 ctx.fillStyle = '#e8c000';
-                ctx.fillRect(-9, -7, 18, 5);
+                ctx.fillRect(-12, -3, 22, 6);
+                // Pupille + highlight
+                ctx.fillStyle = '#1a1000';
+                ctx.fillRect(2, -3, 3, 6);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-10, -3, 3, 3);
+                // Corne (4×7 au-dessus)
+                ctx.fillStyle = '#c8a030';
+                ctx.fillRect(-2, -16, 4, 7);
+                ctx.fillStyle = '#e8c060';
+                ctx.fillRect(-1, -16, 2, 5);
+                // Sang au col
+                ctx.fillStyle = '#cc1111';
+                ctx.fillRect(-12, 10, 24, 8);
             }
-            // Sang au col (moignon)
-            ctx.fillStyle = '#cc1111';
-            ctx.fillRect(-8, 7, 16, 7);
             ctx.restore();
         }
     }

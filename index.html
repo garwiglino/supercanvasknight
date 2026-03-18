@@ -2355,6 +2355,14 @@
                 'sfx/hit/flesh/sword_flesh_9.wav',
                 'sfx/hit/flesh/sword_flesh_10.wav',
             ],
+            // ── Footsteps par surface ─────────────────────────────────
+            // Ajouter les fichiers WAV dans sfx/footsteps/<surface>/
+            'step.stone':  ['sfx/footsteps/stone/stone_step_1.wav','sfx/footsteps/stone/stone_step_2.wav','sfx/footsteps/stone/stone_step_3.wav','sfx/footsteps/stone/stone_step_4.wav'],
+            'step.gravel': ['sfx/footsteps/gravel/gravel_step_1.wav','sfx/footsteps/gravel/gravel_step_2.wav','sfx/footsteps/gravel/gravel_step_3.wav','sfx/footsteps/gravel/gravel_step_4.wav'],
+            'step.grass':  ['sfx/footsteps/grass/grass_step_1.wav','sfx/footsteps/grass/grass_step_2.wav','sfx/footsteps/grass/grass_step_3.wav','sfx/footsteps/grass/grass_step_4.wav'],
+            'step.wood':   ['sfx/footsteps/wood/wood_step_1.wav','sfx/footsteps/wood/wood_step_2.wav','sfx/footsteps/wood/wood_step_3.wav','sfx/footsteps/wood/wood_step_4.wav'],
+            'step.water':  ['sfx/footsteps/water/water_step_1.wav','sfx/footsteps/water/water_step_2.wav','sfx/footsteps/water/water_step_3.wav'],
+            'step.sand':   ['sfx/footsteps/sand/sand_step_1.wav','sfx/footsteps/sand/sand_step_2.wav','sfx/footsteps/sand/sand_step_3.wav','sfx/footsteps/sand/sand_step_4.wav'],
         };
 
         // Cooldown anti-spam par clé (ms) pour éviter le stacking audio
@@ -2374,18 +2382,20 @@
             audio.play().catch(() => {});
         }
 
-        // Joue le woosh de l'arme active (fallback silencieux si pas de son dispo)
         function swing(weaponId) {
             play(`weapon.${weaponId}.swing`);
         }
 
-        // Joue un son d'impact selon la matière de l'ennemi touché
-        // material: 'flesh' | 'bone' | 'metal' | ... (extensible)
         function hit(material = 'flesh') {
             play(`hit.${material}`);
         }
 
-        return { play, swing, hit };
+        // Joue un pas selon la surface ('stone'|'gravel'|'grass'|'wood'|'water'|'sand')
+        function step(surface = 'stone', volume = 0.55) {
+            play(`step.${surface}`, volume);
+        }
+
+        return { play, swing, hit, step };
     })();
 
     // Données d'affichage (nom, description, icône) — remplies depuis weapons.json
@@ -2917,14 +2927,21 @@
 
     const defaultLevelData = {
         platforms: [
-            {x: 0, y: 500, width: 600, height: 200}, {x: 750, y: 450, width: 200, height: 250},
-            {x: 1100, y: 350, width: 150, height: 30}, {x: 1400, y: 500, width: 300, height: 200},
-            {x: 1850, y: 400, width: 100, height: 30}, {x: 2100, y: 250, width: 100, height: 30},
-            {x: 2400, y: 500, width: 600, height: 200}, {x: 3200, y: 450, width: 150, height: 200},
-            {x: 3400, y: 350, width: 150, height: 300}, {x: 3600, y: 250, width: 150, height: 400},
-            {x: 3950, y: 350, width: 200, height: 30}, {x: 4300, y: 500, width: 1000, height: 200},
-            {x: 5500, y: 350, width: 100, height: 30}, {x: 5800, y: 250, width: 100, height: 30},
-            {x: 6100, y: 500, width: 800, height: 200}
+            {x: 0,    y: 500, width: 600,  height: 200, surface: 'stone'},
+            {x: 750,  y: 450, width: 200,  height: 250, surface: 'grass'},
+            {x: 1100, y: 350, width: 150,  height: 30,  surface: 'wood'},
+            {x: 1400, y: 500, width: 300,  height: 200, surface: 'grass'},
+            {x: 1850, y: 400, width: 100,  height: 30,  surface: 'wood'},
+            {x: 2100, y: 250, width: 100,  height: 30,  surface: 'wood'},
+            {x: 2400, y: 500, width: 600,  height: 200, surface: 'gravel'},
+            {x: 3200, y: 450, width: 150,  height: 200, surface: 'sand'},
+            {x: 3400, y: 350, width: 150,  height: 300, surface: 'stone'},
+            {x: 3600, y: 250, width: 150,  height: 400, surface: 'stone'},
+            {x: 3950, y: 350, width: 200,  height: 30,  surface: 'wood'},
+            {x: 4300, y: 500, width: 1000, height: 200, surface: 'stone'},
+            {x: 5500, y: 350, width: 100,  height: 30,  surface: 'wood'},
+            {x: 5800, y: 250, width: 100,  height: 30,  surface: 'wood'},
+            {x: 6100, y: 500, width: 800,  height: 200, surface: 'stone'}
         ],
         coins: [
             {x: 835, y: 380}, {x: 1160, y: 280}, {x: 1535, y: 430}, {x: 1885, y: 330}, {x: 2135, y: 180},
@@ -2944,7 +2961,7 @@
     };
 
     const salonLevelData = {
-        platforms: [{ x: -2000, y: 520, width: 8000, height: 80 }],
+        platforms: [{ x: -2000, y: 520, width: 8000, height: 80, surface: 'stone' }],
         coins: [], skeletons: [], deadZone: 900
     };
 
@@ -4152,6 +4169,8 @@
             // Applique les stats de l'arme équipée
             this.applyWeaponStats();
             this.grounded = false;
+            this.currentSurface = 'stone'; // surface sous les pieds
+            this._footstepTimer = 0;       // timer entre deux pas
             this.color = '#B0C4DE';
             this.facingRight = true;
             this.isAttacking = false;
@@ -4706,6 +4725,19 @@
                 this.idleTime = 0;
             }
 
+            // ── Footsteps ────────────────────────────────────────────────
+            if (this.grounded && Math.abs(this.vx) > 0.8) {
+                if (this._footstepTimer <= 0) {
+                    const interval = this.currentSurface === 'water' ? 14 : 20;
+                    SFX.step(this.currentSurface, this.currentSurface === 'water' ? 0.4 : 0.55);
+                    this._footstepTimer = interval;
+                } else {
+                    this._footstepTimer--;
+                }
+            } else {
+                this._footstepTimer = 0;
+            }
+
             let deathY = levelDeadZone;
             if (this.y > deathY) {
                 handlePlayerDeath(); 
@@ -4724,10 +4756,11 @@
                         else if (this.vx < 0) this.x = p.x + p.width;
                         this.vx = 0;
                     } else if (axis === 'y') {
-                        if (this.vy > 0) { 
+                        if (this.vy > 0) {
                             this.y = p.y - this.height;
                             this.grounded = true;
-                        } else if (this.vy < 0) { 
+                            this.currentSurface = p.surface || 'stone';
+                        } else if (this.vy < 0) {
                             this.y = p.y + p.height;
                         }
                         this.vy = 0;
@@ -6188,13 +6221,15 @@
     }
 
     class Platform {
-        constructor(x, y, width, height, type = 'normal') {
+        constructor(x, y, width, height, type = 'normal', surface = 'stone') {
             this.x = x;
             this.y = y;
             this.width = width;
             this.height = height;
-            this.type = type; 
+            this.type    = type;
+            this.surface = surface;
         }
+
         draw() {
             if (this.type === 'goal') {
                 ctx.fillStyle = '#444';
@@ -6203,42 +6238,202 @@
                 ctx.fillRect(this.x, this.y, this.width, 15);
                 return;
             }
+            const { x, y, width: W, height: H } = this;
 
-            ctx.fillStyle = '#3a404d'; 
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-            
-            const brickW = 40;
-            const brickH = 20;
-            for (let row = 1; row * brickH < this.height; row++) { 
-                let offsetX = (row % 2 === 0) ? 0 : -brickW / 2;
-                for (let col = 0; offsetX + col * brickW < this.width; col++) {
-                    let bx = this.x + offsetX + col * brickW;
-                    let by = this.y + row * brickH;
-                    
-                    let drawX = Math.max(this.x, bx);
-                    let drawW = Math.min(this.x + this.width - drawX, bx + brickW - drawX);
-                    
-                    if (drawW > 0) {
-                        if ((row+col) % 3 === 0) ctx.fillStyle = '#474c53';
-                        else if ((row+col) % 5 === 0) ctx.fillStyle = '#3e4249';
-                        else ctx.fillStyle = '#4f545c';
+            switch (this.surface) {
 
-                        ctx.fillRect(drawX, by, drawW - 2, brickH - 2); 
+                case 'gravel': {
+                    // ── Corps gris moyen ──
+                    ctx.fillStyle = '#6e6e6e';
+                    ctx.fillRect(x, y, W, H);
+                    ctx.fillStyle = '#7a7a7a';
+                    ctx.fillRect(x, y, W, H * 0.4);
+                    // Petits cailloux (pseudo-aléatoires déterministes)
+                    const gColors = ['#555','#888','#999','#4e4e4e'];
+                    for (let i = 4; i < W - 4; i += 9) {
+                        for (let j = 3; j < H - 2; j += 8) {
+                            const seed = (i * 7 + j * 13 + x) % 4;
+                            ctx.fillStyle = gColors[seed];
+                            const pw = 4 + (i * 3 + j) % 5;
+                            const ph = 3 + (i + j * 2) % 4;
+                            ctx.beginPath(); ctx.ellipse(x + i, y + j, pw / 2, ph / 2, (i * 0.3) % Math.PI, 0, Math.PI * 2); ctx.fill();
+                        }
                     }
+                    // Ligne de surface
+                    ctx.fillStyle = '#9a9a9a';
+                    ctx.fillRect(x, y, W, 3);
+                    break;
                 }
-            }
 
-            ctx.fillStyle = '#6a7382'; 
-            ctx.fillRect(this.x, this.y, this.width, 20);
-            
-            ctx.fillStyle = '#9199a6';
-            ctx.fillRect(this.x, this.y, this.width, 4);
+                case 'grass': {
+                    // ── Corps terre ──
+                    ctx.fillStyle = '#5c3d1e';
+                    ctx.fillRect(x, y, W, H);
+                    // Couche de terre plus claire
+                    ctx.fillStyle = '#7a5230';
+                    ctx.fillRect(x, y + 18, W, H - 18);
+                    // Racines (lignes sombres)
+                    ctx.strokeStyle = '#3a2010';
+                    ctx.lineWidth = 1.5;
+                    for (let i = 20; i < W; i += 30) {
+                        ctx.beginPath();
+                        ctx.moveTo(x + i, y + 22);
+                        ctx.lineTo(x + i + ((i * 7) % 14) - 7, y + 22 + 12 + (i % 10));
+                        ctx.stroke();
+                    }
+                    // Bande herbe foncée
+                    ctx.fillStyle = '#2d6a2d';
+                    ctx.fillRect(x, y, W, 18);
+                    // Bande herbe claire
+                    ctx.fillStyle = '#3d8a3d';
+                    ctx.fillRect(x, y, W, 12);
+                    // Reflet herbe
+                    ctx.fillStyle = '#4aaa4a';
+                    ctx.fillRect(x, y, W, 4);
+                    // Touffes d'herbe
+                    ctx.fillStyle = '#2d6a2d';
+                    for (let i = 6; i < W - 6; i += 18) {
+                        const h = 5 + (i * 3) % 7;
+                        ctx.beginPath();
+                        ctx.moveTo(x + i, y);
+                        ctx.lineTo(x + i - 3, y - h);
+                        ctx.lineTo(x + i, y - h + 3);
+                        ctx.lineTo(x + i + 3, y - h - 2);
+                        ctx.lineTo(x + i + 6, y);
+                        ctx.closePath(); ctx.fill();
+                    }
+                    break;
+                }
 
-            ctx.fillStyle = '#2d4c35';
-            for(let i = 15; i < this.width - 20; i += 35) {
-                ctx.beginPath();
-                ctx.roundRect(this.x + i, this.y + 18, 15 + (i%15), 10 + (i%20), 5);
-                ctx.fill();
+                case 'wood': {
+                    // ── Corps bois ──
+                    ctx.fillStyle = '#7a4e28';
+                    ctx.fillRect(x, y, W, H);
+                    // Planches horizontales
+                    const plankH = 18;
+                    const plankColors = ['#8b5a2b', '#7a4e28', '#9c6535', '#6e4522'];
+                    for (let row = 0; row * plankH < H; row++) {
+                        ctx.fillStyle = plankColors[row % plankColors.length];
+                        ctx.fillRect(x, y + row * plankH, W, plankH - 2);
+                        // Grain (lignes fines)
+                        ctx.strokeStyle = plankColors[(row + 2) % plankColors.length];
+                        ctx.lineWidth = 1;
+                        for (let gi = 8; gi < W; gi += 22) {
+                            ctx.beginPath();
+                            ctx.moveTo(x + gi, y + row * plankH);
+                            ctx.lineTo(x + gi + 2, y + row * plankH + plankH - 2);
+                            ctx.stroke();
+                        }
+                    }
+                    // Noeuds de bois
+                    ctx.strokeStyle = '#4e3018';
+                    ctx.lineWidth = 1.5;
+                    for (let ki = 25; ki < W - 10; ki += 60) {
+                        ctx.beginPath();
+                        ctx.ellipse(x + ki, y + 9, 5, 3, 0, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    // Ligne de surface (planche du dessus + clous)
+                    ctx.fillStyle = '#9c6535';
+                    ctx.fillRect(x, y, W, 6);
+                    ctx.fillStyle = '#3a2010';
+                    for (let ni = 10; ni < W; ni += 30) {
+                        ctx.fillRect(x + ni, y + 2, 2, 2);
+                    }
+                    break;
+                }
+
+                case 'water': {
+                    // ── Corps eau ──
+                    const t = Date.now() / 800;
+                    ctx.fillStyle = '#1a4a7a';
+                    ctx.fillRect(x, y, W, H);
+                    // Dégradé bleu plus clair au-dessus
+                    const wGrad = ctx.createLinearGradient(x, y, x, y + H);
+                    wGrad.addColorStop(0, 'rgba(40,120,200,0.85)');
+                    wGrad.addColorStop(1, 'rgba(10,40,100,0.85)');
+                    ctx.fillStyle = wGrad;
+                    ctx.fillRect(x, y, W, H);
+                    // Vaguelettes animées
+                    ctx.strokeStyle = 'rgba(160,210,255,0.5)';
+                    ctx.lineWidth = 2;
+                    for (let wi = 0; wi < 3; wi++) {
+                        const waveY = y + 6 + wi * 10;
+                        const phase = t + wi * 1.2;
+                        ctx.beginPath();
+                        for (let wx = 0; wx <= W; wx += 4) {
+                            const wy = waveY + Math.sin((wx / 30) + phase) * 3;
+                            wx === 0 ? ctx.moveTo(x + wx, wy) : ctx.lineTo(x + wx, wy);
+                        }
+                        ctx.stroke();
+                    }
+                    // Reflets spéculaires
+                    ctx.fillStyle = 'rgba(200,235,255,0.25)';
+                    for (let ri = 10; ri < W - 10; ri += 45) {
+                        const rx = x + ri + Math.sin(t + ri) * 4;
+                        ctx.beginPath(); ctx.ellipse(rx, y + 5, 10, 2, 0, 0, Math.PI * 2); ctx.fill();
+                    }
+                    break;
+                }
+
+                case 'sand': {
+                    // ── Corps sable ──
+                    ctx.fillStyle = '#c2a050';
+                    ctx.fillRect(x, y, W, H);
+                    ctx.fillStyle = '#d4b464';
+                    ctx.fillRect(x, y, W, H * 0.5);
+                    // Grains (points aléatoires déterministes)
+                    const sColors = ['#b89040','#dac070','#e8d080','#a07830'];
+                    for (let si = 3; si < W - 3; si += 7) {
+                        for (let sj = 2; sj < H - 2; sj += 6) {
+                            const sc = (si * 5 + sj * 11 + x) % sColors.length;
+                            ctx.fillStyle = sColors[sc];
+                            ctx.fillRect(x + si, y + sj, 2, 1);
+                        }
+                    }
+                    // Surface ondulée (dunes mini)
+                    ctx.fillStyle = '#e0c070';
+                    ctx.fillRect(x, y, W, 5);
+                    ctx.fillStyle = '#f0d888';
+                    ctx.fillRect(x, y, W, 2);
+                    // Petites bosses
+                    ctx.fillStyle = '#d4b464';
+                    for (let di = 12; di < W - 8; di += 28) {
+                        ctx.beginPath(); ctx.ellipse(x + di, y + 1, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
+                    }
+                    break;
+                }
+
+                default: // 'stone' — design original avec briques + mousse
+                    ctx.fillStyle = '#3a404d';
+                    ctx.fillRect(x, y, W, H);
+                    const brickW = 40, brickH = 20;
+                    for (let row = 1; row * brickH < H; row++) {
+                        let offsetX = (row % 2 === 0) ? 0 : -brickW / 2;
+                        for (let col = 0; offsetX + col * brickW < W; col++) {
+                            let bx = x + offsetX + col * brickW;
+                            let by = y + row * brickH;
+                            let dX = Math.max(x, bx);
+                            let dW = Math.min(x + W - dX, bx + brickW - dX);
+                            if (dW > 0) {
+                                if ((row+col) % 3 === 0) ctx.fillStyle = '#474c53';
+                                else if ((row+col) % 5 === 0) ctx.fillStyle = '#3e4249';
+                                else ctx.fillStyle = '#4f545c';
+                                ctx.fillRect(dX, by, dW - 2, brickH - 2);
+                            }
+                        }
+                    }
+                    ctx.fillStyle = '#6a7382';
+                    ctx.fillRect(x, y, W, 20);
+                    ctx.fillStyle = '#9199a6';
+                    ctx.fillRect(x, y, W, 4);
+                    ctx.fillStyle = '#2d4c35';
+                    for (let i = 15; i < W - 20; i += 35) {
+                        ctx.beginPath();
+                        ctx.roundRect(x + i, y + 18, 15 + (i%15), 10 + (i%20), 5);
+                        ctx.fill();
+                    }
+                    break;
             }
         }
     }
@@ -6483,12 +6678,12 @@
 
         if(currentLevelData.platforms) {
             currentLevelData.platforms.forEach(p => {
-                platforms.push(new Platform(p.x, p.y, p.width, p.height));
+                platforms.push(new Platform(p.x, p.y, p.width, p.height, p.type || 'normal', p.surface || 'stone'));
             });
         }
-        
+
         if(currentLevelData.goal) {
-            platforms.push(new Platform(currentLevelData.goal.x, currentLevelData.goal.y, currentLevelData.goal.width, currentLevelData.goal.height, 'goal'));
+            platforms.push(new Platform(currentLevelData.goal.x, currentLevelData.goal.y, currentLevelData.goal.width, currentLevelData.goal.height, 'goal', 'stone'));
         }
 
         const _pc = (gameMode === 'host' || gameMode === 'guest' || gameMode === 'salon') ? 2 : 1;

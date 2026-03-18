@@ -1349,6 +1349,9 @@
                 if (e && e.state !== 'DEAD') {
                     e.state = 'DEAD';
                     triggerShake(11, 14);
+                    if (event.wasCrit) {
+                        decapHeads.push(new DecapHead(event.x + (e.width||50)/2, event.y, true, event.enemyType || 'skeleton'));
+                    }
                     if (event.dropType === 'force') {
                         const it = new ItemDrop(event.x, event.y, 'force');
                         if (event.dropNetId != null) it.netId = event.dropNetId;
@@ -1384,12 +1387,13 @@
                     if (e.hp <= 0) {
                         e.state = 'DEAD';
                         triggerShake(11, 14);
+                        if (event.isCrit) decapHeads.push(new DecapHead(e.x + (e.width||50)/2, e.y, event.dir > 0, e.type || 'skeleton'));
                         const dropRoll = Math.random();
                         const dropType = dropRoll > 0.85 ? 'force' : dropRoll > 0.7 ? 'potion' : dropRoll > 0.3 ? 'coin' : null;
                         if (dropType === 'force') items.push(new ItemDrop(e.x, e.y, 'force'));
                         else if (dropType === 'potion') items.push(new ItemDrop(e.x, e.y, 'potion'));
                         else if (dropType === 'coin') coins.push(new Coin(e.x, e.y));
-                        socket.emit('game-event', { type: 'enemy-death', id: e.id, x: e.x, y: e.y, dropType });
+                        socket.emit('game-event', { type: 'enemy-death', id: e.id, x: e.x, y: e.y, dropType, wasCrit: event.isCrit, enemyType: e.type || 'skeleton' });
                     }
                 }
             }
@@ -4790,12 +4794,12 @@
             // Pseudo
             if (this.pseudo !== "") {
                 renderCtx.fillStyle = 'white';
-                renderCtx.font = 'bold 16px "Segoe UI", sans-serif';
+                renderCtx.font = 'bold 14px "Rajdhani", sans-serif';
                 renderCtx.textAlign = 'center';
                 renderCtx.lineWidth = 3;
                 renderCtx.strokeStyle = 'black';
-                renderCtx.strokeText(this.pseudo, drawX + this.width/2, bodyY - 15);
-                renderCtx.fillText(this.pseudo,   drawX + this.width/2, bodyY - 15);
+                renderCtx.strokeText(this.pseudo, drawX + this.width/2, bodyY - 34);
+                renderCtx.fillText(this.pseudo,   drawX + this.width/2, bodyY - 34);
             }
 
             // ── CAPE (physique Verlet — même système que les cheveux) ────────
@@ -4998,9 +5002,9 @@
             // Barre de vie
             if (this.hp < this.maxHp) {
                 renderCtx.fillStyle = '#000';
-                renderCtx.fillRect(this.x, this.y - 12, this.width, 6);
+                renderCtx.fillRect(this.x, this.y - 22, this.width, 6);
                 renderCtx.fillStyle = '#ff0000';
-                renderCtx.fillRect(this.x + 1, this.y - 11, ((this.width-2)*this.hp)/this.maxHp, 4);
+                renderCtx.fillRect(this.x + 1, this.y - 21, ((this.width-2)*this.hp)/this.maxHp, 4);
             }
 
             // ── AURA BOUCLIER SÉRAPHIN ────────────────────────────────────────
@@ -5201,12 +5205,12 @@
 
             // ── Pseudo (cyan = joueur distant) ─────────────────────────────
             ctx.fillStyle = '#00e5ff';
-            ctx.font = 'bold 16px "Segoe UI", sans-serif';
+            ctx.font = 'bold 14px "Rajdhani", sans-serif';
             ctx.textAlign = 'center';
             ctx.lineWidth = 3;
             ctx.strokeStyle = 'black';
-            ctx.strokeText(this.pseudo, drawX + W/2, bodyY - 15);
-            ctx.fillText(this.pseudo,   drawX + W/2, bodyY - 15);
+            ctx.strokeText(this.pseudo, drawX + W/2, bodyY - 34);
+            ctx.fillText(this.pseudo,   drawX + W/2, bodyY - 34);
 
             // ── Cape ────────────────────────────────────────────────────────
             drawCapeStrands(ctx, this.skin, drawX, bodyY, W, H, this.facingRight, this.vy, this.vx, this.grounded, isMoving);
@@ -5275,9 +5279,9 @@
 
             // ── Barre de vie (cyan = distant) ───────────────────────────────
             ctx.fillStyle = '#000';
-            ctx.fillRect(this.x, this.y - 12, W, 6);
+            ctx.fillRect(this.x, this.y - 22, W, 6);
             ctx.fillStyle = '#00e5ff';
-            ctx.fillRect(this.x+1, this.y-11, ((W-2)*Math.max(0,this.hp))/this.maxHp, 4);
+            ctx.fillRect(this.x+1, this.y-21, ((W-2)*Math.max(0,this.hp))/this.maxHp, 4);
 
             // ── Aura bouclier ────────────────────────────────────────────────
             if (this.shieldActive && this.abilityTimer > 0) {
@@ -5303,6 +5307,134 @@
     }
 
     let _enemyIdCounter = 0; // ID stable indépendant de la position dans le tableau
+
+    // ── Coups critiques ───────────────────────────────────────────────────
+    const CRIT_CHANCE      = 0.15; // 15 % de chance
+    const CRIT_MULTIPLIER  = 2.0;
+
+    // ── Chiffres de dégâts flottants ──────────────────────────────────────
+    let damageNumbers = [];
+
+    class DamageNumber {
+        constructor(x, y, value, isCrit) {
+            this.x = x + (Math.random() * 16 - 8);
+            this.y = y;
+            this.value  = value;
+            this.isCrit = isCrit;
+            this.vy = -2.8 - Math.random();
+            this.vx = (Math.random() - 0.5) * 1.2;
+            this.life    = isCrit ? 70 : 52;
+            this.maxLife = this.life;
+        }
+        update() {
+            this.vy += 0.055;
+            this.x  += this.vx;
+            this.y  += this.vy;
+            this.life--;
+        }
+        draw() {
+            const alpha = Math.min(1, (this.life / this.maxLife) * 2.5);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.textAlign   = 'center';
+            ctx.lineWidth   = 3;
+            ctx.strokeStyle = '#000';
+            if (this.isCrit) {
+                ctx.font      = 'bold 22px "Rajdhani", sans-serif';
+                ctx.fillStyle = '#FFD700';
+                ctx.strokeText('⚡' + this.value, this.x, this.y);
+                ctx.fillText  ('⚡' + this.value, this.x, this.y);
+            } else {
+                ctx.font      = 'bold 15px "Rajdhani", sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeText(String(this.value), this.x, this.y);
+                ctx.fillText  (String(this.value), this.x, this.y);
+            }
+            ctx.restore();
+        }
+    }
+
+    // ── Tête décapitée ────────────────────────────────────────────────────
+    let decapHeads = [];
+
+    class DecapHead {
+        constructor(x, y, facingRight, type) {
+            this.x    = x;
+            this.y    = y;
+            this.type = type; // 'skeleton' | 'goblin'
+            this.vx   = (facingRight ? 2.5 : -2.5) + (Math.random() * 2 - 1);
+            this.vy   = -9 - Math.random() * 4;
+            this.rot  = 0;
+            this.rotSpd = (facingRight ? 0.18 : -0.18) + (Math.random() * 0.08 - 0.04);
+            this.life = 120;
+            // Gerbe de sang initiale
+            for (let i = 0; i < 14; i++) {
+                bloodDrops.push(new BloodDrop(x, y,
+                    (Math.random() - 0.5) * 8,
+                    -3 - Math.random() * 7));
+            }
+        }
+        update(platforms) {
+            this.vy  += 0.45;
+            this.x   += this.vx;
+            this.y   += this.vy;
+            this.rot += this.rotSpd;
+            this.life--;
+            // Rebond sur plateformes
+            for (let p of platforms) {
+                if (this.x > p.x && this.x < p.x + p.width &&
+                    this.y > p.y - 10 && this.y < p.y + 5 && this.vy > 0) {
+                    this.y = p.y - 10;
+                    this.vy *= -0.28;
+                    this.vx *= 0.65;
+                    this.rotSpd *= 0.5;
+                    // petite giclée au rebond
+                    for (let i = 0; i < 4; i++) {
+                        bloodDrops.push(new BloodDrop(this.x, this.y,
+                            (Math.random() - 0.5) * 4, -1 - Math.random() * 3));
+                    }
+                }
+            }
+        }
+        draw() {
+            if (this.life <= 0) return;
+            const alpha = Math.min(1, this.life / 20);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rot);
+            if (this.type === 'skeleton') {
+                // Casque sombre
+                ctx.fillStyle = '#3d342b';
+                ctx.fillRect(-16, -12, 32, 20);
+                // Visor noir
+                ctx.fillStyle = '#111';
+                ctx.fillRect(-8, -7, 16, 8);
+                // Yeux rouges
+                ctx.fillStyle = '#ff2200';
+                ctx.fillRect(-4, -5, 6, 3);
+            } else {
+                // Tête gobelin large
+                ctx.fillStyle = '#2e6e1e';
+                ctx.fillRect(-19, -13, 38, 20);
+                ctx.fillStyle = '#4a9c36';
+                ctx.fillRect(-18, -14, 36, 19);
+                // Oreilles
+                ctx.fillStyle = '#3d7a2e';
+                ctx.beginPath(); ctx.moveTo(-18,-6); ctx.lineTo(-27,-14); ctx.lineTo(-18,5); ctx.closePath(); ctx.fill();
+                ctx.beginPath(); ctx.moveTo( 18,-6); ctx.lineTo( 27,-14); ctx.lineTo( 18,5); ctx.closePath(); ctx.fill();
+                // Slot yeux
+                ctx.fillStyle = '#111';
+                ctx.fillRect(-12, -8, 24, 7);
+                ctx.fillStyle = '#e8c000';
+                ctx.fillRect(-9, -7, 18, 5);
+            }
+            // Sang au col (moignon)
+            ctx.fillStyle = '#cc1111';
+            ctx.fillRect(-8, 7, 16, 7);
+            ctx.restore();
+        }
+    }
 
     class Skeleton {
         constructor(x, y, minX, maxX, playerCount = 1) {
@@ -5370,11 +5502,14 @@
                         }
                         // Notifier le host — il applique les dégâts et valide la mort
                         const _wdmg = WEAPON_CONFIG[player._equippedWeaponId?.()??player.skin?.weapon??'sword']?.dmg || [15,15,15,25];
-                        const dmg = (_wdmg[player.comboStep] || 15) + (player.bonusDamage || 0);
+                        const _base = (_wdmg[player.comboStep] || 15) + (player.bonusDamage || 0);
+                        const _crit = Math.random() < CRIT_CHANCE;
+                        const dmg = _crit ? Math.round(_base * CRIT_MULTIPLIER) : _base;
+                        damageNumbers.push(new DamageNumber(hitX, this.y - 10, dmg, _crit));
                         if (socket && socket.connected && roomCode) {
                             socket.emit('game-event', {
                                 type: 'enemy-hit', id: this.id,
-                                damage: dmg, dir: player.facingRight ? 1 : -1,
+                                damage: dmg, isCrit: _crit, dir: player.facingRight ? 1 : -1,
                                 hitX, hitY
                             });
                         }
@@ -5470,55 +5605,49 @@
                     this.y + this.height > player.attackHitbox.y) {
                     
                     const _wdmg2 = WEAPON_CONFIG[player._equippedWeaponId?.()??player.skin?.weapon??'sword']?.dmg || [15,15,15,25];
-                    let damage = (_wdmg2[player.comboStep] || 15) + (player.bonusDamage || 0); 
+                    const _baseDmg = (_wdmg2[player.comboStep] || 15) + (player.bonusDamage || 0);
+                    const isCrit = Math.random() < CRIT_CHANCE;
+                    let damage = isCrit ? Math.round(_baseDmg * CRIT_MULTIPLIER) : _baseDmg;
                     this.hp -= damage;
-                    this.hurtTimer = 30; 
-                    this.vx = player.facingRight ? 8 : -8; 
-                    this.vy = -4; 
+                    this.hurtTimer = 30;
+                    this.vx = player.facingRight ? 8 : -8;
+                    this.vy = -4;
                     player.hasHit.add(this);
-                    triggerShake(4, 6); // Hit léger — sec et bref
+                    triggerShake(isCrit ? 7 : 4, isCrit ? 9 : 6);
                     SFX.hit('flesh');
-                    // Accumulation de charge pour la capacité spéciale
                     player.abilityCharge = Math.min(player.abilityMaxCharge, player.abilityCharge + 1);
 
-                    // --- DÉCLENCHEMENT VFX ---
                     let hitX = this.x + this.width / 2;
                     let hitY = this.y + this.height / 2;
-                    
-                    // 1. Splash initial
                     hitEffects.push(new HitEffect(hitX, hitY));
+                    damageNumbers.push(new DamageNumber(hitX, this.y - 10, damage, isCrit));
 
-                    // 2. Gouttes de sang projetées
-                    let dropCount = 3 + Math.floor(Math.random() * 4); // 3 à 6 gouttes
+                    let dropCount = isCrit ? 6 + Math.floor(Math.random() * 4) : 3 + Math.floor(Math.random() * 4);
                     for(let i=0; i<dropCount; i++) {
                         let vx = (player.facingRight ? 2 : -2) + (Math.random() * 6 - 3);
                         let vy = -2 - Math.random() * 6;
                         bloodDrops.push(new BloodDrop(hitX, hitY, vx, vy));
                     }
-
-                    // Broadcast VFX au partenaire
                     if (socket && socket.connected && roomCode) {
                         socket.emit('game-event', { type: 'combat-vfx', x: hitX, y: hitY, dir: player.facingRight ? 1 : -1 });
                     }
-
-                    // 3. Tacher le joueur avec du sang de l'ennemi (CUMULABLE)
-                    let stainCount = 1 + Math.floor(Math.random() * 3); // 1 à 3 taches
+                    let stainCount = isCrit ? 2 + Math.floor(Math.random() * 3) : 1 + Math.floor(Math.random() * 3);
                     for(let i=0; i<stainCount; i++) {
                         player.bloodStains.push({
                             dx: Math.random() * player.width,
-                            dy: -20 + Math.random() * (player.height + 20), // -20 couvre le casque
+                            dy: -20 + Math.random() * (player.height + 20),
                             scale: 0.15 + Math.random() * 0.15,
                             rotation: Math.random() * Math.PI * 2
                         });
                     }
-                    // Limite optionnelle de 100 taches pour éviter de surcharger la mémoire
                     if (player.bloodStains.length > 100) player.bloodStains.shift();
-                    
+
                     if (this.hp <= 0) {
                         this.state = 'DEAD';
-                        triggerShake(11, 14); // Mort ennemi — impact brutal
+                        triggerShake(11, 14);
                         player.gainXp(10);
                         updateQuest('kill_skel', 1);
+                        if (isCrit) decapHeads.push(new DecapHead(this.x + this.width/2, this.y, player.facingRight, 'skeleton'));
 
                         let dropRoll = Math.random();
                         let dropType = dropRoll > 0.85 ? 'force' : dropRoll > 0.7 ? 'potion' : dropRoll > 0.3 ? 'coin' : null;
@@ -5526,12 +5655,12 @@
                         else if (dropType === 'potion') items.push(new ItemDrop(this.x, this.y, 'potion'));
                         else if (dropType === 'coin') coins.push(new Coin(this.x, this.y));
 
-                        // Notifier le guest de la mort + drop (via id stable)
                         if (socket && socket.connected && roomCode && gameMode === 'host') {
                             const spawnedItem = items[items.length - 1];
                             socket.emit('game-event', {
                                 type: 'enemy-death', id: this.id, x: this.x, y: this.y, dropType,
-                                dropNetId: spawnedItem ? spawnedItem.netId : null
+                                dropNetId: spawnedItem ? spawnedItem.netId : null,
+                                wasCrit: isCrit, enemyType: 'skeleton'
                             });
                         }
                     }
@@ -5654,9 +5783,9 @@
 
             if (this.hp < this.maxHp) {
                 ctx.fillStyle = '#000';
-                ctx.fillRect(this.x, this.y - 12, this.width, 6);
+                ctx.fillRect(this.x, this.y - 22, this.width, 6);
                 ctx.fillStyle = '#ff0000';
-                ctx.fillRect(this.x + 1, this.y - 11, ((this.width - 2) * this.hp) / this.maxHp, 4);
+                ctx.fillRect(this.x + 1, this.y - 21, ((this.width - 2) * this.hp) / this.maxHp, 4);
             }
         }
     }
@@ -5723,11 +5852,14 @@
                                 -2 - Math.random() * 6));
                         }
                         const _wdmg = WEAPON_CONFIG[player._equippedWeaponId?.() ?? player.skin?.weapon ?? 'sword']?.dmg || [15, 15, 15, 25];
-                        const dmg = (_wdmg[player.comboStep] || 15) + (player.bonusDamage || 0);
+                        const _baseG = (_wdmg[player.comboStep] || 15) + (player.bonusDamage || 0);
+                        const _critG = Math.random() < CRIT_CHANCE;
+                        const dmg = _critG ? Math.round(_baseG * CRIT_MULTIPLIER) : _baseG;
+                        damageNumbers.push(new DamageNumber(hitX, this.y - 10, dmg, _critG));
                         if (socket && socket.connected && roomCode) {
                             socket.emit('game-event', {
                                 type: 'enemy-hit', id: this.id,
-                                damage: dmg, dir: player.facingRight ? 1 : -1,
+                                damage: dmg, isCrit: _critG, dir: player.facingRight ? 1 : -1,
                                 hitX, hitY
                             });
                         }
@@ -5809,20 +5941,23 @@
                     this.y + this.height > player.attackHitbox.y) {
 
                     const _wdmg2 = WEAPON_CONFIG[player._equippedWeaponId?.() ?? player.skin?.weapon ?? 'sword']?.dmg || [15, 15, 15, 25];
-                    let damage = (_wdmg2[player.comboStep] || 15) + (player.bonusDamage || 0);
+                    const _baseDmgG = (_wdmg2[player.comboStep] || 15) + (player.bonusDamage || 0);
+                    const isCritG = Math.random() < CRIT_CHANCE;
+                    let damage = isCritG ? Math.round(_baseDmgG * CRIT_MULTIPLIER) : _baseDmgG;
                     this.hp -= damage;
                     this.hurtTimer = 25;
                     this.vx = player.facingRight ? 9 : -9;
                     this.vy = -5;
                     player.hasHit.add(this);
-                    triggerShake(3, 5);
+                    triggerShake(isCritG ? 6 : 3, isCritG ? 8 : 5);
                     SFX.hit('flesh');
                     player.abilityCharge = Math.min(player.abilityMaxCharge, player.abilityCharge + 1);
 
                     let hitX = this.x + this.width / 2;
                     let hitY = this.y + this.height / 2;
                     hitEffects.push(new HitEffect(hitX, hitY));
-                    let dropCount = 2 + Math.floor(Math.random() * 3);
+                    damageNumbers.push(new DamageNumber(hitX, this.y - 10, damage, isCritG));
+                    let dropCount = isCritG ? 5 + Math.floor(Math.random() * 4) : 2 + Math.floor(Math.random() * 3);
                     for (let i = 0; i < dropCount; i++) {
                         bloodDrops.push(new BloodDrop(hitX, hitY,
                             (player.facingRight ? 2 : -2) + (Math.random() * 6 - 3),
@@ -5831,7 +5966,7 @@
                     if (socket && socket.connected && roomCode) {
                         socket.emit('game-event', { type: 'combat-vfx', x: hitX, y: hitY, dir: player.facingRight ? 1 : -1 });
                     }
-                    let stainCount = 1 + Math.floor(Math.random() * 2);
+                    let stainCount = isCritG ? 2 + Math.floor(Math.random() * 3) : 1 + Math.floor(Math.random() * 2);
                     for (let i = 0; i < stainCount; i++) {
                         player.bloodStains.push({
                             dx: Math.random() * player.width,
@@ -5847,6 +5982,7 @@
                         triggerShake(8, 10);
                         player.gainXp(6);
                         updateQuest('kill_goblin', 1);
+                        if (isCritG) decapHeads.push(new DecapHead(this.x + this.width/2, this.y, player.facingRight, 'goblin'));
 
                         let dropRoll = Math.random();
                         let dropType = dropRoll > 0.88 ? 'force' : dropRoll > 0.72 ? 'potion' : dropRoll > 0.4 ? 'coin' : null;
@@ -5858,7 +5994,8 @@
                             const spawnedItem = items[items.length - 1];
                             socket.emit('game-event', {
                                 type: 'enemy-death', id: this.id, x: this.x, y: this.y, dropType,
-                                dropNetId: spawnedItem ? spawnedItem.netId : null
+                                dropNetId: spawnedItem ? spawnedItem.netId : null,
+                                wasCrit: isCritG, enemyType: 'goblin'
                             });
                         }
                     }
@@ -6016,9 +6153,9 @@
             // ── Barre de vie ──
             if (this.hp < this.maxHp) {
                 ctx.fillStyle = '#000';
-                ctx.fillRect(this.x, this.y - 10, this.width, 5);
+                ctx.fillRect(this.x, this.y - 22, this.width, 6);
                 ctx.fillStyle = '#22cc44';
-                ctx.fillRect(this.x + 1, this.y - 9, ((this.width - 2) * this.hp) / this.maxHp, 3);
+                ctx.fillRect(this.x + 1, this.y - 21, ((this.width - 2) * this.hp) / this.maxHp, 4);
             }
         }
     }
@@ -6312,6 +6449,8 @@
         hitEffects = [];
         bloodDrops = [];
         floorBloods = [];
+        damageNumbers = [];
+        decapHeads = [];
         _enemyIdCounter = 0; // reset pour cohérence host/guest (même niveau = mêmes IDs)
         _itemNetId = 0;
 
@@ -6429,6 +6568,12 @@
             hitEffects.forEach(he => he.update());
             hitEffects = hitEffects.filter(he => he.life > 0);
 
+            damageNumbers.forEach(dn => dn.update());
+            damageNumbers = damageNumbers.filter(dn => dn.life > 0);
+
+            decapHeads.forEach(dh => dh.update(platforms));
+            decapHeads = decapHeads.filter(dh => dh.life > 0);
+
             let targetCameraX = player.x - canvas.width / 3;
             let targetCameraY = player.y - canvas.height / 1.5; 
             if (targetCameraX < 0) targetCameraX = 0;
@@ -6503,6 +6648,8 @@
         // On dessine les particules de sang au-dessus du reste
         bloodDrops.forEach(bd => bd.draw());
         hitEffects.forEach(he => he.draw());
+        decapHeads.forEach(dh => dh.draw());
+        damageNumbers.forEach(dn => dn.draw());
 
         ctx.restore();
 

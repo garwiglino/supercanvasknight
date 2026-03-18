@@ -2015,6 +2015,29 @@
                 remotePlayer.isDying = false;
                 remotePlayer.deathTimer = 0;
             }
+            if (event.type === 'player-downed') {
+                remotePlayer.downed = true;
+                remotePlayer.downTimer = 480;
+            }
+            if (event.type === 'revive-partner') {
+                // Mon partenaire veut me ranimer
+                if (player.downed) {
+                    player.downed = false;
+                    player.downTimer = 0;
+                    player.hp = Math.round(player.maxHp * 0.30);
+                    player.hurtTimer = 60;
+                    player.isDying = false;
+                    player.deathTimer = 0;
+                    player.updateUI();
+                    showNotification('💚 Ranimé par votre partenaire !', '#4CAF50');
+                    if (socket && socket.connected) socket.emit('game-event', { type: 'revive-confirmed', hp: player.hp });
+                }
+            }
+            if (event.type === 'revive-confirmed') {
+                remotePlayer.downed = false;
+                remotePlayer.downTimer = 0;
+                remotePlayer.hp = event.hp ?? 30;
+            }
         });
 
         // Sync ennemis depuis le host (lookup par id stable)
@@ -3741,147 +3764,155 @@
     let quests = [];
 
     const defaultLevelData = {
-        // ═══════════════════════════════════════════════════
-        //  DONJON DE PIERRE — carte longue, double chemin
-        //  Bas  : route sol (y≈500-520), séries de dalles
-        //  Haut : route aérienne (y≈200-320), plateforme-sauts
-        //  Connexion : grandes tours de pierre reliant les deux
-        // ═══════════════════════════════════════════════════
+        // RÈGLE : toutes surfaces 'stone'.
+        // Sol principal : y=520.
+        // Plateformes basses (+100-110px) : y=410-420.
+        // Plateformes moyennes (+90-110px depuis basse) : y=310-330.
+        // Jamais plus de 110px de saut entre deux surfaces adjacentes.
         platforms: [
-            // ── ZONE 1 : salle d'entrée (0-900) ───────────────────
-            {x: -60,  y: 520, width: 960,  height: 220, surface: 'stone'},   // sol départ
+            // ── ZONE 1 : salle d'entrée (x=0→800) ──────────────────────
+            {x: -60,  y: 520, width: 860,  height: 220, surface: 'stone'},  // sol
+            {x: 120,  y: 420, width: 160,  height: 30,  surface: 'stone'},  // step bas +100 ✓
+            {x: 360,  y: 320, width: 160,  height: 30,  surface: 'stone'},  // step haut +100 ✓
 
-            // ── TOUR A : première grande tour (900-1200) ───────────
-            {x: 960,  y: 300, width: 240,  height: 440, surface: 'stone'},   // tour (connecte bas et haut)
+            // ── PILIER A (x=800→1020) ────────────────────────────────────
+            // top=420 → +100 depuis sol ✓ (puis step vers y=320 depuis dessus)
+            {x: 800,  y: 420, width: 220,  height: 320, surface: 'stone'},
+            {x: 800,  y: 320, width: 120,  height: 30,  surface: 'stone'},  // marche sommet ✓ +100
 
-            // ── ZONE 2 : croisée des chemins (1200-2400) ──────────
-            // Chemin bas
-            {x: 1200, y: 520, width: 500,  height: 220, surface: 'stone'},   // dalles basses
-            {x: 1800, y: 520, width: 120,  height: 220, surface: 'stone'},   // marche
-            {x: 2020, y: 520, width: 380,  height: 220, surface: 'stone'},
-            // Chemin haut (plateformes aériennes)
-            {x: 1200, y: 300, width: 180,  height: 30,  surface: 'stone'},
-            {x: 1460, y: 240, width: 140,  height: 30,  surface: 'stone'},
-            {x: 1680, y: 180, width: 140,  height: 30,  surface: 'stone'},
-            {x: 1900, y: 220, width: 160,  height: 30,  surface: 'stone'},
-            {x: 2140, y: 280, width: 140,  height: 30,  surface: 'stone'},
+            // ── ZONE 2 : croisée (x=1020→2280) ────────────────────────
+            // Bas
+            {x: 1020, y: 520, width: 500,  height: 220, surface: 'stone'},
+            {x: 1620, y: 520, width: 460,  height: 220, surface: 'stone'},
+            // Haut (accessible depuis sommet pilier A y=320 ou depuis sol via steps)
+            {x: 1020, y: 420, width: 160,  height: 30,  surface: 'stone'},  // +100 from ground ✓
+            {x: 1260, y: 330, width: 150,  height: 30,  surface: 'stone'},  // +90 ✓
+            {x: 1480, y: 420, width: 150,  height: 30,  surface: 'stone'},  // retour bas
+            {x: 1700, y: 330, width: 150,  height: 30,  surface: 'stone'},  // +90 ✓
+            {x: 1930, y: 420, width: 150,  height: 30,  surface: 'stone'},  // retour bas
 
-            // ── TOUR B : deuxième tour (2400-2600) ─────────────────
-            {x: 2400, y: 260, width: 200,  height: 480, surface: 'stone'},
+            // ── PILIER B (x=2280→2480) ──────────────────────────────────
+            {x: 2240, y: 420, width: 280,  height: 320, surface: 'stone'},  // top=420 +100 ✓
+            {x: 2240, y: 320, width: 120,  height: 30,  surface: 'stone'},  // marche sommet +100 ✓
 
-            // ── ZONE 3 : couloir bas droit (2600-3400) ─────────────
-            {x: 2600, y: 520, width: 800,  height: 220, surface: 'stone'},
-            // Balcon haut au-dessus du couloir
-            {x: 2700, y: 340, width: 200,  height: 30,  surface: 'stone'},
-            {x: 2980, y: 300, width: 200,  height: 30,  surface: 'stone'},
-            {x: 3260, y: 340, width: 180,  height: 30,  surface: 'stone'},
+            // ── ZONE 3 : couloir large (x=2480→3260) ───────────────────
+            {x: 2480, y: 520, width: 780,  height: 220, surface: 'stone'},
+            {x: 2580, y: 420, width: 170,  height: 30,  surface: 'stone'},  // balcon bas +100 ✓
+            {x: 2850, y: 410, width: 160,  height: 30,  surface: 'stone'},  // balcon +110 ✓
+            {x: 3060, y: 420, width: 160,  height: 30,  surface: 'stone'},  // balcon ✓
 
-            // ── TOUR C : grande tour centrale (3400-3700) ──────────
-            {x: 3400, y: 180, width: 300,  height: 560, surface: 'stone'},
+            // ── PILIER C CENTRAL (x=3260→3520) ─────────────────────────
+            {x: 3220, y: 420, width: 80,   height: 30,  surface: 'stone'},  // marche accès +100 ✓
+            {x: 3260, y: 320, width: 260,  height: 420, surface: 'stone'},  // pilier (top=320) +100 from marche ✓
 
-            // ── ZONE 4 : passage haut puis descente (3700-4800) ────
-            // Chemin haut
-            {x: 3700, y: 200, width: 160,  height: 30,  surface: 'stone'},
-            {x: 3940, y: 240, width: 160,  height: 30,  surface: 'stone'},
-            {x: 4180, y: 300, width: 160,  height: 30,  surface: 'stone'},
-            {x: 4420, y: 360, width: 160,  height: 30,  surface: 'stone'},
-            // Chemin bas
-            {x: 3700, y: 520, width: 1100, height: 220, surface: 'stone'},
-            // Marches au milieu (peut aller des deux côtés)
-            {x: 4200, y: 440, width: 180,  height: 30,  surface: 'stone'},
-            {x: 4450, y: 370, width: 140,  height: 30,  surface: 'stone'},
+            // ── ZONE 4 : double passage (x=3520→4660) ──────────────────
+            // Bas
+            {x: 3520, y: 520, width: 1140, height: 220, surface: 'stone'},
+            // Haut depuis sommet pilier C (y=320)
+            {x: 3520, y: 420, width: 160,  height: 30,  surface: 'stone'},  // +100 from sol ✓
+            {x: 3760, y: 340, width: 160,  height: 30,  surface: 'stone'},  // +80 from précédente ✓
+            {x: 3990, y: 420, width: 160,  height: 30,  surface: 'stone'},  // retour bas
+            {x: 4220, y: 340, width: 160,  height: 30,  surface: 'stone'},  // +80 ✓
+            {x: 4450, y: 420, width: 160,  height: 30,  surface: 'stone'},  // retour bas
+            // Marche intermédiaire au sol (chemin mixte)
+            {x: 4080, y: 455, width: 180,  height: 30,  surface: 'stone'},  // step léger +65 ✓
 
-            // ── TOUR D : avant-dernière salle (4800-5100) ──────────
-            {x: 4800, y: 220, width: 300,  height: 520, surface: 'stone'},
+            // ── PILIER D (x=4660→4860) ──────────────────────────────────
+            {x: 4620, y: 420, width: 280,  height: 320, surface: 'stone'},  // top=420 ✓
+            {x: 4620, y: 320, width: 120,  height: 30,  surface: 'stone'},  // sommet +100 ✓
 
-            // ── ZONE 5 : grande salle finale (5100-7000) ───────────
-            {x: 5100, y: 520, width: 600,  height: 220, surface: 'stone'},
-            // Colonnes hautes (obstacles)
-            {x: 5350, y: 320, width: 80,   height: 200, surface: 'stone'},
-            {x: 5650, y: 280, width: 80,   height: 240, surface: 'stone'},
-            // Plateformes hautes de la salle finale
-            {x: 5200, y: 250, width: 140,  height: 30,  surface: 'stone'},
-            {x: 5460, y: 200, width: 160,  height: 30,  surface: 'stone'},
-            {x: 5740, y: 240, width: 160,  height: 30,  surface: 'stone'},
+            // ── ZONE 5 : grande salle finale (x=4860→6300) ─────────────
+            {x: 4860, y: 520, width: 900,  height: 220, surface: 'stone'},
+            // Colonnes obstacle (montables, top accessible en saut +100)
+            {x: 5080, y: 420, width: 70,   height: 100, surface: 'stone'},  // colonne top=420 ✓
+            {x: 5380, y: 400, width: 70,   height: 120, surface: 'stone'},  // top=400 ✓
+            // Plateformes hautes
+            {x: 4960, y: 420, width: 110,  height: 30,  surface: 'stone'},  // +100 ✓
+            {x: 5150, y: 340, width: 120,  height: 30,  surface: 'stone'},  // +80 from y=420 ✓
+            {x: 5450, y: 420, width: 120,  height: 30,  surface: 'stone'},  // retour
             // Sol final
-            {x: 5700, y: 520, width: 1500, height: 220, surface: 'stone'},
+            {x: 5760, y: 520, width: 540,  height: 220, surface: 'stone'},
 
-            // ── TOUR FINALE (7200) ──────────────────────────────────
-            {x: 7200, y: 200, width: 200,  height: 540, surface: 'stone'},
-            {x: 7400, y: 520, width: 800,  height: 220, surface: 'stone'},
+            // ── TOUR FINALE (x=6300→6500) ───────────────────────────────
+            {x: 6260, y: 420, width: 80,   height: 30,  surface: 'stone'},  // accès +100 ✓
+            {x: 6300, y: 320, width: 200,  height: 420, surface: 'stone'},  // tour (top=320) +100 ✓
+            {x: 6500, y: 520, width: 700,  height: 220, surface: 'stone'},  // salle finale
         ],
         coins: [
             // Zone 1
-            {x: 100,  y: 460}, {x: 300,  y: 460}, {x: 550,  y: 460}, {x: 800,  y: 460},
-            // Tour A sommet
-            {x: 1000, y: 240}, {x: 1080, y: 240}, {x: 1160, y: 240},
-            // Chemin haut zone 2
-            {x: 1240, y: 240}, {x: 1490, y: 180}, {x: 1710, y: 120},
-            {x: 1930, y: 160}, {x: 2160, y: 220},
-            // Chemin bas zone 2
-            {x: 1340, y: 460}, {x: 1600, y: 460}, {x: 1950, y: 460}, {x: 2200, y: 460},
-            // Tour B
-            {x: 2460, y: 200}, {x: 2480, y: 260},
-            // Zone 3 bas
-            {x: 2700, y: 460}, {x: 2900, y: 460}, {x: 3100, y: 460}, {x: 3300, y: 460},
-            // Balcons zone 3
-            {x: 2760, y: 280}, {x: 3050, y: 240}, {x: 3310, y: 280},
-            // Tour C
-            {x: 3470, y: 120}, {x: 3550, y: 120},
+            {x: 160, y: 360}, {x: 400, y: 260},
+            {x: 300, y: 460}, {x: 600, y: 460},
+            // Pilier A
+            {x: 860, y: 260},
+            // Zone 2 haut
+            {x: 1060, y: 360}, {x: 1300, y: 270}, {x: 1740, y: 270},
+            // Zone 2 bas
+            {x: 1150, y: 460}, {x: 1750, y: 460},
+            // Pilier B
+            {x: 2300, y: 260},
+            // Zone 3
+            {x: 2640, y: 360}, {x: 2910, y: 350}, {x: 3110, y: 360},
+            {x: 2750, y: 460}, {x: 3000, y: 460},
+            // Pilier C
+            {x: 3350, y: 260},
             // Zone 4 haut
-            {x: 3760, y: 140}, {x: 3990, y: 180}, {x: 4240, y: 240}, {x: 4480, y: 300},
-            // Zone 4 bas + marches
-            {x: 3900, y: 460}, {x: 4100, y: 460}, {x: 4300, y: 380}, {x: 4550, y: 310},
-            // Zone 5 sol
-            {x: 5150, y: 460}, {x: 5400, y: 460}, {x: 5900, y: 460}, {x: 6200, y: 460},
-            // Zone 5 haut
-            {x: 5240, y: 190}, {x: 5520, y: 140}, {x: 5800, y: 180},
+            {x: 3560, y: 360}, {x: 3800, y: 280}, {x: 4260, y: 280},
+            // Zone 4 bas
+            {x: 3800, y: 460}, {x: 4100, y: 395},
+            // Pilier D
+            {x: 4680, y: 260},
+            // Zone 5
+            {x: 5010, y: 360}, {x: 5200, y: 280}, {x: 5500, y: 360},
+            {x: 5200, y: 460}, {x: 5500, y: 460}, {x: 5900, y: 460},
+            // Tour finale
+            {x: 6350, y: 260},
+            {x: 6600, y: 460}, {x: 7000, y: 460},
         ],
         skeletons: [
-            // Zone 1 (2)
-            {x: 400,  y: 470}, {x: 700,  y: 470},
-            // Tour A sommet (1)
-            {x: 1060, y: 250},
+            // Zone 1 bas (2)
+            {x: 350, y: 470}, {x: 650, y: 470},
             // Zone 2 bas (2)
-            {x: 1500, y: 470}, {x: 2150, y: 470},
-            // Zone 2 haut (2)
-            {x: 1480, y: 190}, {x: 1900, y: 170},
-            // Zone 3 bas (3)
-            {x: 2750, y: 470}, {x: 3000, y: 470}, {x: 3250, y: 470},
-            // Tour C sommet (1)
-            {x: 3500, y: 130},
-            // Zone 4 haut (2)
-            {x: 3940, y: 190}, {x: 4430, y: 310},
+            {x: 1150, y: 470}, {x: 1750, y: 470},
+            // Zone 2 haut (2) — sur plateformes y=330 → enemy y=330-50=280
+            {x: 1280, y: 280}, {x: 1720, y: 280},
+            // Zone 3 bas (2)
+            {x: 2650, y: 470}, {x: 3100, y: 470},
+            // Balcon zone 3 (1) — sur y=410 → enemy y=360
+            {x: 2870, y: 360},
+            // Pilier C sommet (1) — sur y=320 → enemy y=270
+            {x: 3360, y: 270},
             // Zone 4 bas (2)
-            {x: 4000, y: 470}, {x: 4600, y: 470},
+            {x: 3750, y: 470}, {x: 4200, y: 470},
+            // Zone 4 haut (2) — sur y=340 → enemy y=290
+            {x: 3780, y: 290}, {x: 4240, y: 290},
             // Zone 5 bas (3)
-            {x: 5250, y: 470}, {x: 5550, y: 470}, {x: 6000, y: 470},
-            // Zone 5 haut (2)
-            {x: 5470, y: 150}, {x: 5800, y: 190},
-            // Final (2)
-            {x: 7450, y: 470}, {x: 7800, y: 470},
+            {x: 5050, y: 470}, {x: 5450, y: 470}, {x: 5950, y: 470},
+            // Zone 5 haut (1) — sur y=340 → enemy y=290
+            {x: 5170, y: 290},
+            // Finale (2)
+            {x: 6600, y: 470}, {x: 7100, y: 470},
         ],
         goblins: [
-            // Zone 1 (2)
-            {x: 200,  y: 470}, {x: 600,  y: 470},
-            // Zone 2 haut (2)
-            {x: 1700, y: 130}, {x: 2150, y: 230},
-            // Zone 2 bas (1)
-            {x: 1900, y: 470},
-            // Balcon zone 3 (2)
-            {x: 2800, y: 290}, {x: 3100, y: 250},
+            // Zone 1 (1 bas + 1 haut)
+            {x: 500, y: 470},
+            {x: 380, y: 270},  // sur y=320 → y=270
+            // Zone 2 bas (1) + haut (2)
+            {x: 1400, y: 470},
+            {x: 1060, y: 370}, {x: 1950, y: 370},  // sur y=420 → y=370
+            // Zone 3 balcons (2)
+            {x: 2620, y: 370}, {x: 3080, y: 370},
             // Zone 3 bas (1)
-            {x: 3200, y: 470},
+            {x: 2850, y: 470},
             // Zone 4 haut (2)
-            {x: 3750, y: 150}, {x: 4200, y: 250},
+            {x: 3560, y: 370}, {x: 4460, y: 370},
             // Zone 4 bas (1)
-            {x: 4400, y: 470},
-            // Zone 5 (3)
-            {x: 5300, y: 470}, {x: 5900, y: 200}, {x: 6300, y: 470},
-            // Final (2)
-            {x: 7600, y: 470}, {x: 7900, y: 200},
+            {x: 4000, y: 470},
+            // Zone 5 (2)
+            {x: 5000, y: 370}, {x: 5460, y: 370},
+            // Finale (2)
+            {x: 6800, y: 470}, {x: 7300, y: 470},
         ],
-        goal: {x: 8000, y: 500, width: 180, height: 20},
+        goal: {x: 7500, y: 500, width: 180, height: 20},
         deadZone: 1100
     };
 
@@ -5568,6 +5599,8 @@
             this.chatBubbles = [];
             this.isDying = false;
             this.deathTimer = 0;
+            this.downed = false;
+            this.downTimer = 0;
 
             // --- DASH ---
             this.dashCooldown = 0;
@@ -5714,14 +5747,29 @@
             
             this.updateUI();
             
-            if (this.hp <= 0 && !this.isDying) {
-                this.isDying = true;
-                this.deathTimer = 60; // 1 seconde
-                this.vx = knockbackDir * 8;
-                this.vy = -6;
-                triggerShake(12, 18);
-                if (socket && socket.connected && roomCode) {
-                    socket.emit('game-event', { type: 'player-dying', x: this.x, y: this.y, dir: knockbackDir });
+            if (this.hp <= 0 && !this.isDying && !this.downed) {
+                if ((gameMode === 'host' || gameMode === 'guest') && roomCode) {
+                    // Coop : état "A Terre"
+                    this.downed = true;
+                    this.downTimer = 480;
+                    this.hp = 0;
+                    this.vx = knockbackDir * 3;
+                    this.vy = -2;
+                    this.isAttacking = false;
+                    triggerShake(10, 14);
+                    if (socket && socket.connected) {
+                        socket.emit('game-event', { type: 'player-downed', x: this.x, y: this.y });
+                    }
+                } else {
+                    // Solo ou timeout coop : mort normale
+                    this.isDying = true;
+                    this.deathTimer = 60;
+                    this.vx = knockbackDir * 8;
+                    this.vy = -6;
+                    triggerShake(12, 18);
+                    if (socket && socket.connected && roomCode) {
+                        socket.emit('game-event', { type: 'player-dying', x: this.x, y: this.y, dir: knockbackDir });
+                    }
                 }
             }
         }
@@ -5916,6 +5964,22 @@
                 }
                 if (this.deathTimer <= 0) {
                     this.isDying = false;
+                    handlePlayerDeath();
+                }
+                return;
+            }
+
+            // ── État "A Terre" (coop) ──────────────────────────────────
+            if (this.downed) {
+                this.downTimer--;
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.vx *= 0.88;
+                this.y += this.vy;
+                this.checkCollisions(platforms, 'y');
+                if (this.y > levelDeadZone) this.y = platforms[0].y - 60;
+                if (this.downTimer <= 0) {
+                    this.downed = false;
                     handlePlayerDeath();
                 }
                 return;
@@ -6359,6 +6423,35 @@
             const drawX = this.x + attackOffsetX;
             const bodyY = this.y - bodyBob + breathAnim + floatAnim + attackOffsetY;
             const isFemale = this.skin.gender === 'F';
+
+            // ── Dessin état "A Terre" ─────────────────────────────────
+            if (this.downed) {
+                const cx = drawX + this.width / 2;
+                const cy = this.y + this.height / 2;
+                renderCtx.save();
+                renderCtx.translate(cx, this.y + this.height * 0.8);
+                renderCtx.rotate(Math.PI / 2);
+                renderCtx.globalAlpha = 0.55 + Math.sin(Date.now() / 180) * 0.15;
+                renderCtx.fillStyle = '#cc2222';
+                renderCtx.fillRect(-this.height / 2, -this.width / 2, this.height, this.width);
+                renderCtx.globalAlpha = 1;
+                renderCtx.restore();
+                // Anneau de timer
+                const frac = this.downTimer / 480;
+                renderCtx.save();
+                renderCtx.translate(cx, this.y - 22);
+                renderCtx.beginPath();
+                renderCtx.arc(0, 0, 16, -Math.PI/2, -Math.PI/2 + frac * Math.PI * 2);
+                renderCtx.strokeStyle = frac > 0.4 ? '#f0c040' : '#e03030';
+                renderCtx.lineWidth = 4;
+                renderCtx.stroke();
+                renderCtx.fillStyle = '#fff';
+                renderCtx.font = 'bold 11px Rajdhani';
+                renderCtx.textAlign = 'center';
+                renderCtx.fillText(Math.ceil(this.downTimer / 60) + 's', 0, 4);
+                renderCtx.restore();
+                return;
+            }
 
             // Pseudo
             if (this.pseudo !== "") {
@@ -6851,6 +6944,8 @@
             this.chatBubbles = [];
             this.isDying = false;
             this.deathTimer = 0;
+            this.downed = false;
+            this.downTimer = 0;
         }
 
         updateFromNetwork(data) {
@@ -6872,6 +6967,8 @@
             this.shieldActive = data.shieldActive ?? false;
             this.warCryActive = data.warCryActive ?? false;
             this.abilityTimer = data.abilityTimer ?? 0;
+            if (typeof data.downed !== 'undefined') this.downed = data.downed;
+            if (typeof data.downTimer !== 'undefined') this.downTimer = data.downTimer;
             if (!this.visible) {
                 // Premier paquet : placer directement sans lerp
                 this.x = data.x; this.y = data.y;
@@ -6902,6 +6999,28 @@
         draw() {
             if (!this.visible || !this.skin) return;
             if (this.hurtTimer > 0 && !this.isDying && Math.floor(Date.now() / 100) % 2 === 0) return;
+
+            if (this.downed) {
+                const cx = this.x + 25;
+                const frac = Math.max(0, this.downTimer / 480);
+                ctx.save();
+                ctx.translate(cx, this.y + 45);
+                ctx.rotate(Math.PI / 2);
+                ctx.globalAlpha = 0.55 + Math.sin(Date.now() / 180) * 0.15;
+                ctx.fillStyle = '#cc2222';
+                ctx.fillRect(-25, -25, 50, 50);
+                ctx.globalAlpha = 1;
+                ctx.restore();
+                ctx.save();
+                ctx.translate(cx, this.y - 22);
+                ctx.beginPath();
+                ctx.arc(0, 0, 16, -Math.PI/2, -Math.PI/2 + frac * Math.PI * 2);
+                ctx.strokeStyle = frac > 0.4 ? '#f0c040' : '#e03030';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                ctx.restore();
+                return;
+            }
 
             if (this.isDying) {
                 ctx.save();
@@ -8894,6 +9013,23 @@
             droppedWeapons = droppedWeapons.filter(dw => !dw._collected);
             if (_hintEl) _hintEl.style.display = _showHint ? 'block' : 'none';
 
+            // ── Revive partenaire (coop) ──────────────────────────────
+            if (remotePlayer.visible && remotePlayer.downed && !player.downed) {
+                const _rdist = Math.hypot((player.x + 25) - (remotePlayer.x + 25), (player.y + 25) - (remotePlayer.y + 25));
+                const _hintRevive = document.getElementById('weaponPickupHint');
+                if (_rdist < 80) {
+                    if (_hintRevive) { _hintRevive.innerHTML = `💀 <b>${remotePlayer.pseudo || 'Partenaire'}</b> — <kbd style="background:#1a1a1a;border:1px solid #c49a20;padding:1px 5px;border-radius:3px;font-family:monospace">E</kbd> pour ranimer`; _hintRevive.style.display = 'block'; }
+                    if (keys.interact) {
+                        keys.interact = false;
+                        socket.emit('game-event', { type: 'revive-partner', roomCode });
+                    }
+                }
+            }
+            // Both downed → Game Over
+            if (player.downed && remotePlayer.visible && remotePlayer.downed) {
+                endGame(false);
+            }
+
             // Mise à jour des effets de sang
             floorBloods.forEach(fb => fb.update());
             floorBloods = floorBloods.filter(fb => fb.life > 0);
@@ -8934,7 +9070,9 @@
                     pseudo:    player.pseudo,
                     shieldActive: player.shieldActive  ?? false,
                     warCryActive: player.warCryActive  ?? false,
-                    abilityTimer: player.abilityTimer  ?? 0
+                    abilityTimer: player.abilityTimer  ?? 0,
+                    downed: player.downed  ?? false,
+                    downTimer: player.downTimer ?? 0
                 });
             }
             // ── Sync ennemis/pièces toutes les 3 frames (host seul) ──────

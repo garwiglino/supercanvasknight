@@ -7596,10 +7596,18 @@
                 this.vx = 0; // immobile en posture de bloc
             } else if (this.blockCooldown === 0 && this.windupTimer === 0 &&
                 this.state !== 'ATTACK' && this.state !== 'STUNNED' && this.state !== 'DYING') {
-                const _bDist = Math.hypot((player.x+25)-(this.x+25), (player.y+25)-(this.y+25));
-                if (_bDist < 220 && Math.random() < 0.004) {
-                    this.blockTimer    = 80 + Math.floor(Math.random() * 50);  // 1.3–2.2s
-                    this.blockCooldown = 420 + Math.floor(Math.random() * 180); // 7–10s
+                const _bDist = Math.abs((player.x + 25) - (this.x + 25));
+                // Blocage réactif : le joueur attaque face à l'ennemi
+                const _playerFacingMe = (player.facingRight  && player.x < this.x) ||
+                                        (!player.facingRight && player.x > this.x);
+                if (_bDist < 140 && player.isAttacking && _playerFacingMe && Math.random() < 0.12) {
+                    // Réaction à l'attaque imminente
+                    this.blockTimer    = 50 + Math.floor(Math.random() * 30);  // 0.8–1.3s
+                    this.blockCooldown = 180 + Math.floor(Math.random() * 90); // 3–4.5s
+                } else if (_bDist < 160 && Math.random() < 0.008) {
+                    // Garde préventive occasionnelle
+                    this.blockTimer    = 65 + Math.floor(Math.random() * 35);  // 1.1–1.7s
+                    this.blockCooldown = 280 + Math.floor(Math.random() * 100); // 4.6–6.3s
                 }
             }
 
@@ -7945,12 +7953,12 @@
             ctx.fillRect(drawX + pupilOffsetX + (this.facingRight?4:2), bodyY + 8, 2, 2);
 
             ctx.save();
-            // En posture de bloc : bras tendu vers l'avant
             const _isBlocking = this.blockTimer > 0;
+            // En garde : main légèrement avancée devant le corps, à hauteur de poitrine
             let handX = _isBlocking
-                ? (this.facingRight ? drawX + this.width + 2 : drawX - 2)
+                ? (this.facingRight ? drawX + this.width * 0.7 : drawX + this.width * 0.3)
                 : (this.facingRight ? drawX + this.width / 2 + 10 : drawX + this.width / 2 - 10);
-            let handY = bodyY + this.height * 0.5;
+            let handY = _isBlocking ? bodyY + this.height * 0.42 : bodyY + this.height * 0.55;
 
             ctx.translate(handX, handY);
             if (!this.facingRight) ctx.scale(-1, 1);
@@ -7967,10 +7975,11 @@
             ctx.fillRect(-22, 12, 3, 3);
 
             if (_isBlocking) {
-                // Épée à l'horizontale devant le squelette
-                ctx.rotate(Math.PI / 2);
+                // Épée horizontale en travers du corps (garde)
+                // La lame part du centre et s'étend vers la droite (devant l'ennemi)
+                ctx.rotate(-Math.PI / 2);
                 // Lueur de blocage (pulsante)
-                const _bp = 0.4 + 0.3 * Math.sin(Date.now() / 80);
+                const _bp = 0.35 + 0.25 * Math.sin(Date.now() / 90);
                 ctx.globalAlpha = _bp;
                 ctx.fillStyle = '#FFF176';
                 ctx.beginPath(); ctx.roundRect(-5, -34, 10, 38, 3); ctx.fill();

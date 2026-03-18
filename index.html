@@ -7762,9 +7762,16 @@
                         this.comboCount = 0;
                     }
                     if (this.state === 'PATROL') {
-                        if (this.x < this.minX) this.facingRight = true;
-                        if (this.x > this.maxX) this.facingRight = false;
-                        intendedVx = this.facingRight ? this.speed : -this.speed;
+                        if (this.patrolWaitTimer === undefined) this.patrolWaitTimer = 0;
+                        if (this.patrolWaitTimer > 0) {
+                            this.patrolWaitTimer--;
+                            intendedVx = 0;
+                        } else {
+                            if (this.x < this.minX) { this.facingRight = true; this.patrolWaitTimer = 30 + Math.floor(Math.random() * 60); }
+                            else if (this.x > this.maxX) { this.facingRight = false; this.patrolWaitTimer = 30 + Math.floor(Math.random() * 60); }
+                            else if (Math.random() < 0.004) { this.patrolWaitTimer = 40 + Math.floor(Math.random() * 80); }
+                            intendedVx = this.facingRight ? this.speed : -this.speed;
+                        }
                     }
                 }
 
@@ -8322,9 +8329,16 @@
                         this.comboCount = 0;
                     }
                     if (this.state === 'PATROL') {
-                        if (this.x < this.minX) this.facingRight = true;
-                        if (this.x > this.maxX) this.facingRight = false;
-                        intendedVx = this.facingRight ? this.speed : -this.speed;
+                        if (this.patrolWaitTimer === undefined) this.patrolWaitTimer = 0;
+                        if (this.patrolWaitTimer > 0) {
+                            this.patrolWaitTimer--;
+                            intendedVx = 0;
+                        } else {
+                            if (this.x < this.minX) { this.facingRight = true; this.patrolWaitTimer = 25 + Math.floor(Math.random() * 50); }
+                            else if (this.x > this.maxX) { this.facingRight = false; this.patrolWaitTimer = 25 + Math.floor(Math.random() * 50); }
+                            else if (Math.random() < 0.004) { this.patrolWaitTimer = 35 + Math.floor(Math.random() * 70); }
+                            intendedVx = this.facingRight ? this.speed : -this.speed;
+                        }
                     }
                 }
 
@@ -8349,6 +8363,32 @@
                     if (this.state === 'ATTACK' && this.windupTimer > 0) {
                         this.windupTimer = 0; this.attackTimer = 0; this.state = 'PATROL';
                     }
+                    // ── Vérification blocage ennemi ──────────────────────────
+                    let _gobBlocked = false;
+                    if (this.blockTimer > 0) {
+                        const _atkDirG  = player.facingRight ? 1 : -1;
+                        const _faceDirG = this.facingRight  ? 1 : -1;
+                        if (_atkDirG !== _faceDirG) {
+                            _gobBlocked = true;
+                            SFX.hit('stone');
+                            const _bx = this.facingRight ? this.x + this.width + 4 : this.x - 4;
+                            const _by = this.y + this.height * 0.35;
+                            for (let _bi = 0; _bi < 8; _bi++) {
+                                const _ba = (_bi / 8) * Math.PI + (this.facingRight ? 0 : Math.PI);
+                                player.abilityVfx.push({ x: _bx, y: _by,
+                                    vx: Math.cos(_ba) * (3 + Math.random() * 3),
+                                    vy: Math.sin(_ba) * 3 - 1,
+                                    life: 14, maxLife: 14,
+                                    color: _bi % 2 === 0 ? '#FFF176' : '#FFB300', r: 3, grav: 0.3 });
+                            }
+                            player.vx = -_atkDirG * 5;
+                            player.vy = -2.5;
+                            player.hasHit.add(this);
+                            this.blockTimer = 0;
+                            this.blockCooldown = 300 + Math.floor(Math.random() * 120);
+                        }
+                    }
+                    if (!_gobBlocked) {
                     const _wdmg2 = WEAPON_CONFIG[player._equippedWeaponId?.() ?? player.skin?.weapon ?? 'sword']?.dmg || [15, 15, 15, 25];
                     const _baseDmgG = (_wdmg2[player.comboStep] || 15) + (player.bonusDamage || 0);
                     const isCritG = Math.random() < CRIT_CHANCE;
@@ -8415,6 +8455,7 @@
                             });
                         }
                     }
+                    } // end if (!_gobBlocked)
                 }
             }
         }

@@ -15,6 +15,21 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Pseudo et mot de passe requis' });
     }
 
+    // ── Compte de test (dev) ─────────────────────────────────────
+    if (pseudo.trim().toLowerCase() === 'usertest' && password === '1234') {
+        const testPseudo = 'UserTest';
+        const userKey = `user:${testPseudo.toLowerCase()}`;
+        const exists = await redis.get(userKey);
+        if (!exists) {
+            const salt = process.env.AUTH_SALT ?? 'sckt_default_salt_change_me';
+            const hash = crypto.createHash('sha256').update('1234' + salt).digest('hex');
+            await redis.set(userKey, JSON.stringify({ pseudo: testPseudo, hash, email: 'test@test.dev', createdAt: Date.now() }));
+        }
+        const token = crypto.randomBytes(32).toString('hex');
+        await redis.set(`token:${token}`, testPseudo, { ex: 604800 });
+        return res.status(200).json({ token, pseudo: testPseudo });
+    }
+
     const key = `user:${pseudo.trim().toLowerCase()}`;
     const raw = await redis.get(key);
 

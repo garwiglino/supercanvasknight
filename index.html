@@ -5804,8 +5804,6 @@
             const t = Date.now();
             const walkAnim = (this.grounded && isMoving) ? Math.sin(t / 50) * 10 : 0;
             const bodyBob = (this.grounded && isMoving) ? Math.abs(Math.cos(t / 100)) * 3 : 0;
-            // Goblin se penche en avant quand il court
-            const leanAngle = (this.state === 'CHASE') ? (this.facingRight ? 0.22 : -0.22) : 0;
 
             let attackOffsetX = 0, attackOffsetY = 0;
             if (this.state === 'ATTACK') {
@@ -5814,154 +5812,131 @@
                 attackOffsetY = p * 3;
             }
 
+            const fr = this.facingRight;
             const drawX = this.x + attackOffsetX;
             const bodyY = this.y - bodyBob + attackOffsetY;
-            const cx = drawX + this.width / 2;
+            const W = this.width; // 38
+            const H = this.height; // 42
 
             ctx.save();
-            ctx.translate(cx, bodyY + this.height);
-            ctx.rotate(leanAngle);
-            ctx.translate(-cx, -(bodyY + this.height));
 
             // ── Jambes ──
-            const legColor = '#6b4a1e';
-            ctx.fillStyle = legColor;
-            ctx.beginPath(); ctx.roundRect(drawX + 4 + walkAnim, bodyY + this.height - 18, 11, 22, 3); ctx.fill();
-            ctx.beginPath(); ctx.roundRect(drawX + this.width - 15 - walkAnim, bodyY + this.height - 18, 11, 22, 3); ctx.fill();
+            ctx.fillStyle = '#5a3d18';
+            ctx.fillRect(drawX + 4 + walkAnim * 0.7, bodyY + H - 10, 11, 14);
+            ctx.fillRect(drawX + W - 15 - walkAnim * 0.7, bodyY + H - 10, 11, 14);
             // Pieds
-            ctx.fillStyle = '#4a3010';
-            ctx.beginPath(); ctx.roundRect(drawX + 2 + walkAnim, bodyY + this.height + 2, 14, 7, 2); ctx.fill();
-            ctx.beginPath(); ctx.roundRect(drawX + this.width - 16 - walkAnim, bodyY + this.height + 2, 14, 7, 2); ctx.fill();
+            ctx.fillStyle = '#3a2510';
+            ctx.fillRect(drawX + 2 + walkAnim * 0.7, bodyY + H + 2, 14, 6);
+            ctx.fillRect(drawX + W - 16 - walkAnim * 0.7, bodyY + H + 2, 14, 6);
 
-            // ── Corps (cuir cabossé) ──
-            let bodyGrad = ctx.createLinearGradient(drawX, bodyY + 10, drawX + this.width, bodyY + this.height);
-            bodyGrad.addColorStop(0, '#7a5a20');
-            bodyGrad.addColorStop(0.5, '#5c4218');
-            bodyGrad.addColorStop(1, '#3e2c0e');
-            ctx.fillStyle = bodyGrad;
-            ctx.beginPath();
-            ctx.roundRect(drawX + 2, bodyY + 14, this.width - 4, this.height - 16, 5);
-            ctx.fill();
-            // Coutures de cuir
-            ctx.strokeStyle = '#3e2c0e';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(drawX + 10, bodyY + 18); ctx.lineTo(drawX + 10, bodyY + this.height - 6);
-            ctx.moveTo(drawX + this.width - 10, bodyY + 18); ctx.lineTo(drawX + this.width - 10, bodyY + this.height - 6);
-            ctx.stroke();
-            // Rivets
+            // ── Corps (armure cuir) ──
+            ctx.fillStyle = '#5c4218';
+            ctx.fillRect(drawX + 3, bodyY + 14, W - 6, H - 20);
+            // Reflet latéral
+            ctx.fillStyle = '#7a5a20';
+            ctx.fillRect(drawX + 4, bodyY + 15, 5, H - 24);
+            // Bande horizontale (renfort)
+            ctx.fillStyle = '#3e2c0e';
+            ctx.fillRect(drawX + 3, bodyY + 24, W - 6, 3);
+            // Rivets carrés
             ctx.fillStyle = '#c8a030';
-            for (let ry of [bodyY + 20, bodyY + 30]) {
-                ctx.beginPath(); ctx.arc(drawX + 8, ry, 2, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.arc(drawX + this.width - 8, ry, 2, 0, Math.PI * 2); ctx.fill();
-            }
+            ctx.fillRect(drawX + 6, bodyY + 17, 3, 3);
+            ctx.fillRect(drawX + W - 9, bodyY + 17, 3, 3);
+            ctx.fillRect(drawX + 6, bodyY + 28, 3, 3);
+            ctx.fillRect(drawX + W - 9, bodyY + 28, 3, 3);
 
-            // ── Peau verte (bras) ──
+            // ── Bras (peau verte, blocs plats) ──
             ctx.fillStyle = '#3d7a2e';
-            // Bras gauche
-            let armLX = this.facingRight ? drawX - 6 : drawX + this.width - 5;
-            ctx.beginPath(); ctx.roundRect(armLX, bodyY + 16, 10, 18, 4); ctx.fill();
-            // Bras droit (avec dague)
-            let armRX = this.facingRight ? drawX + this.width - 5 : drawX - 6;
-            ctx.beginPath(); ctx.roundRect(armRX, bodyY + 16, 10, 18, 4); ctx.fill();
+            ctx.fillRect(fr ? drawX - 5 : drawX + W - 4, bodyY + 15, 9, 16);
+            ctx.fillRect(fr ? drawX + W - 4 : drawX - 5, bodyY + 15, 9, 16);
 
-            // ── Dague dans la main droite ──
+            // ── Dague ──
             ctx.save();
-            const daggerHandX = this.facingRight ? drawX + this.width + 2 : drawX - 8;
-            const daggerHandY = bodyY + 26;
-            ctx.translate(daggerHandX, daggerHandY);
-            if (!this.facingRight) ctx.scale(-1, 1);
+            ctx.translate(fr ? drawX + W + 3 : drawX - 5, bodyY + 24);
+            if (!fr) ctx.scale(-1, 1);
             if (this.state === 'ATTACK') {
-                let ap = this.attackTimer / 42;
-                ctx.rotate(ap > 0.7 ? -Math.PI / 2 : ap > 0.4 ? Math.PI / 5 : Math.PI / 8);
+                ctx.rotate(this.attackTimer / 42 > 0.7 ? -Math.PI / 2 : Math.PI / 6);
             } else {
-                ctx.rotate(Math.PI / 6);
+                ctx.rotate(Math.PI / 8);
             }
-            // Lame
-            ctx.fillStyle = '#aab8c8';
-            ctx.beginPath();
-            ctx.moveTo(0, -22); ctx.lineTo(3, -6); ctx.lineTo(-3, -6); ctx.closePath(); ctx.fill();
-            ctx.fillStyle = '#c8d4e0';
-            ctx.beginPath();
-            ctx.moveTo(0, -22); ctx.lineTo(1.5, -6); ctx.lineTo(0, -8); ctx.closePath(); ctx.fill();
-            // Garde
+            ctx.fillStyle = '#9ab0c0';
+            ctx.fillRect(-2, -20, 5, 20);          // lame
+            ctx.fillStyle = '#c0d0dc';
+            ctx.fillRect(-1, -20, 2, 16);           // reflet lame
             ctx.fillStyle = '#8b6914';
-            ctx.fillRect(-5, -6, 10, 3);
-            // Poignée
+            ctx.fillRect(-5, 0, 11, 3);             // garde
             ctx.fillStyle = '#5c3d0e';
-            ctx.beginPath(); ctx.roundRect(-2, -3, 4, 10, 2); ctx.fill();
+            ctx.fillRect(-2, 3, 4, 8);              // poignée
             ctx.restore();
 
-            // ── Tête ──
-            const headW = this.width + 4;
-            const headH = 20;
-            const headX = drawX - 2;
-            const headY = bodyY - 2;
-
-            // Peau verte tête
-            let headGrad = ctx.createLinearGradient(headX, headY, headX + headW, headY + headH);
-            headGrad.addColorStop(0, '#4a9c36');
-            headGrad.addColorStop(1, '#2e6e1e');
-            ctx.fillStyle = headGrad;
-            ctx.beginPath(); ctx.roundRect(headX, headY, headW, headH, [8, 8, 4, 4]); ctx.fill();
-
-            // Grandes oreilles pointues
-            ctx.fillStyle = '#3d8a2a';
-            // Oreille gauche
+            // ── Oreilles pointues (triangles derrière la tête) ──
+            ctx.fillStyle = '#3d7a2e';
             ctx.beginPath();
-            ctx.moveTo(headX + 3, headY + 5);
-            ctx.lineTo(headX - 10, headY - 6);
-            ctx.lineTo(headX + 8, headY + 12);
-            ctx.closePath(); ctx.fill();
-            // Oreille droite
-            ctx.beginPath();
-            ctx.moveTo(headX + headW - 3, headY + 5);
-            ctx.lineTo(headX + headW + 10, headY - 6);
-            ctx.lineTo(headX + headW - 8, headY + 12);
-            ctx.closePath(); ctx.fill();
-            // Intérieur oreilles (rose)
-            ctx.fillStyle = '#c06060';
-            ctx.beginPath();
-            ctx.moveTo(headX + 3, headY + 6);
-            ctx.lineTo(headX - 5, headY - 2);
-            ctx.lineTo(headX + 6, headY + 11);
+            ctx.moveTo(drawX + 5, bodyY + 2);
+            ctx.lineTo(drawX - 9, bodyY - 7);
+            ctx.lineTo(drawX + 5, bodyY + 12);
             ctx.closePath(); ctx.fill();
             ctx.beginPath();
-            ctx.moveTo(headX + headW - 3, headY + 6);
-            ctx.lineTo(headX + headW + 5, headY - 2);
-            ctx.lineTo(headX + headW - 6, headY + 11);
+            ctx.moveTo(drawX + W - 5, bodyY + 2);
+            ctx.lineTo(drawX + W + 9, bodyY - 7);
+            ctx.lineTo(drawX + W - 5, bodyY + 12);
+            ctx.closePath(); ctx.fill();
+            // Intérieur oreilles (teinte rosée, même principe que les joueurs)
+            ctx.fillStyle = '#a04040';
+            ctx.beginPath();
+            ctx.moveTo(drawX + 5, bodyY + 4);
+            ctx.lineTo(drawX - 3, bodyY - 2);
+            ctx.lineTo(drawX + 5, bodyY + 10);
+            ctx.closePath(); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(drawX + W - 5, bodyY + 4);
+            ctx.lineTo(drawX + W + 3, bodyY - 2);
+            ctx.lineTo(drawX + W - 5, bodyY + 10);
             ctx.closePath(); ctx.fill();
 
-            // Yeux jaunes lumineux
-            const eyeOffL = this.facingRight ? headX + 8 : headX + 4;
-            const eyeOffR = this.facingRight ? headX + headW - 12 : headX + headW - 16;
-            // Glow
-            ctx.shadowColor = '#ffcc00';
-            ctx.shadowBlur = 6;
-            ctx.fillStyle = '#ffdd00';
-            ctx.beginPath(); ctx.ellipse(eyeOffL + 3, headY + 9, 4, 4, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(eyeOffR + 3, headY + 9, 4, 4, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.shadowBlur = 0;
-            // Pupilles noires
+            // ── Tête (bloc plat, peau verte) ──
+            ctx.fillStyle = '#2e6e1e'; // ombre
+            ctx.fillRect(drawX, bodyY + 1, W, 16);
+            ctx.fillStyle = '#4a9c36'; // peau principale
+            ctx.fillRect(drawX + 1, bodyY, W - 2, 15);
+            // Reflet haut
+            ctx.fillStyle = '#5ab840';
+            ctx.fillRect(drawX + 3, bodyY + 1, 5, 4);
+
+            // ── Yeux — slot sombre + iris jaune + highlight (même style que Skeleton/players) ──
+            const slotW = 26;
+            const slotH = 7;
+            const slotX = fr ? drawX + W - 5 - slotW : drawX + 5;
+            const slotY = bodyY + 4;
+            // Slot noir
             ctx.fillStyle = '#111';
-            ctx.beginPath(); ctx.ellipse(eyeOffL + 3 + (this.facingRight ? 1 : -1), headY + 9, 2, 2.5, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(eyeOffR + 3 + (this.facingRight ? 1 : -1), headY + 9, 2, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillRect(slotX, slotY, slotW, slotH);
+            // Iris jaune
+            ctx.fillStyle = '#e8c000';
+            const irisX = slotX + (fr ? slotW * 0.35 : slotW * 0.05);
+            ctx.fillRect(irisX, slotY + 1, slotW * 0.55, slotH - 2);
+            // Pupille verticale (sombre)
+            ctx.fillStyle = '#1a1000';
+            ctx.fillRect(irisX + (fr ? slotW * 0.22 : slotW * 0.1), slotY + 1, 3, slotH - 2);
+            // Highlight pixel blanc
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(slotX + (fr ? slotW * 0.6 : slotW * 0.1), slotY + 1, 3, 3);
 
-            // Sourcils menaçants
-            ctx.strokeStyle = '#1a3d10';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(eyeOffL, headY + 5); ctx.lineTo(eyeOffL + 7, headY + 7); ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(eyeOffR + 6, headY + 5); ctx.lineTo(eyeOffR - 1, headY + 7); ctx.stroke();
+            // ── Sourcils (blocs pixel anguleux) ──
+            ctx.fillStyle = '#1a3d10';
+            if (fr) {
+                ctx.fillRect(slotX, slotY - 3, 10, 2);
+                ctx.fillRect(slotX + 14, slotY - 2, 10, 2);
+            } else {
+                ctx.fillRect(slotX + slotW - 10, slotY - 3, 10, 2);
+                ctx.fillRect(slotX + 2, slotY - 2, 10, 2);
+            }
 
-            // Petite corne (milieu front)
-            ctx.fillStyle = '#d4a830';
-            ctx.beginPath();
-            ctx.moveTo(headX + headW / 2, headY - 8);
-            ctx.lineTo(headX + headW / 2 - 4, headY + 1);
-            ctx.lineTo(headX + headW / 2 + 4, headY + 1);
-            ctx.closePath(); ctx.fill();
+            // ── Petite corne (bloc simple, top centre) ──
+            ctx.fillStyle = '#c8a030';
+            ctx.fillRect(drawX + W / 2 - 2, bodyY - 5, 4, 6);
+            ctx.fillStyle = '#e8c060';
+            ctx.fillRect(drawX + W / 2 - 1, bodyY - 5, 2, 4);
 
             ctx.restore();
 

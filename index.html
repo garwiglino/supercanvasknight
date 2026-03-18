@@ -7820,8 +7820,7 @@
                             player.vx = -_atkDir * 5;
                             player.vy = -2.5;
                             player.hasHit.add(this);
-                            this.blockTimer = 0;
-                            this.blockCooldown = 300 + Math.floor(Math.random() * 120);
+                            // Ne pas réinitialiser blockTimer : la garde reste active
                         }
                         // Si par derrière : le bloc ne tient pas → dommages normaux
                     }
@@ -8384,8 +8383,7 @@
                             player.vx = -_atkDirG * 5;
                             player.vy = -2.5;
                             player.hasHit.add(this);
-                            this.blockTimer = 0;
-                            this.blockCooldown = 300 + Math.floor(Math.random() * 120);
+                            // Ne pas réinitialiser blockTimer : la garde reste active
                         }
                     }
                     if (!_gobBlocked) {

@@ -6741,6 +6741,8 @@
             this.attackTimer = 0;
             this.windupTimer = 0;
             this.stunnedTimer = 0;
+            this.behaviorTimer = 0;
+            this.comboCount = 0;
             this.state = 'PATROL';
             this.currentPlatform = null;
             this.deathTimer = 0;
@@ -6888,31 +6890,89 @@
                 let playerIsAlive = player.hp > 0;
                 let intendedVx = 0;
 
+                if (this.behaviorTimer > 0) this.behaviorTimer--;
+
                 if (this.hurtTimer > 20) {
                     intendedVx = this.vx;
                 } else if (this.state === 'ATTACK') {
-                    // En train d'attaquer (windup ou cooldown) : sur place
                     intendedVx = 0;
                     this.facingRight = player.x > this.x;
                     if (this.attackTimer === 0 && this.windupTimer === 0) {
-                        this.state = 'PATROL'; // prêt à réengager
+                        // Combo : enchaîner une 2e attaque avec ~45% de chance si encore à portée
+                        if (this.comboCount < 2 && distToPlayer < 80 && Math.random() < 0.45) {
+                            this.comboCount++;
+                            this.behaviorTimer = 14 + Math.floor(Math.random() * 10); // courte pause entre les coups
+                            this.state = 'CHASE';
+                        } else {
+                            this.comboCount = 0;
+                            // Après l'attaque : reculer ou patrouiller aléatoirement
+                            if (Math.random() < 0.5) {
+                                this.state = 'BACKSTEP';
+                                this.behaviorTimer = 20 + Math.floor(Math.random() * 18);
+                            } else {
+                                this.state = 'PATROL';
+                                this.behaviorTimer = 10 + Math.floor(Math.random() * 15);
+                            }
+                        }
+                    }
+                } else if (this.state === 'BACKSTEP') {
+                    // Recule à l'opposé du joueur
+                    this.facingRight = player.x > this.x;
+                    intendedVx = this.facingRight ? -this.speed * 1.2 : this.speed * 1.2;
+                    if (this.behaviorTimer === 0) this.state = 'PATROL';
+                } else if (this.state === 'HESITATE') {
+                    // Sur place, attend avant de décider
+                    intendedVx = 0;
+                    this.facingRight = player.x > this.x;
+                    if (this.behaviorTimer === 0) {
+                        // Décision aléatoire : attaquer, reculer ou continuer à chasser
+                        const roll = Math.random();
+                        if (roll < 0.5 && distToPlayer < 70) {
+                            this.state = 'ATTACK';
+                            this.windupTimer = PARRY_WINDOW_SKEL;
+                        } else if (roll < 0.75) {
+                            this.state = 'BACKSTEP';
+                            this.behaviorTimer = 18 + Math.floor(Math.random() * 14);
+                        } else {
+                            this.state = 'CHASE';
+                        }
                     }
                 } else if (distToPlayer < 70 && Math.abs(player.y - this.y) < 50 && playerIsAlive) {
-                    if (this.attackTimer === 0 && this.windupTimer === 0) {
-                        this.state = 'ATTACK';
-                        this.facingRight = player.x > this.x;
-                        this.windupTimer = PARRY_WINDOW_SKEL; // démarre le windup
+                    if (this.attackTimer === 0 && this.windupTimer === 0 && this.behaviorTimer === 0) {
+                        const roll = Math.random();
+                        if (roll < 0.55) {
+                            // Attaque directe
+                            this.state = 'ATTACK';
+                            this.facingRight = player.x > this.x;
+                            this.windupTimer = PARRY_WINDOW_SKEL;
+                        } else if (roll < 0.78) {
+                            // Hésitation : reste à portée mais attend un peu
+                            this.state = 'HESITATE';
+                            this.behaviorTimer = 12 + Math.floor(Math.random() * 18);
+                            this.facingRight = player.x > this.x;
+                        } else {
+                            // Backstep surprise : recule au lieu d'attaquer
+                            this.state = 'BACKSTEP';
+                            this.behaviorTimer = 16 + Math.floor(Math.random() * 14);
+                        }
                     }
                     intendedVx = 0;
                 } else if (distToPlayer < 350 && Math.abs(player.y - this.y) < 100 && playerIsAlive) {
-                    this.state = 'CHASE';
-                    this.facingRight = player.x > this.x;
-                    intendedVx = this.facingRight ? this.speed * 1.5 : -this.speed * 1.5;
+                    if (this.state !== 'BACKSTEP' && this.state !== 'HESITATE') {
+                        this.state = 'CHASE';
+                        this.facingRight = player.x > this.x;
+                        intendedVx = this.facingRight ? this.speed * 1.5 : -this.speed * 1.5;
+                    }
                 } else {
-                    this.state = 'PATROL';
-                    if (this.x < this.minX) this.facingRight = true;
-                    if (this.x > this.maxX) this.facingRight = false;
-                    intendedVx = this.facingRight ? this.speed : -this.speed;
+                    if (this.state !== 'BACKSTEP' && this.state !== 'HESITATE') {
+                        this.state = 'PATROL';
+                        this.comboCount = 0;
+                    }
+                    if (this.state === 'PATROL') {
+                        if (this.x < this.minX) this.facingRight = true;
+                        if (this.x > this.maxX) this.facingRight = false;
+                        intendedVx = this.facingRight ? this.speed : -this.speed;
+                    }
                 }
 
                 if (this.grounded && this.currentPlatform && this.hurtTimer <= 20) {
@@ -7202,6 +7262,8 @@
             this.attackTimer = 0;
             this.windupTimer = 0;
             this.stunnedTimer = 0;
+            this.behaviorTimer = 0;
+            this.comboCount = 0;
             this.deathTimer = 0;
             this.state = 'PATROL';
             this.currentPlatform = null;
@@ -7342,28 +7404,82 @@
                 let playerIsAlive = player.hp > 0;
                 let intendedVx = 0;
 
+                if (this.behaviorTimer > 0) this.behaviorTimer--;
+
                 if (this.hurtTimer > 18) {
                     intendedVx = this.vx;
                 } else if (this.state === 'ATTACK') {
                     intendedVx = 0;
                     this.facingRight = player.x > this.x;
-                    if (this.attackTimer === 0 && this.windupTimer === 0) this.state = 'PATROL';
-                } else if (distToPlayer < 58 && Math.abs(player.y - this.y) < 45 && playerIsAlive) {
                     if (this.attackTimer === 0 && this.windupTimer === 0) {
-                        this.state = 'ATTACK';
-                        this.facingRight = player.x > this.x;
-                        this.windupTimer = PARRY_WINDOW_GOB;
+                        // Goblin plus agressif : combo jusqu'à 3 coups, 55% de chance
+                        if (this.comboCount < 3 && distToPlayer < 65 && Math.random() < 0.55) {
+                            this.comboCount++;
+                            this.behaviorTimer = 10 + Math.floor(Math.random() * 8);
+                            this.state = 'CHASE';
+                        } else {
+                            this.comboCount = 0;
+                            if (Math.random() < 0.45) {
+                                this.state = 'BACKSTEP';
+                                this.behaviorTimer = 14 + Math.floor(Math.random() * 14);
+                            } else {
+                                this.state = 'PATROL';
+                                this.behaviorTimer = 8 + Math.floor(Math.random() * 12);
+                            }
+                        }
+                    }
+                } else if (this.state === 'BACKSTEP') {
+                    this.facingRight = player.x > this.x;
+                    intendedVx = this.facingRight ? -this.speed * 1.4 : this.speed * 1.4;
+                    if (this.behaviorTimer === 0) this.state = 'PATROL';
+                } else if (this.state === 'HESITATE') {
+                    intendedVx = 0;
+                    this.facingRight = player.x > this.x;
+                    if (this.behaviorTimer === 0) {
+                        const roll = Math.random();
+                        if (roll < 0.55 && distToPlayer < 58) {
+                            this.state = 'ATTACK';
+                            this.windupTimer = PARRY_WINDOW_GOB;
+                        } else if (roll < 0.78) {
+                            this.state = 'BACKSTEP';
+                            this.behaviorTimer = 12 + Math.floor(Math.random() * 12);
+                        } else {
+                            this.state = 'CHASE';
+                        }
+                    }
+                } else if (distToPlayer < 58 && Math.abs(player.y - this.y) < 45 && playerIsAlive) {
+                    if (this.attackTimer === 0 && this.windupTimer === 0 && this.behaviorTimer === 0) {
+                        const roll = Math.random();
+                        if (roll < 0.60) {
+                            this.state = 'ATTACK';
+                            this.facingRight = player.x > this.x;
+                            this.windupTimer = PARRY_WINDOW_GOB;
+                        } else if (roll < 0.80) {
+                            this.state = 'HESITATE';
+                            this.behaviorTimer = 8 + Math.floor(Math.random() * 14);
+                            this.facingRight = player.x > this.x;
+                        } else {
+                            this.state = 'BACKSTEP';
+                            this.behaviorTimer = 12 + Math.floor(Math.random() * 12);
+                        }
                     }
                     intendedVx = 0;
                 } else if (distToPlayer < 300 && Math.abs(player.y - this.y) < 90 && playerIsAlive) {
-                    this.state = 'CHASE';
-                    this.facingRight = player.x > this.x;
-                    intendedVx = this.facingRight ? this.speed * 1.7 : -this.speed * 1.7;
+                    if (this.state !== 'BACKSTEP' && this.state !== 'HESITATE') {
+                        this.state = 'CHASE';
+                        this.facingRight = player.x > this.x;
+                        intendedVx = this.facingRight ? this.speed * 1.7 : -this.speed * 1.7;
+                    }
                 } else {
-                    this.state = 'PATROL';
-                    if (this.x < this.minX) this.facingRight = true;
-                    if (this.x > this.maxX) this.facingRight = false;
-                    intendedVx = this.facingRight ? this.speed : -this.speed;
+                    if (this.state !== 'BACKSTEP' && this.state !== 'HESITATE') {
+                        this.state = 'PATROL';
+                        this.comboCount = 0;
+                    }
+                    if (this.state === 'PATROL') {
+                        if (this.x < this.minX) this.facingRight = true;
+                        if (this.x > this.maxX) this.facingRight = false;
+                        intendedVx = this.facingRight ? this.speed : -this.speed;
+                    }
                 }
 
                 if (this.grounded && this.currentPlatform && this.hurtTimer <= 18) {

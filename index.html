@@ -6334,200 +6334,266 @@
             }
             const { x, y, width: W, height: H } = this;
 
+            // ── Zones tileset : top (surface marchée) / mid (corps) / bottom (profond) ──
+            const topH = Math.min(20, Math.round(H * 0.38));
+            const botH = H > 35 ? Math.min(14, Math.round(H * 0.22)) : 0;
+            const midY = y + topH;
+            const midH = H - topH - botH;
+            const botY = y + H - botH;
+            const sx = Math.floor(x); // seed stable basé sur position
+
             switch (this.surface) {
 
                 case 'gravel': {
-                    // ── Corps gris moyen ──
-                    ctx.fillStyle = '#6e6e6e';
-                    ctx.fillRect(x, y, W, H);
-                    ctx.fillStyle = '#7a7a7a';
-                    ctx.fillRect(x, y, W, H * 0.4);
-                    // Petits cailloux (pseudo-aléatoires déterministes)
-                    const gColors = ['#555','#888','#999','#4e4e4e'];
-                    for (let i = 4; i < W - 4; i += 9) {
-                        for (let j = 3; j < H - 2; j += 8) {
-                            const seed = (i * 7 + j * 13 + x) % 4;
-                            ctx.fillStyle = gColors[seed];
-                            const pw = 4 + (i * 3 + j) % 5;
-                            const ph = 3 + (i + j * 2) % 4;
+                    // ── Bottom : base compactée sombre ──
+                    if (botH > 0) {
+                        ctx.fillStyle = '#2a2a2a';
+                        ctx.fillRect(x, botY, W, botH);
+                        ctx.fillStyle = '#333';
+                        for (let j = 3; j < botH; j += 5) ctx.fillRect(x, botY + j, W, 2);
+                    }
+                    // ── Mid : graviers moyens ──
+                    ctx.fillStyle = '#525252';
+                    ctx.fillRect(x, midY, W, midH);
+                    const gM = ['#464646','#5e5e5e','#3c3c3c','#686868'];
+                    for (let i = 7; i < W - 4; i += 13) {
+                        for (let j = 3; j < midH - 2; j += 11) {
+                            const s = (i * 5 + j * 9 + sx) % 4;
+                            ctx.fillStyle = gM[s];
+                            const pw = 5 + (i * 2 + j) % 6, ph = 4 + (i + j) % 4;
+                            ctx.beginPath(); ctx.ellipse(x + i, midY + j, pw / 2, ph / 2, (i * 0.4) % Math.PI, 0, Math.PI * 2); ctx.fill();
+                        }
+                    }
+                    // ── Top : gravillon fin, surface lisse ──
+                    ctx.fillStyle = '#727272';
+                    ctx.fillRect(x, y, W, topH);
+                    const gT = ['#606060','#888','#6c6c6c','#929292'];
+                    for (let i = 4; i < W - 3; i += 8) {
+                        for (let j = 2; j < topH - 1; j += 6) {
+                            const s = (i * 7 + j * 13 + sx) % 4;
+                            ctx.fillStyle = gT[s];
+                            const pw = 3 + (i + j * 2) % 4, ph = 2 + (i * 3 + j) % 3;
                             ctx.beginPath(); ctx.ellipse(x + i, y + j, pw / 2, ph / 2, (i * 0.3) % Math.PI, 0, Math.PI * 2); ctx.fill();
                         }
                     }
-                    // Ligne de surface
-                    ctx.fillStyle = '#9a9a9a';
-                    ctx.fillRect(x, y, W, 3);
+                    ctx.fillStyle = '#a8a8a8'; ctx.fillRect(x, y, W, 2);
                     break;
                 }
 
                 case 'grass': {
-                    // ── Corps terre ──
-                    ctx.fillStyle = '#5c3d1e';
-                    ctx.fillRect(x, y, W, H);
-                    // Couche de terre plus claire
-                    ctx.fillStyle = '#7a5230';
-                    ctx.fillRect(x, y + 18, W, H - 18);
-                    // Racines (lignes sombres)
-                    ctx.strokeStyle = '#3a2010';
-                    ctx.lineWidth = 1.5;
-                    for (let i = 20; i < W; i += 30) {
-                        ctx.beginPath();
-                        ctx.moveTo(x + i, y + 22);
-                        ctx.lineTo(x + i + ((i * 7) % 14) - 7, y + 22 + 12 + (i % 10));
-                        ctx.stroke();
+                    // ── Bottom : argile sombre stratifiée ──
+                    if (botH > 0) {
+                        ctx.fillStyle = '#2e1a08';
+                        ctx.fillRect(x, botY, W, botH);
+                        ctx.fillStyle = '#3a220e';
+                        for (let j = 3; j < botH; j += 5) ctx.fillRect(x, botY + j, W, 2);
                     }
-                    // Bande herbe foncée
-                    ctx.fillStyle = '#2d6a2d';
-                    ctx.fillRect(x, y, W, 18);
-                    // Bande herbe claire
-                    ctx.fillStyle = '#3d8a3d';
-                    ctx.fillRect(x, y, W, 12);
-                    // Reflet herbe
-                    ctx.fillStyle = '#4aaa4a';
-                    ctx.fillRect(x, y, W, 4);
-                    // Touffes d'herbe
-                    ctx.fillStyle = '#2d6a2d';
-                    for (let i = 6; i < W - 6; i += 18) {
-                        const h = 5 + (i * 3) % 7;
+                    // ── Mid : terre + racines ──
+                    ctx.fillStyle = '#5c3d1e';
+                    ctx.fillRect(x, midY, W, midH);
+                    ctx.fillStyle = '#7a5230';
+                    ctx.fillRect(x, midY, W, Math.round(midH * 0.4));
+                    ctx.strokeStyle = '#3a2010'; ctx.lineWidth = 1;
+                    for (let i = 16; i < W; i += 26) {
+                        const s = (i * 7 + sx) % 10;
+                        ctx.beginPath(); ctx.moveTo(x + i, midY + 3); ctx.lineTo(x + i + s - 5, midY + 10 + s); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(x + i + (s - 5) / 2, midY + 7); ctx.lineTo(x + i + s, midY + 12); ctx.stroke();
+                    }
+                    // petits cailloux dans la terre
+                    ctx.fillStyle = '#8a7560';
+                    for (let i = 10; i < W; i += 34) ctx.fillRect(x + i + (i % 7), midY + Math.round(midH * 0.55), 5, 3);
+                    // ── Top : herbe épaisse ──
+                    ctx.fillStyle = '#2a6028';
+                    ctx.fillRect(x, y, W, topH);
+                    ctx.fillStyle = '#388038';
+                    ctx.fillRect(x, y, W, Math.round(topH * 0.6));
+                    ctx.fillStyle = '#48a848';
+                    ctx.fillRect(x, y, W, 3);
+                    // touffes
+                    for (let i = 5; i < W - 4; i += 13) {
+                        const h = 4 + (i * 3 + sx) % 7;
+                        ctx.fillStyle = i % 3 === 0 ? '#58c458' : '#48a848';
                         ctx.beginPath();
-                        ctx.moveTo(x + i, y);
-                        ctx.lineTo(x + i - 3, y - h);
-                        ctx.lineTo(x + i, y - h + 3);
-                        ctx.lineTo(x + i + 3, y - h - 2);
-                        ctx.lineTo(x + i + 6, y);
+                        ctx.moveTo(x + i, y); ctx.lineTo(x + i - 2, y - h); ctx.lineTo(x + i + 2, y - h + 3); ctx.lineTo(x + i + 5, y - h - 2); ctx.lineTo(x + i + 7, y);
                         ctx.closePath(); ctx.fill();
                     }
+                    // fleurs
+                    ctx.fillStyle = '#ffe040';
+                    for (let i = 22; i < W - 12; i += 58) { ctx.beginPath(); ctx.arc(x + i + (i % 9), y - 5, 2, 0, Math.PI * 2); ctx.fill(); }
                     break;
                 }
 
                 case 'wood': {
-                    // ── Corps bois ──
-                    ctx.fillStyle = '#7a4e28';
-                    ctx.fillRect(x, y, W, H);
-                    // Planches horizontales
-                    const plankH = 18;
-                    const plankColors = ['#8b5a2b', '#7a4e28', '#9c6535', '#6e4522'];
-                    for (let row = 0; row * plankH < H; row++) {
-                        ctx.fillStyle = plankColors[row % plankColors.length];
-                        ctx.fillRect(x, y + row * plankH, W, plankH - 2);
-                        // Grain (lignes fines)
-                        ctx.strokeStyle = plankColors[(row + 2) % plankColors.length];
-                        ctx.lineWidth = 1;
-                        for (let gi = 8; gi < W; gi += 22) {
-                            ctx.beginPath();
-                            ctx.moveTo(x + gi, y + row * plankH);
-                            ctx.lineTo(x + gi + 2, y + row * plankH + plankH - 2);
-                            ctx.stroke();
+                    // ── Bottom : poutres structurales sombres ──
+                    if (botH > 0) {
+                        ctx.fillStyle = '#3a220a';
+                        ctx.fillRect(x, botY, W, botH);
+                        ctx.strokeStyle = '#2a1808'; ctx.lineWidth = 1;
+                        for (let i = 16; i < W; i += 20) { ctx.beginPath(); ctx.moveTo(x + i, botY); ctx.lineTo(x + i + 2, botY + botH); ctx.stroke(); }
+                    }
+                    // ── Mid : planches de côté avec veinage ──
+                    const pHm = 16;
+                    const mCols = ['#7a4e28','#6e4420','#8b5a2b','#5c3818'];
+                    for (let row = 0; row * pHm < midH + pHm; row++) {
+                        const py = midY + row * pHm;
+                        if (py >= botY && botH > 0) break;
+                        const rH = Math.min(pHm - 2, (botH > 0 ? botY : y + H) - py);
+                        if (rH <= 0) continue;
+                        ctx.fillStyle = mCols[(row + Math.floor(sx / 40)) % mCols.length];
+                        ctx.fillRect(x, py, W, rH);
+                        ctx.strokeStyle = 'rgba(0,0,0,0.22)'; ctx.lineWidth = 1;
+                        for (let gi = 10; gi < W; gi += 20) { ctx.beginPath(); ctx.moveTo(x + gi, py); ctx.lineTo(x + gi + 1, py + rH); ctx.stroke(); }
+                        if (row % 2 === 1 && W > 60) {
+                            const kx = x + 20 + (row * 19 + sx) % Math.max(1, W - 40);
+                            ctx.strokeStyle = 'rgba(0,0,0,0.32)'; ctx.lineWidth = 1.5;
+                            ctx.beginPath(); ctx.ellipse(kx, py + rH / 2, 5, 3, 0, 0, Math.PI * 2); ctx.stroke();
                         }
                     }
-                    // Noeuds de bois
-                    ctx.strokeStyle = '#4e3018';
-                    ctx.lineWidth = 1.5;
-                    for (let ki = 25; ki < W - 10; ki += 60) {
-                        ctx.beginPath();
-                        ctx.ellipse(x + ki, y + 9, 5, 3, 0, 0, Math.PI * 2);
-                        ctx.stroke();
-                    }
-                    // Ligne de surface (planche du dessus + clous)
-                    ctx.fillStyle = '#9c6535';
-                    ctx.fillRect(x, y, W, 6);
-                    ctx.fillStyle = '#3a2010';
-                    for (let ni = 10; ni < W; ni += 30) {
-                        ctx.fillRect(x + ni, y + 2, 2, 2);
+                    // ── Top : surface planches (vue dessus) + clous ──
+                    ctx.fillStyle = '#9c6835';
+                    ctx.fillRect(x, y, W, topH);
+                    // joints entre planches (verticaux)
+                    ctx.strokeStyle = '#5a3010'; ctx.lineWidth = 1;
+                    for (let i = 34; i < W; i += 40) { ctx.beginPath(); ctx.moveTo(x + i, y); ctx.lineTo(x + i, y + topH); ctx.stroke(); }
+                    // grain horizontal
+                    ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.lineWidth = 1;
+                    for (let j = 4; j < topH - 2; j += 5) { ctx.beginPath(); ctx.moveTo(x, y + j); ctx.lineTo(x + W, y + j); ctx.stroke(); }
+                    // highlight
+                    ctx.fillStyle = '#bc8850'; ctx.fillRect(x, y, W, 2);
+                    // clous
+                    for (let ni = 14; ni < W; ni += 40) {
+                        ctx.fillStyle = '#2a1808'; ctx.fillRect(x + ni, y + 3, 3, 3);
+                        ctx.fillStyle = '#7a6050'; ctx.fillRect(x + ni, y + 3, 2, 1);
                     }
                     break;
                 }
 
                 case 'water': {
-                    // ── Corps eau ──
-                    const t = Date.now() / 800;
-                    ctx.fillStyle = '#1a4a7a';
-                    ctx.fillRect(x, y, W, H);
-                    // Dégradé bleu plus clair au-dessus
-                    const wGrad = ctx.createLinearGradient(x, y, x, y + H);
-                    wGrad.addColorStop(0, 'rgba(40,120,200,0.85)');
-                    wGrad.addColorStop(1, 'rgba(10,40,100,0.85)');
-                    ctx.fillStyle = wGrad;
-                    ctx.fillRect(x, y, W, H);
-                    // Vaguelettes animées
-                    ctx.strokeStyle = 'rgba(160,210,255,0.5)';
-                    ctx.lineWidth = 2;
-                    for (let wi = 0; wi < 3; wi++) {
-                        const waveY = y + 6 + wi * 10;
-                        const phase = t + wi * 1.2;
+                    const wt = Date.now() / 800;
+                    // ── Bottom : abysses ──
+                    if (botH > 0) {
+                        ctx.fillStyle = '#060e22';
+                        ctx.fillRect(x, botY, W, botH);
+                    }
+                    // ── Mid : eau profonde ──
+                    const dg = ctx.createLinearGradient(x, midY, x, midY + midH);
+                    dg.addColorStop(0, '#173468'); dg.addColorStop(1, '#090f2a');
+                    ctx.fillStyle = dg; ctx.fillRect(x, midY, W, midH);
+                    // caustiques
+                    ctx.fillStyle = 'rgba(70,140,255,0.07)';
+                    for (let ci = 18; ci < W; ci += 52) {
+                        const ccx = x + ci + Math.sin(wt * 0.5 + ci) * 6;
+                        const ccy = midY + midH * 0.4 + Math.cos(wt * 0.35 + ci) * 9;
+                        ctx.beginPath(); ctx.ellipse(ccx, ccy, 14, 6, 0, 0, Math.PI * 2); ctx.fill();
+                    }
+                    // ── Top : surface animée ──
+                    const sg = ctx.createLinearGradient(x, y, x, y + topH);
+                    sg.addColorStop(0, '#3a90d8'); sg.addColorStop(1, '#1a4a7a');
+                    ctx.fillStyle = sg; ctx.fillRect(x, y, W, topH);
+                    ctx.strokeStyle = 'rgba(180,230,255,0.55)'; ctx.lineWidth = 1.5;
+                    for (let wi = 0; wi < 2; wi++) {
+                        const waveY = y + 4 + wi * 5, phase = wt + wi * 1.5;
                         ctx.beginPath();
-                        for (let wx = 0; wx <= W; wx += 4) {
-                            const wy = waveY + Math.sin((wx / 30) + phase) * 3;
-                            wx === 0 ? ctx.moveTo(x + wx, wy) : ctx.lineTo(x + wx, wy);
-                        }
+                        for (let wx = 0; wx <= W; wx += 4) { const wy = waveY + Math.sin((wx / 24) + phase) * 2.5; wx === 0 ? ctx.moveTo(x + wx, wy) : ctx.lineTo(x + wx, wy); }
                         ctx.stroke();
                     }
-                    // Reflets spéculaires
-                    ctx.fillStyle = 'rgba(200,235,255,0.25)';
-                    for (let ri = 10; ri < W - 10; ri += 45) {
-                        const rx = x + ri + Math.sin(t + ri) * 4;
-                        ctx.beginPath(); ctx.ellipse(rx, y + 5, 10, 2, 0, 0, Math.PI * 2); ctx.fill();
-                    }
+                    ctx.fillStyle = 'rgba(215,245,255,0.30)'; ctx.fillRect(x, y, W, 2);
+                    ctx.fillStyle = 'rgba(220,245,255,0.18)';
+                    for (let ri = 12; ri < W - 10; ri += 42) { const rx = x + ri + Math.sin(wt * 1.2 + ri) * 5; ctx.beginPath(); ctx.ellipse(rx, y + 4, 10, 2, 0, 0, Math.PI * 2); ctx.fill(); }
                     break;
                 }
 
                 case 'sand': {
-                    // ── Corps sable ──
-                    ctx.fillStyle = '#c2a050';
-                    ctx.fillRect(x, y, W, H);
-                    ctx.fillStyle = '#d4b464';
-                    ctx.fillRect(x, y, W, H * 0.5);
-                    // Grains (points aléatoires déterministes)
-                    const sColors = ['#b89040','#dac070','#e8d080','#a07830'];
-                    for (let si = 3; si < W - 3; si += 7) {
-                        for (let sj = 2; sj < H - 2; sj += 6) {
-                            const sc = (si * 5 + sj * 11 + x) % sColors.length;
-                            ctx.fillStyle = sColors[sc];
-                            ctx.fillRect(x + si, y + sj, 2, 1);
+                    // ── Bottom : sable humide/compact ──
+                    if (botH > 0) {
+                        ctx.fillStyle = '#7a5820';
+                        ctx.fillRect(x, botY, W, botH);
+                        ctx.fillStyle = '#6a4c18';
+                        for (let j = 3; j < botH; j += 5) ctx.fillRect(x, botY + j, W, 1);
+                    }
+                    // ── Mid : sable compacté en strates ──
+                    ctx.fillStyle = '#b09040';
+                    ctx.fillRect(x, midY, W, midH);
+                    const sL = ['#a88030','#c0a048','#986e28','#b89040'];
+                    for (let j = 0; j < midH; j += 6) { ctx.fillStyle = sL[(Math.floor(j / 6) + Math.floor(sx / 20)) % sL.length]; ctx.fillRect(x, midY + j, W, 3); }
+                    const sMc = ['#987828','#caa840','#d8b850','#886820'];
+                    for (let si = 5; si < W - 3; si += 9) {
+                        for (let sj = 2; sj < midH - 1; sj += 8) {
+                            ctx.fillStyle = sMc[(si * 3 + sj * 7 + sx) % 4]; ctx.fillRect(x + si, midY + sj, 2, 1);
                         }
                     }
-                    // Surface ondulée (dunes mini)
-                    ctx.fillStyle = '#e0c070';
-                    ctx.fillRect(x, y, W, 5);
-                    ctx.fillStyle = '#f0d888';
-                    ctx.fillRect(x, y, W, 2);
-                    // Petites bosses
-                    ctx.fillStyle = '#d4b464';
-                    for (let di = 12; di < W - 8; di += 28) {
-                        ctx.beginPath(); ctx.ellipse(x + di, y + 1, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
+                    // ── Top : sable fin avec ripples ──
+                    ctx.fillStyle = '#d4b464'; ctx.fillRect(x, y, W, topH);
+                    ctx.fillStyle = '#e8c870'; ctx.fillRect(x, y, W, Math.round(topH * 0.55));
+                    ctx.strokeStyle = 'rgba(150,100,15,0.28)'; ctx.lineWidth = 1;
+                    for (let ri = 0; ri < topH - 2; ri += 4) {
+                        ctx.beginPath();
+                        for (let rxi = 0; rxi <= W; rxi += 6) { const ry = y + ri + Math.sin((rxi / 28) + (sx + ri) * 0.1) * 1.5; rxi === 0 ? ctx.moveTo(x + rxi, ry) : ctx.lineTo(x + rxi, ry); }
+                        ctx.stroke();
                     }
+                    ctx.fillStyle = '#f8e090'; ctx.fillRect(x, y, W, 2);
+                    ctx.fillStyle = '#dcc070';
+                    for (let di = 10; di < W - 8; di += 24) { ctx.beginPath(); ctx.ellipse(x + di, y + 1, 7, 2, 0, 0, Math.PI * 2); ctx.fill(); }
                     break;
                 }
 
-                default: // 'stone' — design original avec briques + mousse
-                    ctx.fillStyle = '#3a404d';
-                    ctx.fillRect(x, y, W, H);
-                    const brickW = 40, brickH = 20;
-                    for (let row = 1; row * brickH < H; row++) {
-                        let offsetX = (row % 2 === 0) ? 0 : -brickW / 2;
-                        for (let col = 0; offsetX + col * brickW < W; col++) {
-                            let bx = x + offsetX + col * brickW;
-                            let by = y + row * brickH;
-                            let dX = Math.max(x, bx);
-                            let dW = Math.min(x + W - dX, bx + brickW - dX);
-                            if (dW > 0) {
-                                if ((row+col) % 3 === 0) ctx.fillStyle = '#474c53';
-                                else if ((row+col) % 5 === 0) ctx.fillStyle = '#3e4249';
-                                else ctx.fillStyle = '#4f545c';
-                                ctx.fillRect(dX, by, dW - 2, brickH - 2);
+                default: // 'stone'
+                case 'stone': {
+                    // ── Bottom : roche brute compressée ──
+                    if (botH > 0) {
+                        ctx.fillStyle = '#1e2228';
+                        ctx.fillRect(x, botY, W, botH);
+                        ctx.strokeStyle = '#161a1f'; ctx.lineWidth = 1;
+                        for (let i = 18; i < W; i += 44) {
+                            const s = (i * 3 + sx) % 7;
+                            ctx.beginPath(); ctx.moveTo(x + i, botY + 2); ctx.lineTo(x + i + s - 3, botY + botH - 3); ctx.stroke();
+                        }
+                    }
+                    // ── Mid : briques offset ──
+                    ctx.fillStyle = '#2a2f3a';
+                    ctx.fillRect(x, midY, W, midH);
+                    const bW = 38, bHh = 18;
+                    for (let row = 0; row * bHh < midH + bHh; row++) {
+                        const offX = (row % 2 === 0) ? 0 : -bW / 2;
+                        for (let col = 0; offX + col * bW < W + bW; col++) {
+                            const bx = x + offX + col * bW;
+                            const by = midY + row * bHh;
+                            const clX = Math.max(x, bx);
+                            const clW = Math.min(x + W, bx + bW) - clX - 2;
+                            const clH = Math.min(midY + midH, by + bHh - 2) - by;
+                            if (clW > 0 && clH > 0 && by >= midY) {
+                                const c = (row * 7 + col * 3 + Math.floor(sx / 10)) % 3;
+                                ctx.fillStyle = c === 0 ? '#40454e' : c === 1 ? '#383d46' : '#474c54';
+                                ctx.fillRect(clX, by, clW, clH);
+                                ctx.fillStyle = 'rgba(255,255,255,0.035)'; ctx.fillRect(clX, by, clW, 2);
+                                ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(clX, by + clH - 2, clW, 2);
                             }
                         }
                     }
-                    ctx.fillStyle = '#6a7382';
-                    ctx.fillRect(x, y, W, 20);
-                    ctx.fillStyle = '#9199a6';
-                    ctx.fillRect(x, y, W, 4);
-                    ctx.fillStyle = '#2d4c35';
-                    for (let i = 15; i < W - 20; i += 35) {
-                        ctx.beginPath();
-                        ctx.roundRect(x + i, y + 18, 15 + (i%15), 10 + (i%20), 5);
-                        ctx.fill();
+                    // ── Top : dalle de pierre polie ──
+                    ctx.fillStyle = '#636f80';
+                    ctx.fillRect(x, y, W, topH);
+                    // variation légère de la dalle
+                    for (let i = 0; i < W; i += 42) {
+                        const s = (i * 11 + sx) % 3;
+                        ctx.fillStyle = s === 0 ? '#5e6a78' : s === 1 ? '#6a7584' : '#707c8c';
+                        ctx.fillRect(x + i, y, Math.min(40, W - i), topH);
+                    }
+                    // highlight bord sup
+                    ctx.fillStyle = '#8d9aaa'; ctx.fillRect(x, y, W, 3);
+                    // ombre bord inf de la dalle
+                    ctx.fillStyle = '#424850'; ctx.fillRect(x, y + topH - 3, W, 3);
+                    // mousse (en bas du cap)
+                    ctx.fillStyle = '#2a4a30';
+                    for (let i = 14; i < W - 14; i += 30) {
+                        const mw = 10 + (i * 3 + sx) % 14;
+                        ctx.beginPath(); ctx.roundRect(x + i, y + topH - 7, mw, 6, 3); ctx.fill();
+                        ctx.fillStyle = '#3a6040';
+                        ctx.fillRect(x + i + 2, y + topH - 7, Math.round(mw * 0.4), 2);
+                        ctx.fillStyle = '#2a4a30';
                     }
                     break;
+                }
             }
         }
     }

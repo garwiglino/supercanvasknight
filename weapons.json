@@ -43,7 +43,7 @@
       "jumpStrength": -11,
       "attackDuration": 14,
       "comboWindow": 95,
-      "gravity": 1.10,
+      "gravity": 0.90,
       "hitRadii": [88, 100, 112, 135],
       "dmg": [28, 30, 35, 62],
       "mobility": { "dash": false, "doubleJump": true }

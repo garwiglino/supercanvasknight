@@ -4476,6 +4476,40 @@
                     renderInventory();
                     updateQuickSlotsHUD();
                     showNotification(`Vous avez utilisé ${dbItem.name} !`, "#4CAF50");
+                    // ── VFX de soin ─────────────────────────────────────────
+                    player.healVfxTimer = 48;
+                    const _hcx = player.x + player.width / 2;
+                    const _hcy = player.y + player.height * 0.5;
+                    const _healColors = ['#69F0AE','#4CAF50','#B9F6CA','#A5D6A7','#CCFF90'];
+                    // Couronne de particules montantes
+                    for (let i = 0; i < 20; i++) {
+                        const a = (i / 20) * Math.PI * 2;
+                        player.abilityVfx.push({
+                            x: _hcx + Math.cos(a) * (10 + Math.random() * 8),
+                            y: _hcy + Math.sin(a) * 8,
+                            vx: Math.cos(a) * (0.6 + Math.random() * 1.4),
+                            vy: -2.5 - Math.random() * 3,
+                            life: 38 + Math.floor(Math.random() * 18),
+                            maxLife: 56,
+                            color: _healColors[i % _healColors.length],
+                            r: 2.5 + Math.random() * 2.5,
+                            grav: -0.07
+                        });
+                    }
+                    // Quelques grosses étincelles centrales
+                    for (let i = 0; i < 6; i++) {
+                        player.abilityVfx.push({
+                            x: _hcx + (Math.random() - 0.5) * player.width,
+                            y: player.y + Math.random() * player.height,
+                            vx: (Math.random() - 0.5) * 1.5,
+                            vy: -3.5 - Math.random() * 2.5,
+                            life: 45,
+                            maxLife: 45,
+                            color: '#CCFF90',
+                            r: 4,
+                            grav: -0.05
+                        });
+                    }
                 } else {
                     showNotification("Votre santé est déjà au maximum.", "#FBD000");
                 }
@@ -5399,6 +5433,7 @@
             this.parryCooldown = 0;
             this.parryAnim = 0;
             this.lastParryKey = false;
+            this.healVfxTimer = 0;
 
             this.respawn();
         }
@@ -5811,11 +5846,15 @@
                 }
             }
             if (!_ck && this._cWheelHeld) {
-                const _useSlot = this._cWheelOpen ? this._cWheelSel : this.quickSel;
-                if (this._cWheelOpen) this.quickSel = this._cWheelSel;
-                const _useId = this.quickSlots[_useSlot];
-                if (_useId && this.inventory[_useId]?.count > 0) {
-                    useItem(_useId);
+                if (this._cWheelOpen) {
+                    // Roue ouverte → utilise le slot navigué
+                    this.quickSel = this._cWheelSel;
+                    const _useId = this.quickSlots[this.quickSel];
+                    if (_useId && this.inventory[_useId]?.count > 0) useItem(_useId);
+                } else {
+                    // Tap rapide → premier slot non-vide
+                    const _firstId = this.quickSlots.find(id => id && this.inventory[id]?.count > 0);
+                    if (_firstId) useItem(_firstId);
                 }
                 this._cWheelHeld = false;
                 this._cWheelOpen = false;
@@ -5918,6 +5957,7 @@
             // ── PARADE ─────────────────────────────────────────────────────
             if (this.parryCooldown > 0) this.parryCooldown--;
             if (this.parryAnim > 0) this.parryAnim--;
+            if (this.healVfxTimer > 0) this.healVfxTimer--;
             const _justParry = keys.parry && !this.lastParryKey;
             this.lastParryKey = keys.parry;
             const _parryWepId = this._equippedWeaponId();
@@ -6486,6 +6526,53 @@
                 renderCtx.fillRect(this.x, this.y - 22, this.width, 6);
                 renderCtx.fillStyle = '#ff0000';
                 renderCtx.fillRect(this.x + 1, this.y - 21, ((this.width-2)*this.hp)/this.maxHp, 4);
+            }
+
+            // ── VFX DE SOIN ──────────────────────────────────────────────────
+            if (this.healVfxTimer > 0) {
+                const _ht  = this.healVfxTimer;
+                const _hp  = 1 - _ht / 48; // 0→1
+                const _hcx = drawX + this.width / 2;
+                const _hcy = bodyY + this.height * 0.5;
+                renderCtx.save();
+                // Glow body
+                renderCtx.globalAlpha = (_ht / 48) * 0.28;
+                const _grd = renderCtx.createRadialGradient(_hcx, _hcy, 2, _hcx, _hcy, this.height * 0.75);
+                _grd.addColorStop(0, '#69F0AE');
+                _grd.addColorStop(1, 'rgba(76,175,80,0)');
+                renderCtx.fillStyle = _grd;
+                renderCtx.beginPath();
+                renderCtx.ellipse(_hcx, _hcy, this.width * 0.85, this.height * 0.7, 0, 0, Math.PI * 2);
+                renderCtx.fill();
+                // 1er anneau expansif
+                const _r1 = 8 + _hp * 40;
+                renderCtx.globalAlpha = (_ht / 48) * 0.75;
+                renderCtx.strokeStyle = '#4CAF50';
+                renderCtx.lineWidth = 2.5;
+                renderCtx.beginPath();
+                renderCtx.arc(_hcx, _hcy, _r1, 0, Math.PI * 2);
+                renderCtx.stroke();
+                // 2e anneau décalé
+                if (_hp > 0.15) {
+                    const _r2 = 4 + (_hp - 0.15) * 30;
+                    renderCtx.globalAlpha = (_ht / 48) * 0.45;
+                    renderCtx.strokeStyle = '#B9F6CA';
+                    renderCtx.lineWidth = 1.5;
+                    renderCtx.beginPath();
+                    renderCtx.arc(_hcx, _hcy, _r2, 0, Math.PI * 2);
+                    renderCtx.stroke();
+                }
+                // Croix "+` centrale (soin)
+                if (_ht > 30) {
+                    const _ca = ((_ht - 30) / 18);
+                    renderCtx.globalAlpha = _ca * 0.9;
+                    renderCtx.fillStyle = '#CCFF90';
+                    renderCtx.font = `bold ${14 + Math.round(_ca * 4)}px Rajdhani, sans-serif`;
+                    renderCtx.textAlign = 'center';
+                    renderCtx.textBaseline = 'middle';
+                    renderCtx.fillText('+', _hcx, bodyY - 12 - _ca * 6);
+                }
+                renderCtx.restore();
             }
 
             // ── FLASH DE PARADE ──────────────────────────────────────────────

@@ -3025,6 +3025,13 @@
             'step.wood':   ['sfx/footsteps/wood/wood_step_1.wav','sfx/footsteps/wood/wood_step_2.wav','sfx/footsteps/wood/wood_step_3.wav','sfx/footsteps/wood/wood_step_4.wav'],
             'step.water':  ['sfx/footsteps/water/water_step_1.wav','sfx/footsteps/water/water_step_2.wav','sfx/footsteps/water/water_step_3.wav'],
             'step.sand':   ['sfx/footsteps/sand/sand_step_1.wav','sfx/footsteps/sand/sand_step_2.wav','sfx/footsteps/sand/sand_step_3.wav','sfx/footsteps/sand/sand_step_4.wav'],
+            'weapon.parry': [
+                'sfx/weapons/parry/parry_1.wav',
+                'sfx/weapons/parry/parry_2.wav',
+                'sfx/weapons/parry/parry_3.wav',
+                'sfx/weapons/parry/parry_4.wav',
+                'sfx/weapons/parry/parry_5.wav',
+            ],
         };
 
         // Cooldown anti-spam par clé (ms) pour éviter le stacking audio
@@ -3065,7 +3072,9 @@
             play(`step.${surface}`, volume);
         }
 
-        return { play, swing, hit, step, setVolume, getVolume };
+        function parry() { play('weapon.parry', 1.0); }
+
+        return { play, swing, hit, step, parry, setVolume, getVolume };
     })();
 
     // Données d'affichage (nom, description, icône) — remplies depuis weapons.json
@@ -4274,7 +4283,7 @@
             const a = (i / 10) * Math.PI * 2;
             player.abilityVfx.push({ x: sx, y: sy, vx: Math.cos(a) * 5, vy: Math.sin(a) * 4 - 1, life: 20, maxLife: 20, color: i % 2 === 0 ? '#90CAF9' : '#CFD8DC', r: 2 + (i % 3), grav: 0.2 });
         }
-        SFX.hit('stone');
+        SFX.parry();
         triggerShake(4, 6);
         showNotification('⚡ Parade !', '#90CAF9');
     }
@@ -6554,8 +6563,8 @@
     // ── Coups critiques ───────────────────────────────────────────────────
     const CRIT_CHANCE        = 0.15; // 15 % de chance
     const CRIT_MULTIPLIER    = 2.0;
-    const PARRY_WINDOW_SKEL  = 10;  // frames de fenêtre de parade — squelette
-    const PARRY_WINDOW_GOB   = 8;   // frames de fenêtre de parade — goblin
+    const PARRY_WINDOW_SKEL  = 6;   // frames de fenêtre de parade — squelette (~0.1s)
+    const PARRY_WINDOW_GOB   = 5;   // frames de fenêtre de parade — goblin (~0.08s)
     const PARRY_STUN_FRAMES  = 200; // durée étourdissement (~3.3 s)
     const PARRY_RANGE        = 105; // portée de parade (px)
 

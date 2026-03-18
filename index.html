@@ -4285,7 +4285,6 @@
         }
         SFX.parry();
         triggerShake(4, 6);
-        showNotification('⚡ Parade !', '#90CAF9');
     }
 
     function menuEquipWeapon(slot) {
@@ -5722,7 +5721,7 @@
                     }
                 }
                 this.parryAnim = 10;
-                this.parryCooldown = _parried ? 15 : 8;
+                this.parryCooldown = _parried ? 40 : 35; // cooldown long dans les deux cas pour éviter le spam
             }
 
             let justPressedAttack = keys.attack && !this.lastAttackKey && !this.isBlocking;

@@ -3044,7 +3044,7 @@
 
         // Cooldown anti-spam par clé (ms) pour éviter le stacking audio
         const _lastPlayed = {};
-        const COOLDOWN = { 'hit.flesh': 40, 'weapon.sword.swing': 0 };
+        const COOLDOWN = { 'hit.flesh': 40, 'weapon.sword.swing': 0, 'pain.goblin': 400 };
 
         let _masterVolume = (() => {
             const saved = parseInt(localStorage.getItem('sckt_sfx_volume'));
@@ -5300,10 +5300,11 @@
             }
 
             this.hp -= amount;
-            this.hurtTimer = 40; 
-            this.vy = -4; 
-            this.vx = knockbackDir * 4; 
+            this.hurtTimer = 40;
+            this.vy = -4;
+            this.vx = knockbackDir * 4;
             triggerShake(5, 7); // Dégâts reçus — medium
+            SFX.hit('flesh');
 
             // --- DÉCLENCHEMENT VFX (Sang sur le joueur) ---
             let hitX = this.x + this.width / 2;

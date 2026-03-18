@@ -3746,7 +3746,7 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, consumeWheel: false, interact: false, block: false, parry: false };
+    const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, interact: false, block: false, parry: false };
 
     // ── Keybinds remappables ───────────────────────────────────────
     const KEYBINDS_DEFAULT = {
@@ -3910,7 +3910,8 @@
         if (e.code === 'ShiftRight' || isKey(e,'dash')) keys.dash = true;
         if (isKey(e,'ability')) keys.ability = true;
         if (e.code === 'Numpad8' || e.code === 'Digit8') { keys.weaponWheel = true; e.preventDefault(); }
-        if (e.code === 'Numpad4' || e.code === 'Digit4') { keys.consumeWheel = true; e.preventDefault(); }
+        if (e.code === 'KeyF' && gameState === 'PLAYING') { _useConsumableByType('heal'); e.preventDefault(); }
+        if (e.code === 'KeyG' && gameState === 'PLAYING') { _useConsumableByType('damage'); e.preventDefault(); }
         if (isKey(e,'interact')) keys.interact = true;
 
         if (e.code === 'Enter' || e.code === 'NumpadEnter') {
@@ -3939,7 +3940,6 @@
         if (e.code === 'ShiftRight' || isKey(e,'dash')) keys.dash = false;
         if (isKey(e,'ability')) keys.ability = false;
         if (e.code === 'Numpad8' || e.code === 'Digit8') keys.weaponWheel = false;
-        if (e.code === 'Numpad4' || e.code === 'Digit4') keys.consumeWheel = false;
         if (isKey(e,'interact')) keys.interact = false;
     });
 
@@ -5363,16 +5363,6 @@
             this._lastWheelKey = false;
             this._lastWheelLeft = false;
             this._lastWheelRight = false;
-            // Roue de consommables (touche 4)
-            this.quickSlots = [null, null, null];
-            this.quickSel = 0;
-            this._cWheelHeld = false;
-            this._cWheelTimer = 0;
-            this._cWheelOpen = false;
-            this._cWheelSel = 0;
-            this._lastCKey = false;
-            this._lastCLeft = false;
-            this._lastCRight = false;
             this._nearDroppedWeapon = null;
             this._lastInteract = false;
             // Applique les stats de l'arme équipée
@@ -5821,45 +5811,6 @@
                 this._wheelHeld = false;
                 this._wheelOpen = false;
                 this._wheelHoldTimer = 0;
-            }
-
-            // ── ROUE DE CONSOMMABLES (Numpad4 / 4) ──────────────────────
-            const _ck = keys.consumeWheel;
-            const _justCKey = _ck && !this._lastCKey;
-            this._lastCKey = _ck;
-            if (_justCKey) {
-                this._cWheelTimer = 0;
-                this._cWheelHeld = true;
-                this._cWheelSel = this.quickSel;
-                this._lastCLeft  = keys.left;
-                this._lastCRight = keys.right;
-            }
-            if (this._cWheelHeld && _ck) {
-                this._cWheelTimer++;
-                if (this._cWheelTimer >= 18) {
-                    this._cWheelOpen = true;
-                    const _cL = keys.left, _cR = keys.right;
-                    if (_cL && !this._lastCLeft  && this._cWheelSel > 0) this._cWheelSel--;
-                    if (_cR && !this._lastCRight && this._cWheelSel < 2)  this._cWheelSel++;
-                    this._lastCLeft  = _cL;
-                    this._lastCRight = _cR;
-                }
-            }
-            if (!_ck && this._cWheelHeld) {
-                if (this._cWheelOpen) {
-                    // Roue ouverte → utilise le slot navigué
-                    this.quickSel = this._cWheelSel;
-                    const _useId = this.quickSlots[this.quickSel];
-                    if (_useId && this.inventory[_useId]?.count > 0) useItem(_useId);
-                } else {
-                    // Tap rapide → premier slot non-vide
-                    const _firstId = this.quickSlots.find(id => id && this.inventory[id]?.count > 0);
-                    if (_firstId) useItem(_firstId);
-                }
-                this._cWheelHeld = false;
-                this._cWheelOpen = false;
-                this._cWheelTimer = 0;
-                updateQuickSlotsHUD();
             }
 
             // ── INTERACTION arme au sol (touche E) ──────────────────────
@@ -6440,66 +6391,6 @@
                         renderCtx.fill();
                     }
                 });
-                renderCtx.restore();
-            }
-
-            // ── ROUE DE CONSOMMABLES (rendu canvas au-dessus du personnage) ──
-            if (this._cWheelOpen) {
-                const _ccx = drawX + this.width / 2;
-                const _ccy = bodyY - (this._wheelOpen ? 130 : 58);
-                const slotW = 54, slotH = 50, gap = 8;
-                const totalW = 3 * slotW + 2 * gap;
-                const startX = _ccx - totalW / 2;
-                renderCtx.save();
-                renderCtx.fillStyle = 'rgba(2,18,8,0.90)';
-                renderCtx.beginPath();
-                renderCtx.roundRect(startX - 8, _ccy - slotH/2 - 8, totalW + 16, slotH + 22, 12);
-                renderCtx.fill();
-                renderCtx.strokeStyle = 'rgba(76,175,80,0.55)';
-                renderCtx.lineWidth = 1.5;
-                renderCtx.stroke();
-                // Flèche indicatrice
-                renderCtx.fillStyle = 'rgba(255,255,255,0.18)';
-                renderCtx.beginPath();
-                renderCtx.moveTo(_ccx - 7, _ccy + slotH/2 + 14);
-                renderCtx.lineTo(_ccx + 7, _ccy + slotH/2 + 14);
-                renderCtx.lineTo(_ccx, _ccy + slotH/2 + 22);
-                renderCtx.closePath();
-                renderCtx.fill();
-                for (let i = 0; i < 3; i++) {
-                    const sx = startX + i * (slotW + gap);
-                    const isSel    = (i === this._cWheelSel);
-                    const isActive = (i === this.quickSel);
-                    const itemId   = this.quickSlots[i];
-                    const db       = itemId ? (itemDatabase[itemId] || {}) : null;
-                    const count    = db ? (this.inventory[itemId]?.count || 0) : 0;
-                    renderCtx.fillStyle   = isSel ? 'rgba(76,175,80,0.28)' : 'rgba(10,35,14,0.70)';
-                    renderCtx.strokeStyle = isSel ? '#4CAF50' : (isActive ? '#FBD000' : 'rgba(76,175,80,0.28)');
-                    renderCtx.lineWidth   = isSel ? 2.5 : 1.5;
-                    renderCtx.beginPath();
-                    renderCtx.roundRect(sx, _ccy - slotH/2, slotW, slotH, 8);
-                    renderCtx.fill(); renderCtx.stroke();
-                    // Numéro de slot
-                    renderCtx.font = 'bold 8px Rajdhani, sans-serif';
-                    renderCtx.textAlign = 'center';
-                    renderCtx.fillStyle = isActive ? '#FBD000' : 'rgba(180,220,180,0.55)';
-                    renderCtx.fillText(`${i + 1}`, sx + 9, _ccy - slotH/2 + 10);
-                    if (db) {
-                        renderCtx.font = '20px sans-serif';
-                        renderCtx.fillStyle = count > 0 ? '#fff' : 'rgba(255,255,255,0.3)';
-                        renderCtx.fillText(db.icon || '📦', sx + slotW/2, _ccy + 8);
-                        renderCtx.font = 'bold 9px Rajdhani, sans-serif';
-                        renderCtx.fillStyle = isSel ? '#4CAF50' : '#8ab';
-                        renderCtx.fillText(`×${count}`, sx + slotW/2, _ccy + slotH/2 + 2);
-                    } else {
-                        renderCtx.font = '15px sans-serif';
-                        renderCtx.fillStyle = 'rgba(180,200,180,0.28)';
-                        renderCtx.fillText('—', sx + slotW/2, _ccy + 6);
-                        renderCtx.font = 'bold 9px Rajdhani, sans-serif';
-                        renderCtx.fillStyle = 'rgba(180,200,180,0.28)';
-                        renderCtx.fillText('vide', sx + slotW/2, _ccy + slotH/2 + 2);
-                    }
-                }
                 renderCtx.restore();
             }
 

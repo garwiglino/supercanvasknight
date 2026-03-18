@@ -1886,6 +1886,7 @@
             // ── Attaque ennemie sur le joueur guest ──────────────────────
             if (event.type === 'enemy-attack-player' && gameMode === 'guest' && player && player.hp > 0) {
                 player.takeDamage(event.damage, event.dir);
+                if (event.enemyType) SFX.pain(event.enemyType);
             }
 
             // ── Pièce collectée par le partenaire ────────────────────────
@@ -3032,6 +3033,14 @@
                 'sfx/weapons/parry/parry_4.wav',
                 'sfx/weapons/parry/parry_5.wav',
             ],
+            'pain.goblin': [
+                'sfx/pain/goblin_pain_1.wav',
+                'sfx/pain/goblin_pain_2.wav',
+                'sfx/pain/goblin_pain_3.wav',
+                'sfx/pain/goblin_pain_4.wav',
+                'sfx/pain/goblin_pain_5.wav',
+                'sfx/pain/goblin_pain_6.wav',
+            ],
         };
 
         // Cooldown anti-spam par clé (ms) pour éviter le stacking audio
@@ -3074,7 +3083,9 @@
 
         function parry() { play('weapon.parry', 1.0); }
 
-        return { play, swing, hit, step, parry, setVolume, getVolume };
+        function pain(enemy = 'goblin') { play(`pain.${enemy}`, 0.85); }
+
+        return { play, swing, hit, step, parry, pain, setVolume, getVolume };
     })();
 
     // Données d'affichage (nom, description, icône) — remplies depuis weapons.json
@@ -7371,8 +7382,9 @@
                     if (Math.abs((player.x + 19) - (this.x + 19)) < 68 &&
                         Math.abs(player.y - this.y) < 50 && player.hp > 0) {
                         player.takeDamage(12, this.facingRight ? 1 : -1, this);
+                        SFX.pain('goblin');
                         if (socket && socket.connected && roomCode && gameMode === 'host') {
-                            socket.emit('game-event', { type: 'enemy-attack-player', damage: 12, dir: this.facingRight ? 1 : -1 });
+                            socket.emit('game-event', { type: 'enemy-attack-player', damage: 12, dir: this.facingRight ? 1 : -1, enemyType: 'goblin' });
                         }
                     }
                     this.attackTimer = 30;

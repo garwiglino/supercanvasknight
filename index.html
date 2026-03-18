@@ -1496,7 +1496,8 @@
     let socket = null;
     let networkFrameCount = 0;
 
-    let _guestReady = false; // hôte : savoir si le guest est prêt
+    let _guestReady        = false; // hôte : savoir si le guest est prêt
+    let _guestClickedReady = false; // guest : a-t-il déjà cliqué PRÊT ?
 
     function initSocket() {
         socket = io(SOCKET_SERVER, {
@@ -1618,6 +1619,12 @@
 
         socket.on('peer-joined', ({ pseudo, skinIndex }) => {
             showNotification(`⚔️ ${pseudo} a rejoint la partie !`, '#00e5ff');
+            // Race condition fix : si le guest avait cliqué PRÊT avant que
+            // le host rejoigne la room socket, on re-envoie l'event maintenant.
+            if (gameMode === 'guest' && _guestClickedReady) {
+                const myPseudo = localStorage.getItem('sckt_pseudo') || 'Invité';
+                socket.emit('game-event', { type: 'guest-ready', pseudo: myPseudo });
+            }
         });
 
         socket.on('peer-state', (data) => {
@@ -1634,16 +1641,20 @@
             showNotification(`${name} s'est déconnecté`, '#E52521');
             if (remotePlayer) remotePlayer.visible = false;
             if (gameState === 'PLAYING' || gameState === 'MENU') {
-                // Continue en solo — notification persistante 4s
+                // Continue en solo
                 setTimeout(() => showNotification('⚔️ Vous continuez en solo', '#FBD000'), 500);
             }
-            // Si on était dans le lobby coop
+            // Déco pendant la sélection de personnage (hôte)
             if (gameState === 'START' && gameMode === 'host') {
                 _guestReady = false;
-                const hostGuestStatus = document.getElementById('hostGuestStatus');
-                if (hostGuestStatus) hostGuestStatus.innerHTML = '⏳ En attente que l\'invité soit prêt…';
-                const startBtn = document.getElementById('startBtn');
-                if (startBtn) startBtn.disabled = true;
+                showNotification(`${name} a quitté. Retour au menu…`, '#E52521');
+                setTimeout(() => { if (gameState === 'START') backToMode(); }, 1800);
+            }
+            // Déco pendant la sélection de personnage (guest)
+            if (gameState === 'START' && gameMode === 'guest') {
+                _guestClickedReady = false;
+                showNotification(`${name} a quitté. Retour au menu…`, '#E52521');
+                setTimeout(() => { if (gameState === 'START') backToMode(); }, 1800);
             }
         });
 
@@ -1751,6 +1762,13 @@
             // ── Message de chat en jeu ───────────────────────────────────
             if (event.type === 'game-chat') {
                 addChatBubble(remotePlayer, event.text);
+            }
+
+            // ── Partenaire a quitté l'écran de sélection ────────────────
+            if (event.type === 'coop-abort' && gameState === 'START') {
+                showNotification('⚠️ Votre partenaire a quitté. Retour au menu…', '#E52521');
+                _guestClickedReady = false; _guestReady = false;
+                setTimeout(() => { if (gameState === 'START') backToMode(); }, 1800);
             }
 
             // ── Guest prêt (reçu par l'hôte) ────────────────────────────
@@ -2054,7 +2072,7 @@
         gameState = 'IDLE';
         closeIngameMenu();
         if (socket && socket.connected) socket.emit('status-update', { status: 'online' });
-        roomCode = null; gameMode = null;
+        roomCode = null; gameMode = null; _guestReady = false; _guestClickedReady = false;
         clearInterval(_lobbyPoll);
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         // Reset lobby panels
@@ -2073,8 +2091,13 @@
     function backFromStart() {
         document.getElementById('startScreen').classList.add('hidden');
         if (gameMode === 'guest' || gameMode === 'host') {
-            roomCode = null; gameMode = null;
-            document.getElementById('lobbyScreen').classList.remove('hidden');
+            // Prévenir le partenaire qu'on part
+            if (socket && socket.connected) {
+                socket.emit('game-event', { type: 'coop-abort' });
+            }
+            _guestClickedReady = false;
+            _guestReady = false;
+            backToMode(); // reset roomCode/gameMode + showHub
         } else {
             backToMode();
         }
@@ -2581,6 +2604,7 @@
 
     function proceedToCharSelection() {
         clearInterval(_lobbyPoll);
+        _guestClickedReady = false;
         document.getElementById('lobbyScreen').classList.add('hidden');
         document.getElementById('startScreen').classList.remove('hidden');
 
@@ -2618,6 +2642,7 @@
 
     function sendGuestReady() {
         const pseudo = localStorage.getItem('sckt_pseudo') || 'Invité';
+        _guestClickedReady = true;
         if (socket && socket.connected) {
             socket.emit('game-event', { type: 'guest-ready', pseudo });
         }
@@ -7676,7 +7701,7 @@
     function abandonReconnect() {
         hideReconnectOverlay();
         if (socket) { socket.disconnect(); socket = null; }
-        roomCode = null; gameMode = null; _guestReady = false;
+        roomCode = null; gameMode = null; _guestReady = false; _guestClickedReady = false;
         cancelAnimationFrame(animationId);
         gameState = 'HUB';
         showHub();
@@ -8003,7 +8028,7 @@
         if (startBtn2) startBtn2.style.display = '';
         const lbtn2 = document.getElementById('levelBtn');
         if (lbtn2) lbtn2.style.display = '';
-        _guestReady = false;
+        _guestReady = false; _guestClickedReady = false;
 
         score = 0;
         lives = 3;

@@ -1374,11 +1374,31 @@
             <p id="levelInfo" style="font-size: 16px; color: #4CAF50; margin-top: -20px; display: none;">Niveau personnalisé chargé !</p>
         </div>
 
-        <div id="gameOverScreen" class="screen hidden">
-            <h1 id="endTitle">FIN DE PARTIE</h1>
-            <p id="endMessage">Vous êtes tombé dans le vide !</p>
-            <button onclick="startGame()">REJOUER</button>
-            <button class="btn-sec" onclick="backToMode()" style="margin-top:10px;">◀ MENU PRINCIPAL</button>
+        <div id="gameOverScreen" class="screen hidden" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:32px 20px;">
+            <h1 id="endTitle" style="font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:4px;margin:0 0 6px">FIN DE PARTIE</h1>
+            <p id="endMessage" style="color:#aaa;font-size:.95rem;margin:0 0 22px;opacity:.8">Vous êtes tombé dans le vide !</p>
+
+            <!-- Barre XP de session -->
+            <div id="endXpBlock" style="width:min(420px,90vw);margin-bottom:20px;display:none">
+                <div style="display:flex;justify-content:space-between;font-size:.78rem;color:#aaa;margin-bottom:4px">
+                    <span>XP gagnée cette partie</span>
+                    <span id="endXpLabel">+0 XP</span>
+                </div>
+                <div style="height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden">
+                    <div id="endXpBar" style="height:100%;width:0%;background:linear-gradient(90deg,#7b1fa2,#ea80fc);border-radius:4px;transition:width 1.2s ease"></div>
+                </div>
+                <div style="text-align:right;font-size:.72rem;color:#666;margin-top:3px" id="endLevelLabel"></div>
+            </div>
+
+            <!-- Grille de stats -->
+            <div id="endStatsGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(420px,90vw);margin-bottom:24px"></div>
+
+            <!-- Boutons -->
+            <div style="display:flex;flex-direction:column;gap:10px;width:min(300px,90vw)">
+                <button id="endReplayBtn" onclick="replayFromEnd()">REJOUER</button>
+                <button class="btn-sec" id="endMenuBtn" onclick="backToMenuFromEnd()">◀ MENU PRINCIPAL</button>
+            </div>
+            <p id="endCoopHint" style="font-size:.75rem;color:#555;margin-top:10px;display:none">En attente de l'autre joueur…</p>
         </div>
 
         <!-- Menu Inventaire / Quêtes / Armes -->
@@ -1760,6 +1780,9 @@
         });
         socket.on('dm-received', ({ from, message, ts }) => {
             const token = localStorage.getItem('sckt_token');
+            const myPseudo = localStorage.getItem('sckt_pseudo');
+            // Ignorer l'écho de ses propres messages (déjà ajoutés localement dans sendDM)
+            if (from === myPseudo) return;
             const msgTs = ts || Date.now();
             if (!_dmHistory[from]) _dmHistory[from] = [];
             _dmHistory[from].push({ from, message, ts: msgTs });
@@ -1971,6 +1994,21 @@
                 endGame(event.won);
             }
 
+            // ── XP partagé (hôte → guest) ───────────────────────────
+            if (event.type === 'xp-gained' && gameMode === 'guest') {
+                player.gainXp(event.amount);
+            }
+
+            // ── Coop : rejouer / retour menu depuis l'écran de fin ───
+            if (event.type === 'coop-replay' && gameState === 'GAMEOVER') {
+                showNotification('🔄 Partenaire relance la partie…', '#FBD000');
+                setTimeout(() => startGame(), 800);
+            }
+            if (event.type === 'coop-back-to-menu' && gameState === 'GAMEOVER') {
+                showNotification('◀ Partenaire retourne au menu…', '#aaa');
+                setTimeout(() => backToMode(), 800);
+            }
+
             // ── Message de chat en jeu ───────────────────────────────────
             if (event.type === 'game-chat') {
                 addChatBubble(remotePlayer, event.text);
@@ -2088,6 +2126,8 @@
 
     // ── Profil / progression ─────────────────────────────────────────
     let _profile = { level: 1, xp: 0, maxXp: 80, totalKills: 0, gamesPlayed: 0 };
+    let _sessionStats = { kills: 0, xpGained: 0, coins: 0, assists: 0 };
+    let _sessionStartTime = 0;
     let _socialBadge = 0;
 
     async function loadProfile() {
@@ -5656,14 +5696,26 @@
         }
         
         gainXp(amount) {
+            // ── Suivi session ───────────────────────────────────────
+            _sessionStats.xpGained += amount;
+            // Les kills (squelette=10, gobelin=6) sont distinguables des quêtes (≥25)
+            if (amount <= 15) {
+                _sessionStats.kills++;
+                _profile.totalKills = (_profile.totalKills || 0) + 1;
+            }
+            // ── Partage XP en coop (hôte → guest, pas de boucle côté guest) ──
+            if (gameMode === 'host' && socket?.connected && roomCode) {
+                socket.emit('game-event', { type: 'xp-gained', amount });
+            }
+            // Note : le guest ne ré-émet pas (gameMode==='guest' → pas d'émission)
             this.xp += amount;
             if (this.xp >= this.maxXp) {
                 this.xp -= this.maxXp;
                 this.level++;
                 this.maxXp = Math.floor(this.maxXp * 1.65);
                 this.maxHp += 20;
-                this.hp = this.maxHp; 
-                
+                this.hp = this.maxHp;
+
                 lvlLabel.style.color = '#FBD000';
                 setTimeout(() => lvlLabel.style.color = 'white', 500);
                 showNotification(`Niveau Supérieur ! (Niv. ${this.level})`, "#9b59b6");
@@ -8760,6 +8812,7 @@
 
                 this.collected = true;
                 score++;
+                _sessionStats.coins++;
                 scoreDisplay.innerText = `🪙 ${score}`;
 
                 scoreDisplay.style.color = '#FBD000';
@@ -9582,6 +9635,8 @@
 
         score = 0;
         lives = 3;
+        _sessionStats = { kills: 0, xpGained: 0, coins: 0, assists: 0 };
+        _sessionStartTime = Date.now();
         
         initQuests();
         buildLevel();
@@ -9652,6 +9707,7 @@
         gameState = 'GAMEOVER';
         cancelAnimationFrame(animationId);
         closeIngameMenu();
+        MusicPlayer.play('music/menu.mp3');
         if (socket && socket.connected) socket.emit('status-update', { status: 'online' });
         const _hudEnd = document.querySelector('.hud');
         if (_hudEnd) _hudEnd.style.display = 'none';
@@ -9660,20 +9716,78 @@
         if (win) {
             endTitle.innerText = "NIVEAU TERMINÉ !";
             endTitle.style.color = "#4CAF50";
-            endMessage.innerText = `Bravo ! Vous avez récolté ${score} pièces.`;
+            endMessage.innerText = win ? "Tous les ennemis ont été vaincus !" : "";
         } else {
             endTitle.innerText = "FIN DE PARTIE";
             endTitle.style.color = "#E52521";
-            endMessage.innerText = "Game Over ! Vous n'avez plus de vies.";
+            endMessage.innerText = "Vous n'avez plus de vies.";
         }
 
+        // ── Sauvegarde profil ────────────────────────────────────────
         if (player) {
-            _profile.level      = player.level;
-            _profile.xp         = player.xp;
-            _profile.maxXp      = player.maxXp;
+            _profile.level       = player.level;
+            _profile.xp          = player.xp;
+            _profile.maxXp       = player.maxXp;
             _profile.gamesPlayed = (_profile.gamesPlayed || 0) + 1;
             saveProfile();
         }
+
+        // ── Animation de stats ───────────────────────────────────────
+        const duration = _sessionStartTime ? Math.floor((Date.now() - _sessionStartTime) / 1000) : 0;
+        const mm = String(Math.floor(duration / 60)).padStart(2, '0');
+        const ss = String(duration % 60).padStart(2, '0');
+
+        // Grille de stats
+        const grid = document.getElementById('endStatsGrid');
+        if (grid) {
+            const stats = [
+                { icon: '⚔️', label: 'Ennemis tués',    val: _sessionStats.kills },
+                { icon: '🪙', label: 'Pièces récoltées', val: _sessionStats.coins },
+                { icon: '✨', label: 'XP gagnée',        val: `+${_sessionStats.xpGained}` },
+                { icon: '⏱', label: 'Durée',             val: `${mm}:${ss}` },
+            ];
+            if (gameMode === 'host' || gameMode === 'guest') {
+                stats.push({ icon: '🤝', label: 'Mode',  val: 'Coopératif' });
+            }
+            grid.innerHTML = stats.map(s => `
+                <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+                    border-radius:8px;padding:12px 14px;text-align:center">
+                    <div style="font-size:1.4rem">${s.icon}</div>
+                    <div style="font-size:1.1rem;font-weight:700;color:#fff;margin:2px 0">${s.val}</div>
+                    <div style="font-size:.7rem;color:#666;text-transform:uppercase;letter-spacing:1px">${s.label}</div>
+                </div>`).join('');
+        }
+
+        // Barre XP animée
+        const xpBlock = document.getElementById('endXpBlock');
+        const xpBar   = document.getElementById('endXpBar');
+        const xpLbl   = document.getElementById('endXpLabel');
+        const lvlLbl  = document.getElementById('endLevelLabel');
+        if (xpBlock && player) {
+            xpBlock.style.display = 'block';
+            const pct = Math.min(100, (player.xp / player.maxXp) * 100);
+            if (xpLbl) xpLbl.textContent = `+${_sessionStats.xpGained} XP`;
+            if (lvlLbl) lvlLbl.textContent = `Niveau ${player.level} — ${player.xp} / ${player.maxXp} XP`;
+            if (xpBar) setTimeout(() => { xpBar.style.width = pct + '%'; }, 200);
+        }
+
+        // Boutons coop
+        const hint = document.getElementById('endCoopHint');
+        if (hint) hint.style.display = (gameMode === 'host' || gameMode === 'guest') ? 'block' : 'none';
+    }
+
+    function replayFromEnd() {
+        if ((gameMode === 'host' || gameMode === 'guest') && socket?.connected && roomCode) {
+            socket.emit('game-event', { type: 'coop-replay' });
+        }
+        startGame();
+    }
+
+    function backToMenuFromEnd() {
+        if ((gameMode === 'host' || gameMode === 'guest') && socket?.connected && roomCode) {
+            socket.emit('game-event', { type: 'coop-back-to-menu' });
+        }
+        backToMode();
     }
 
     // Initialisation affichage de fond en attendant le clic

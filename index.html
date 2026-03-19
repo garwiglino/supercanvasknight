@@ -3834,6 +3834,7 @@
     let bloodDrops = [];
     let floorBloods = [];
     let wallBloods = [];
+    let ceilingBloods = [];
 
     // Base de données des quêtes
     let quests = [];
@@ -4328,24 +4329,44 @@
             let nextX = this.x + this.vx;
 
             for (let p of platforms) {
-                // Sol (paroi horizontale supérieure)
-                if (this.x > p.x && this.x < p.x + p.width) {
+                const pw = p.x + p.width;
+                const pb = p.y + p.height;
+
+                if (this.x > p.x && this.x < pw) {
+                    // Sol (face supérieure)
                     if (this.y <= p.y && nextY >= p.y) {
                         this.life = 0;
-                        floorBloods.push(new FloorBlood(this.x, p.y, this.scale));
+                        const fm = 20 * this.scale;
+                        if (this.x - fm >= p.x && this.x + fm <= pw) {
+                            floorBloods.push(new FloorBlood(this.x, p.y, this.scale));
+                        }
+                        return;
+                    }
+                    // Plafond (face inférieure) — drop montant
+                    if (this.vy < 0 && this.y >= pb && nextY <= pb) {
+                        this.life = 0;
+                        const fm = 20 * this.scale;
+                        if (this.x - fm >= p.x && this.x + fm <= pw) {
+                            ceilingBloods.push(new CeilingBlood(this.x, pb, this.scale));
+                        }
                         return;
                     }
                 }
-                // Parois verticales (face gauche et droite de la plateforme)
-                if (this.y > p.y && this.y < p.y + p.height) {
+                // Parois verticales
+                if (this.y > p.y && this.y < pb) {
+                    const vm = 25 * this.scale;
                     if (this.x <= p.x && nextX > p.x) {
                         this.life = 0;
-                        wallBloods.push(new WallBlood(p.x, this.y, this.scale, 'right'));
+                        if (this.y - vm >= p.y && this.y + vm <= pb) {
+                            wallBloods.push(new WallBlood(p.x, this.y, this.scale, 'right'));
+                        }
                         return;
                     }
-                    if (this.x >= p.x + p.width && nextX < p.x + p.width) {
+                    if (this.x >= pw && nextX < pw) {
                         this.life = 0;
-                        wallBloods.push(new WallBlood(p.x + p.width, this.y, this.scale, 'left'));
+                        if (this.y - vm >= p.y && this.y + vm <= pb) {
+                            wallBloods.push(new WallBlood(pw, this.y, this.scale, 'left'));
+                        }
                         return;
                     }
                 }
@@ -4429,6 +4450,47 @@
             ctx.beginPath(); ctx.ellipse(d*7*s, -9*s, 3.5*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(d*6*s, 7*s, 3*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(d*3*s, -16*s, 2*s, 1.5*s, 0, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    class CeilingBlood {
+        constructor(x, y, scale) {
+            this.x = x;
+            this.y = y;
+            this.life = 300;
+            this.maxLife = 300;
+            this.scale = scale;
+            this.dripTimer = 20 + Math.floor(Math.random() * 40);
+        }
+        update() {
+            this.life--;
+            this.dripTimer--;
+            if (this.dripTimer <= 0 && this.life > 60) {
+                bloodDrops.push(new BloodDrop(
+                    this.x + (Math.random() - 0.5) * 10 * this.scale,
+                    this.y + 2,
+                    (Math.random() - 0.5) * 0.5,
+                    1 + Math.random() * 2,
+                    0.15 + Math.random() * 0.2
+                ));
+                this.dripTimer = 50 + Math.floor(Math.random() * 70);
+            }
+        }
+        draw() {
+            let alpha = Math.min(1, this.life / 60);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(this.x, this.y);
+            ctx.fillStyle = '#5c0000';
+            const s = this.scale;
+            // Splat horizontal collé au plafond (blobs vers le bas = +y)
+            ctx.beginPath(); ctx.ellipse(0, 0, 14*s, 4*s, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(12*s, 2*s, 4*s, 2.5*s, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(-10*s, 2*s, 3*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
+            // Pendants (gouttes qui pendent)
+            ctx.beginPath(); ctx.ellipse(3*s, 6*s, 2*s, 4*s, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(-5*s, 5*s, 1.5*s, 3*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.restore();
         }
     }
@@ -9330,6 +9392,7 @@
         bloodDrops = [];
         floorBloods = [];
         wallBloods = [];
+        ceilingBloods = [];
         damageNumbers = [];
         decapHeads = [];
         _enemyIdCounter = 0; // reset pour cohérence host/guest (même niveau = mêmes IDs)
@@ -9451,6 +9514,8 @@
             floorBloods = floorBloods.filter(fb => fb.life > 0);
             wallBloods.forEach(wb => wb.update());
             wallBloods = wallBloods.filter(wb => wb.life > 0);
+            ceilingBloods.forEach(cb => cb.update());
+            ceilingBloods = ceilingBloods.filter(cb => cb.life > 0);
             
             if (bloodDrops.length > 60) bloodDrops.splice(0, bloodDrops.length - 60);
             bloodDrops.forEach(bd => bd.update(platforms));
@@ -9532,7 +9597,8 @@
         // On dessine le sang au sol en premier, AVANT les plateformes pour un bel effet d'intégration (ou juste au dessus)
         platforms.forEach(p => p.draw());
         floorBloods.forEach(fb => fb.draw());
-        wallBloods.forEach(wb => wb.draw()); 
+        wallBloods.forEach(wb => wb.draw());
+        ceilingBloods.forEach(cb => cb.draw()); 
         
         enemies.forEach(enemy => enemy.draw());
         coins.forEach(c => c.draw());

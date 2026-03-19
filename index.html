@@ -1647,6 +1647,7 @@
     }
 
     async function checkExistingToken() {
+        if (new URLSearchParams(window.location.search).get('editorTest')) return; // géré en fin de script
         const token  = localStorage.getItem('sckt_token');
         const pseudo = localStorage.getItem('sckt_pseudo');
         if (!token || !pseudo) return; // reste sur authScreen

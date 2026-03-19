@@ -1903,6 +1903,12 @@
                         event.dir * 2 + (Math.random()*6-3),
                         -2 - Math.random()*6));
                 }
+                for (let i = 0; i < 3+Math.floor(Math.random()*3); i++) {
+                    bloodDrops.push(new BloodDrop(event.x, event.y,
+                        event.dir + (Math.random()*4-2),
+                        -1 - Math.random()*4,
+                        0.15 + Math.random()*0.2));
+                }
             }
 
             // ── Mort d'ennemi déclenchée par le host ────────────────────
@@ -1910,6 +1916,11 @@
                 const e = enemies.find(en => en.id === event.id);
                 if (e && e.state !== 'DEAD' && e.state !== 'DYING') {
                     triggerShake(11, 14);
+                    const _edx = event.x + (e.width||50)/2, _edy = event.y + (e.height||50)/2;
+                    const _ebc = event.wasCrit ? 28 : 18;
+                    for(let i=0; i<_ebc; i++) { const a=Math.random()*Math.PI*2, s=2+Math.random()*8; bloodDrops.push(new BloodDrop(_edx,_edy,Math.cos(a)*s,Math.sin(a)*s-2)); }
+                    for(let i=0; i<8+Math.floor(Math.random()*4); i++) bloodDrops.push(new BloodDrop(_edx,_edy,(Math.random()-0.5)*5,-1-Math.random()*3,0.15+Math.random()*0.2));
+                    for(let i=0; i<(event.wasCrit?4:2); i++) floorBloods.push(new FloorBlood(_edx+(Math.random()-0.5)*30,_edy,0.8+Math.random()*1.0));
                     if (event.wasCrit) {
                         e.state = 'DEAD';
                         decapHeads.push(new DecapHead(event.x + (e.width||50)/2, event.y, true, event.enemyType || 'skeleton'));
@@ -5857,6 +5868,8 @@
                     this.deathTimer = 60;
                     this.vx = knockbackDir * 8;
                     this.vy = -6;
+                    for(let i=0; i<25; i++) { const a=Math.random()*Math.PI*2, s=2+Math.random()*9; bloodDrops.push(new BloodDrop(hitX,hitY,Math.cos(a)*s,Math.sin(a)*s-3)); }
+                    for(let i=0; i<10; i++) bloodDrops.push(new BloodDrop(hitX,hitY,(Math.random()-0.5)*5,-1-Math.random()*3,0.15+Math.random()*0.2));
                     triggerShake(12, 18);
                     if (socket && socket.connected && roomCode) {
                         socket.emit('game-event', { type: 'player-dying', x: this.x, y: this.y, dir: knockbackDir });
@@ -7501,6 +7514,13 @@
 
             if (this.state === 'DYING') {
                 this.deathTimer--;
+                if (this.deathTimer % 7 === 0) {
+                    bloodDrops.push(new BloodDrop(
+                        this.x + this.width/2 + (Math.random()-0.5)*8,
+                        this.y + this.height/2,
+                        (Math.random()-0.5)*1.5, Math.random()*1.5,
+                        0.18 + Math.random()*0.2));
+                }
                 if (this.deathTimer <= 0) { this.state = 'DEAD'; return; }
                 if (gameMode === 'guest') {
                     this.x += (this.targetX - this.x) * 0.45;
@@ -7882,12 +7902,19 @@
                     if (player.bloodStains.length > 200) player.bloodStains.shift();
 
                     if (this.hp <= 0) {
+                        const _sdx = this.x + this.width/2, _sdy = this.y + this.height/2;
                         if (isCrit) {
                             this.state = 'DEAD';
                             decapHeads.push(new DecapHead(this.x + this.width/2, this.y, player.facingRight, 'skeleton'));
+                            for(let i=0; i<30; i++) { const a=Math.random()*Math.PI*2, s=2+Math.random()*9; bloodDrops.push(new BloodDrop(_sdx,_sdy,Math.cos(a)*s,Math.sin(a)*s-3)); }
+                            for(let i=0; i<12; i++) bloodDrops.push(new BloodDrop(_sdx,_sdy,(Math.random()-0.5)*5,-1-Math.random()*3,0.15+Math.random()*0.2));
+                            for(let i=0; i<4; i++) floorBloods.push(new FloorBlood(_sdx+(Math.random()-0.5)*35,_sdy,0.9+Math.random()*1.2));
                         } else {
                             this.state = 'DYING';
                             this.deathTimer = 55;
+                            for(let i=0; i<18; i++) { const a=Math.random()*Math.PI*2, s=1.5+Math.random()*7; bloodDrops.push(new BloodDrop(_sdx,_sdy,Math.cos(a)*s,Math.sin(a)*s-2)); }
+                            for(let i=0; i<8; i++) bloodDrops.push(new BloodDrop(_sdx,_sdy,(Math.random()-0.5)*4,-1-Math.random()*3,0.15+Math.random()*0.2));
+                            for(let i=0; i<2; i++) floorBloods.push(new FloorBlood(_sdx+(Math.random()-0.5)*25,_sdy,0.7+Math.random()*0.9));
                         }
                         triggerShake(11, 14);
                         player.gainXp(10);
@@ -8139,6 +8166,13 @@
 
             if (this.state === 'DYING') {
                 this.deathTimer--;
+                if (this.deathTimer % 7 === 0) {
+                    bloodDrops.push(new BloodDrop(
+                        this.x + this.width/2 + (Math.random()-0.5)*8,
+                        this.y + this.height/2,
+                        (Math.random()-0.5)*1.5, Math.random()*1.5,
+                        0.18 + Math.random()*0.2));
+                }
                 if (this.deathTimer <= 0) { this.state = 'DEAD'; return; }
                 if (gameMode === 'guest') {
                     this.x += (this.targetX - this.x) * 0.45;
@@ -8499,12 +8533,19 @@
                         player.gainXp(6);
                         updateQuest('kill_goblin', 1);
 
+                        const _gdx = this.x + this.width/2, _gdy = this.y + this.height/2;
                         if (isCritG) {
                             this.state = 'DEAD';
                             decapHeads.push(new DecapHead(this.x + this.width/2, this.y, player.facingRight, 'goblin'));
+                            for(let i=0; i<28; i++) { const a=Math.random()*Math.PI*2, s=2+Math.random()*9; bloodDrops.push(new BloodDrop(_gdx,_gdy,Math.cos(a)*s,Math.sin(a)*s-3)); }
+                            for(let i=0; i<10; i++) bloodDrops.push(new BloodDrop(_gdx,_gdy,(Math.random()-0.5)*5,-1-Math.random()*3,0.15+Math.random()*0.2));
+                            for(let i=0; i<4; i++) floorBloods.push(new FloorBlood(_gdx+(Math.random()-0.5)*30,_gdy,0.9+Math.random()*1.2));
                         } else {
                             this.state = 'DYING';
                             this.deathTimer = 55;
+                            for(let i=0; i<15; i++) { const a=Math.random()*Math.PI*2, s=1.5+Math.random()*6; bloodDrops.push(new BloodDrop(_gdx,_gdy,Math.cos(a)*s,Math.sin(a)*s-2)); }
+                            for(let i=0; i<6; i++) bloodDrops.push(new BloodDrop(_gdx,_gdy,(Math.random()-0.5)*4,-1-Math.random()*3,0.15+Math.random()*0.2));
+                            for(let i=0; i<2; i++) floorBloods.push(new FloorBlood(_gdx+(Math.random()-0.5)*20,_gdy,0.7+Math.random()*0.8));
                         }
 
                         let dropRoll = Math.random();

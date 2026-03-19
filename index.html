@@ -6243,7 +6243,7 @@
             let justPressedDash = keys.dash && !this.lastDashKey;
             this.lastDashKey = keys.dash;
 
-            if (justPressedDash && this.dashCooldown === 0 && !this.isAttacking && this._hasDash !== false) {
+            if (justPressedDash && this.dashCooldown === 0 && !this.isAttacking && !this.isBlocking && this._hasDash !== false) {
                 // Direction : input prioritaire, sinon facing
                 if (keys.right) this.dashDir = 1;
                 else if (keys.left) this.dashDir = -1;

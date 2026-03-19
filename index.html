@@ -4303,14 +4303,14 @@
     }
 
     class BloodDrop {
-        constructor(x, y, vx, vy) {
+        constructor(x, y, vx, vy, scale = null) {
             this.x = x;
             this.y = y;
             this.vx = vx;
             this.vy = vy;
             this.gravity = 0.6;
             this.life = 120; // Sécurité si ça tombe dans le vide
-            this.scale = 0.5 + Math.random() * 0.7; // Tailles variées
+            this.scale = scale !== null ? scale : 0.5 + Math.random() * 0.7; // Tailles variées
         }
         update(platforms) {
             let nextY = this.y + this.vy;
@@ -4340,7 +4340,7 @@
             if (img && img.isLoaded) {
                 ctx.drawImage(img, -10, -5, 20, 10);
             } else {
-                ctx.fillStyle = '#b30000';
+                ctx.fillStyle = '#7a0000';
                 ctx.beginPath();
                 ctx.ellipse(0, 0, 8, 3, 0, 0, Math.PI * 2);
                 ctx.fill();
@@ -5810,6 +5810,12 @@
                 let vx = (knockbackDir * 2) + (Math.random() * 6 - 3);
                 let vy = -2 - Math.random() * 6;
                 bloodDrops.push(new BloodDrop(hitX, hitY, vx, vy));
+            }
+            for(let i=0; i<4+Math.floor(Math.random()*3); i++) {
+                bloodDrops.push(new BloodDrop(hitX, hitY,
+                    (knockbackDir * 1) + (Math.random() * 4 - 2),
+                    -1 - Math.random() * 4,
+                    0.15 + Math.random() * 0.2));
             }
 
             // Broadcast VFX de dégâts au partenaire (sang sur joueur distant)
@@ -7549,6 +7555,12 @@
                                 (player.facingRight ? 2 : -2) + (Math.random()*6-3),
                                 -2 - Math.random()*6));
                         }
+                        for (let i = 0; i < 3+Math.floor(Math.random()*3); i++) {
+                            bloodDrops.push(new BloodDrop(hitX, hitY,
+                                (player.facingRight ? 1 : -1) + (Math.random()*4-2),
+                                -1 - Math.random()*4,
+                                0.15 + Math.random() * 0.2));
+                        }
                         // Notifier le host — il applique les dégâts et valide la mort
                         const _wdmg = WEAPON_CONFIG[player._equippedWeaponId?.()??player.skin?.weapon??'sword']?.dmg || [15,15,15,25];
                         const _base = (_wdmg[player.comboStep] || 15) + (player.bonusDamage || 0);
@@ -7848,6 +7860,12 @@
                         let vx = (player.facingRight ? 2 : -2) + (Math.random() * 6 - 3);
                         let vy = -2 - Math.random() * 6;
                         bloodDrops.push(new BloodDrop(hitX, hitY, vx, vy));
+                    }
+                    for(let i=0; i<4+Math.floor(Math.random()*4); i++) {
+                        bloodDrops.push(new BloodDrop(hitX, hitY,
+                            (player.facingRight ? 1 : -1) + (Math.random()*4-2),
+                            -1 - Math.random()*4,
+                            0.15 + Math.random() * 0.2));
                     }
                     if (socket && socket.connected && roomCode) {
                         socket.emit('game-event', { type: 'combat-vfx', x: hitX, y: hitY, dir: player.facingRight ? 1 : -1 });
@@ -8172,6 +8190,12 @@
                                 (player.facingRight ? 2 : -2) + (Math.random() * 6 - 3),
                                 -2 - Math.random() * 6));
                         }
+                        for (let i = 0; i < 3+Math.floor(Math.random()*3); i++) {
+                            bloodDrops.push(new BloodDrop(hitX, hitY,
+                                (player.facingRight ? 1 : -1) + (Math.random()*4-2),
+                                -1 - Math.random()*4,
+                                0.15 + Math.random() * 0.2));
+                        }
                         const _wdmg = WEAPON_CONFIG[player._equippedWeaponId?.() ?? player.skin?.weapon ?? 'sword']?.dmg || [15, 15, 15, 25];
                         const _baseG = (_wdmg[player.comboStep] || 15) + (player.bonusDamage || 0);
                         const _critG = Math.random() < CRIT_CHANCE;
@@ -8449,6 +8473,12 @@
                         bloodDrops.push(new BloodDrop(hitX, hitY,
                             (player.facingRight ? 2 : -2) + (Math.random() * 6 - 3),
                             -2 - Math.random() * 6));
+                    }
+                    for(let i=0; i<3+Math.floor(Math.random()*3); i++) {
+                        bloodDrops.push(new BloodDrop(hitX, hitY,
+                            (player.facingRight ? 1 : -1) + (Math.random()*4-2),
+                            -1 - Math.random()*4,
+                            0.15 + Math.random() * 0.2));
                     }
                     if (socket && socket.connected && roomCode) {
                         socket.emit('game-event', { type: 'combat-vfx', x: hitX, y: hitY, dir: player.facingRight ? 1 : -1 });

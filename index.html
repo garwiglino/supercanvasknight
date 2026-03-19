@@ -4337,7 +4337,7 @@
                     if (this.y <= p.y && nextY >= p.y) {
                         this.life = 0;
                         const fm = 20 * this.scale;
-                        if (this.x - fm >= p.x && this.x + fm <= pw) {
+                        if (Math.random() < 0.5 && this.x - fm >= p.x && this.x + fm <= pw) {
                             floorBloods.push(new FloorBlood(this.x, p.y, this.scale));
                         }
                         return;
@@ -4346,7 +4346,7 @@
                     if (this.vy < 0 && this.y >= pb && nextY <= pb) {
                         this.life = 0;
                         const fm = 20 * this.scale;
-                        if (this.x - fm >= p.x && this.x + fm <= pw) {
+                        if (Math.random() < 0.4 && this.x - fm >= p.x && this.x + fm <= pw) {
                             ceilingBloods.push(new CeilingBlood(this.x, pb, this.scale));
                         }
                         return;
@@ -4412,14 +4412,17 @@
             ctx.save();
             ctx.globalAlpha = alpha;
             ctx.translate(this.x, this.y);
-            ctx.fillStyle = '#5c0000';
             const s = this.scale;
+            ctx.fillStyle = '#5c0000';
             ctx.beginPath(); ctx.ellipse(0, 0, 16*s, 5*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(15*s, 2*s, 5*s, 3*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(-13*s, 1*s, 4*s, 2.5*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(6*s, -5*s, 3.5*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(-5*s, 5*s, 3*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(11*s, -4*s, 2*s, 1.5*s, 0, 0, Math.PI*2); ctx.fill();
+            // Reflet brillant
+            ctx.fillStyle = 'rgba(255,80,80,0.18)';
+            ctx.beginPath(); ctx.ellipse(-4*s, -1.5*s, 7*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.restore();
         }
     }
@@ -4440,8 +4443,8 @@
             ctx.globalAlpha = alpha;
             ctx.translate(this.x, this.y);
             const d = this.side === 'right' ? 1 : -1;
-            ctx.fillStyle = '#5c0000';
             const s = this.scale;
+            ctx.fillStyle = '#5c0000';
             // Splat principal vertical
             ctx.beginPath(); ctx.ellipse(d*3*s, 0, 4*s, 14*s, 0, 0, Math.PI*2); ctx.fill();
             // Drip vers le bas
@@ -4450,6 +4453,9 @@
             ctx.beginPath(); ctx.ellipse(d*7*s, -9*s, 3.5*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(d*6*s, 7*s, 3*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(d*3*s, -16*s, 2*s, 1.5*s, 0, 0, Math.PI*2); ctx.fill();
+            // Reflet brillant
+            ctx.fillStyle = 'rgba(255,80,80,0.18)';
+            ctx.beginPath(); ctx.ellipse(d*2*s, -3*s, 1.5*s, 5*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.restore();
         }
     }
@@ -4482,8 +4488,8 @@
             ctx.save();
             ctx.globalAlpha = alpha;
             ctx.translate(this.x, this.y);
-            ctx.fillStyle = '#5c0000';
             const s = this.scale;
+            ctx.fillStyle = '#5c0000';
             // Splat horizontal collé au plafond (blobs vers le bas = +y)
             ctx.beginPath(); ctx.ellipse(0, 0, 14*s, 4*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(12*s, 2*s, 4*s, 2.5*s, 0, 0, Math.PI*2); ctx.fill();
@@ -4491,6 +4497,9 @@
             // Pendants (gouttes qui pendent)
             ctx.beginPath(); ctx.ellipse(3*s, 6*s, 2*s, 4*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(-5*s, 5*s, 1.5*s, 3*s, 0, 0, Math.PI*2); ctx.fill();
+            // Reflet brillant
+            ctx.fillStyle = 'rgba(255,80,80,0.18)';
+            ctx.beginPath(); ctx.ellipse(-3*s, -1*s, 6*s, 1.5*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.restore();
         }
     }
@@ -9510,10 +9519,13 @@
             }
 
             // Mise à jour des effets de sang
+            if (floorBloods.length > 20) floorBloods.splice(0, floorBloods.length - 20);
             floorBloods.forEach(fb => fb.update());
             floorBloods = floorBloods.filter(fb => fb.life > 0);
+            if (wallBloods.length > 12) wallBloods.splice(0, wallBloods.length - 12);
             wallBloods.forEach(wb => wb.update());
             wallBloods = wallBloods.filter(wb => wb.life > 0);
+            if (ceilingBloods.length > 8) ceilingBloods.splice(0, ceilingBloods.length - 8);
             ceilingBloods.forEach(cb => cb.update());
             ceilingBloods = ceilingBloods.filter(cb => cb.life > 0);
             

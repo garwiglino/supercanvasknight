@@ -10363,6 +10363,16 @@
     player.draw();
     ctx.restore();
 
+    // ── Auto-démarrage éditeur (bypass auth + hub) ───────────────────────────
+    if (new URLSearchParams(window.location.search).get('editorTest')) {
+        const _inp = document.getElementById('pseudoInput');
+        if (_inp) _inp.value = localStorage.getItem('sckt_pseudo') || 'Éditeur';
+        document.getElementById('authScreen')?.classList.add('hidden');
+        loadGameAssets();
+        gameMode = 'solo';
+        startGame();
+    }
+
 </script>
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- BANDEAU COOKIES                                                 -->

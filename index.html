@@ -5396,18 +5396,23 @@
         rc.restore();
     }
 
-    function drawShield(rc, drawX, bodyY, W, H, facingRight, blocking) {
+    function drawShield(rc, drawX, bodyY, W, H, facingRight, blocking, walkPhase = 0) {
         rc.save();
         // Main libre = gauche si facingRight, droite sinon
         const sideX = facingRight ? drawX - 4 : drawX + W + 4;
         const sideY = bodyY + H * 0.4;
         rc.translate(sideX, sideY);
-        if (!facingRight) rc.scale(-1, 1); // miroir pour que le bouclier reste visuel côté off-hand
+        if (!facingRight) rc.scale(-1, 1);
 
         if (blocking) {
-            // En blocage : bouclier étendu vers l'avant (côté face du joueur)
+            // En blocage : bouclier étendu vers l'avant
             rc.translate(W * 0.7, 0);
             rc.rotate(-Math.PI / 10);
+            // Bob de marche : décalage vertical + légère rotation
+            if (walkPhase !== 0) {
+                rc.translate(0, Math.sin(walkPhase) * 3);
+                rc.rotate(Math.sin(walkPhase) * 0.1);
+            }
         } else {
             // Au repos : bouclier plaqué derrière, légèrement incliné
             rc.rotate(Math.PI / 8);
@@ -5824,6 +5829,7 @@
             if (this.equippedShield === undefined) this.equippedShield = null;
             if (this.blockMaxDurability === undefined) this.blockMaxDurability = 0;
             if (this.blockDurability === undefined) this.blockDurability = 0;
+            if (this.shieldWalkPhase === undefined) this.shieldWalkPhase = 0;
             this.isBlocking = false;
             this.lastBlockKey = false;
             // ── PARADE ────────────────────────────────────────────────────
@@ -6385,9 +6391,14 @@
                 const is2H = equippedWep ? (WEAPON_DATA[equippedWep]?.twoHanded ?? false) : false;
                 if (keys.block && !this.isAttacking && !is2H) {
                     this.isBlocking = true;
-                    if (this.grounded) this.vx = 0; // en l'air : garder le momentum
                 } else {
                     this.isBlocking = false;
+                }
+                // Phase de marche bouclier
+                if (this.isBlocking && this.vx !== 0 && this.grounded) {
+                    this.shieldWalkPhase += 0.18;
+                } else {
+                    this.shieldWalkPhase = 0;
                 }
                 // Régénération lente hors blocage
                 if (!this.isBlocking && this.blockDurability < this.blockMaxDurability) {
@@ -6518,12 +6529,15 @@
                 if (this.dashTimer > 0) {
                     // Pendant le dash : vélocité fixe, ignore l'input directionnel
                     this.vx = this.dashDir * 18;
-                } else if (this._wheelOpen || (this.isBlocking && this.grounded)) {
-                    // Roue ouverte ou blocage au sol : immobile
+                } else if (this._wheelOpen) {
                     this.vx = 0;
-                } else if (keys.right) { this.vx = this.speed; this.facingRight = true; }
-                else if (keys.left) { this.vx = -this.speed; this.facingRight = false; }
-                else this.vx = 0;
+                } else if (keys.right) {
+                    this.vx = this.isBlocking ? this.speed * 0.5 : this.speed;
+                    if (!this.isBlocking) this.facingRight = true;
+                } else if (keys.left) {
+                    this.vx = this.isBlocking ? -this.speed * 0.5 : -this.speed;
+                    if (!this.isBlocking) this.facingRight = false;
+                } else this.vx = 0;
             }
 
             this.x += this.vx;
@@ -6878,7 +6892,7 @@
 
             // ── BOUCLIER DEVANT (en blocage) ──────────────────────────────────
             if (this.equippedShield && this.isBlocking) {
-                drawShield(renderCtx, drawX, bodyY, this.width, this.height, this.facingRight, true);
+                drawShield(renderCtx, drawX, bodyY, this.width, this.height, this.facingRight, true, this.shieldWalkPhase);
             }
 
             // ── ROUE D'ARMES (rendu canvas au-dessus du personnage) ───────────

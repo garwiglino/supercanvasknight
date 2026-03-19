@@ -1083,7 +1083,7 @@
         </div>
 
         <!-- ── ÉCRAN AUTH (login / inscription) ──────────────────────── -->
-        <div id="authScreen" class="screen">
+        <div id="authScreen" class="screen hidden">
             <h1>⚔️ Super Canvas Knight</h1>
             <div class="auth-window">
                 <!-- Onglets (cachés en mode forgot/reset) -->
@@ -1654,11 +1654,15 @@
         }
     }
 
+    function _showAuthScreen() {
+        document.getElementById('authScreen').classList.remove('hidden');
+    }
+
     async function checkExistingToken() {
         if (_EDITOR_TEST) return;
         const token  = localStorage.getItem('sckt_token');
         const pseudo = localStorage.getItem('sckt_pseudo');
-        if (!token || !pseudo) return; // reste sur authScreen
+        if (!token || !pseudo) { _showAuthScreen(); return; }
 
         try {
             const res = await fetch('/api/verify', {
@@ -1672,11 +1676,13 @@
             } else {
                 localStorage.removeItem('sckt_token');
                 localStorage.removeItem('sckt_pseudo');
+                _showAuthScreen();
             }
         } catch (e) {
             // réseau KO → on reste sur l'écran auth
             localStorage.removeItem('sckt_token');
             localStorage.removeItem('sckt_pseudo');
+            _showAuthScreen();
         }
     }
 

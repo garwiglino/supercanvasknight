@@ -1505,6 +1505,13 @@
 </div>
 
 <script>
+    // ── Mode test éditeur — masquage immédiat avant toute logique auth ──────
+    const _EDITOR_TEST = !!new URLSearchParams(window.location.search).get('editorTest');
+    if (_EDITOR_TEST) {
+        const _as = document.getElementById('authScreen');
+        if (_as) _as.style.cssText = 'display:none!important';
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // AUTHENTIFICATION
     // ═══════════════════════════════════════════════════════════════
@@ -1647,7 +1654,7 @@
     }
 
     async function checkExistingToken() {
-        if (new URLSearchParams(window.location.search).get('editorTest')) return; // géré en fin de script
+        if (_EDITOR_TEST) return;
         const token  = localStorage.getItem('sckt_token');
         const pseudo = localStorage.getItem('sckt_pseudo');
         if (!token || !pseudo) return; // reste sur authScreen
@@ -4041,7 +4048,7 @@
     let currentLevelData = defaultLevelData;
 
     // ── Chargement depuis l'éditeur de niveaux ──────────────────────────────
-    if (new URLSearchParams(window.location.search).get('editorTest')) {
+    if (_EDITOR_TEST) {
         try {
             const _el = localStorage.getItem('sck_editor_level');
             if (_el) currentLevelData = JSON.parse(_el);
@@ -10365,10 +10372,9 @@
     ctx.restore();
 
     // ── Auto-démarrage éditeur (bypass auth + hub) ───────────────────────────
-    if (new URLSearchParams(window.location.search).get('editorTest')) {
+    if (_EDITOR_TEST) {
         const _inp = document.getElementById('pseudoInput');
         if (_inp) _inp.value = localStorage.getItem('sckt_pseudo') || 'Éditeur';
-        document.getElementById('authScreen')?.classList.add('hidden');
         loadGameAssets();
         gameMode = 'solo';
         startGame();

@@ -4057,10 +4057,15 @@
     // ── Chargement depuis l'éditeur de niveaux ──────────────────────────────
     if (_EDITOR_TEST) {
         try {
-            const _el = localStorage.getItem('sck_editor_level');
-            if (_el) currentLevelData = JSON.parse(_el);
-            const _es = localStorage.getItem('sck_editor_skin');
-            if (_es !== null) currentSkinIndex = parseInt(_es) || 0;
+            // Priorité : variable globale injectée dans le blob (toujours fraîche)
+            if (window._EDITOR_LEVEL_DATA) {
+                currentLevelData = window._EDITOR_LEVEL_DATA;
+            } else {
+                const _el = localStorage.getItem('sck_editor_level');
+                if (_el) currentLevelData = JSON.parse(_el);
+            }
+            const _skinIdx = window._EDITOR_SKIN_IDX ?? parseInt(localStorage.getItem('sck_editor_skin'));
+            if (!isNaN(_skinIdx)) currentSkinIndex = _skinIdx;
         } catch(e) {}
         localStorage.removeItem('sck_editor_level');
         localStorage.removeItem('sck_editor_skin');

@@ -1179,13 +1179,9 @@ async function testLevel() {
         'const _EDITOR_TEST = true;'
     );
 
-    // 3. Pré-injecter le niveau et le skin dans localStorage avant toute logique de jeu
-    const injection = `\n;(function(){try{` +
-        `localStorage.setItem('sck_editor_level',${JSON.stringify(levelJSON)});` +
-        `localStorage.setItem('sck_editor_skin','${skin}');` +
-        `}catch(e){}})();\n`;
-    // Insérer juste après la première balise <script> du body principal (ligne ~1508)
-    html = html.replace(/(<script>\s*\n\s*\/\/ ── Mode test éditeur)/, injection + '$1');
+    // 3. Injecter niveau + skin comme variables globales (pas localStorage — Blob a origin null)
+    const dataScript = `<script>window._EDITOR_LEVEL_DATA=${levelJSON};window._EDITOR_SKIN_IDX=${skin};<\/script>`;
+    html = html.replace('</body>', dataScript + '\n</body>');
 
     // 4. Ouvrir dans une nouvelle fenêtre via Blob URL
     const blob = new Blob([html], { type: 'text/html' });

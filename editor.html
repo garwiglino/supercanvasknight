@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>SCK Level Editor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; user-select: none; }
+
+/* ── Toolbar ── */
+#toolbar { display: flex; align-items: center; gap: 4px; padding: 5px 8px; background: #0a0a14; border-bottom: 1px solid #2a2a44; flex-shrink: 0; flex-wrap: wrap; }
+.btn { padding: 4px 9px; border: 1px solid #3a3a5a; border-radius: 4px; background: #1e1e32; color: #d0d0e8; cursor: pointer; font-size: 12px; transition: background .12s, border-color .12s; white-space: nowrap; }
+.btn:hover { background: #2a2a4a; border-color: #5a5a8a; }
+.btn.active { background: #3a2460; border-color: #7a44cc; color: #fff; }
+.btn.primary { background: #1a3a1a; border-color: #3a7a3a; }
+.btn.primary:hover { background: #245024; }
+.btn.danger { border-color: #7a2222; }
+.btn.danger:hover { background: #4a1010; }
+.sep { width: 1px; background: #2a2a44; margin: 0 3px; align-self: stretch; }
+select, input[type=text], input[type=number], input[type=color] { padding: 3px 5px; border: 1px solid #3a3a5a; border-radius: 3px; background: #14142a; color: #d0d0e8; font-size: 12px; }
+select { cursor: pointer; }
+input[type=color] { padding: 1px; width: 32px; height: 24px; cursor: pointer; }
+label { font-size: 11px; color: #8888aa; }
+
+/* ── Main layout ── */
+#main { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Left panel ── */
+#left-panel { width: 190px; background: #0a0a14; border-right: 1px solid #2a2a44; padding: 8px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex-shrink: 0; }
+.psec { background: #12122a; border: 1px solid #2a2a44; border-radius: 5px; padding: 7px; }
+.psec h3 { font-size: 10px; text-transform: uppercase; color: #6668aa; margin-bottom: 7px; letter-spacing: .6px; }
+.prow { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+.prow label { min-width: 46px; font-size: 11px; }
+.prow input, .prow select { flex: 1; }
+
+/* ── Surface options ── */
+.sopt { display: flex; align-items: center; gap: 5px; padding: 3px 5px; border: 1px solid #2a2a44; border-radius: 3px; cursor: pointer; margin-bottom: 2px; transition: all .1s; }
+.sopt:hover { border-color: #4a4a7a; }
+.sopt.sel { border-color: #7a44cc; background: #200a44; }
+.swatch { width: 18px; height: 11px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── Canvas ── */
+#canvas-wrap { flex: 1; position: relative; overflow: hidden; background: #0a0a14; cursor: default; }
+#canvas { position: absolute; top: 0; left: 0; }
+
+/* ── Right panel ── */
+#right-panel { width: 210px; background: #0a0a14; border-left: 1px solid #2a2a44; padding: 8px; overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; }
+#right-panel h2 { font-size: 10px; text-transform: uppercase; color: #6668aa; letter-spacing: .6px; }
+.prop-row { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+.prop-row label { font-size: 11px; color: #8888aa; min-width: 52px; }
+.prop-row input, .prop-row select { flex: 1; font-size: 11px; }
+.tag { display: inline-block; padding: 1px 6px; border-radius: 2px; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; }
+.t-plat { background: #1a3055; color: #6aafff; }
+.t-skel { background: #3a3a18; color: #eedd66; }
+.t-gob { background: #3a1a1a; color: #ff7766; }
+.t-wep { background: #1a3a1a; color: #66ff88; }
+.t-item { background: #3a1a3a; color: #ee88ff; }
+.t-int { background: #3a2a0a; color: #ffaa44; }
+.t-svg { background: #0a2a3a; color: #44aaff; }
+.t-spawn { background: #0a3a1a; color: #44ff88; }
+.t-goal { background: #3a3a0a; color: #ffdd44; }
+.t-coin { background: #2a2a0a; color: #ffee44; }
+
+/* ── Status bar ── */
+#sbar { padding: 3px 8px; background: #0a0a14; border-top: 1px solid #2a2a44; font-size: 11px; color: #555577; display: flex; gap: 18px; flex-shrink: 0; }
+.hint { font-size: 10px; color: #444466; font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ TOOLBAR ═══════════════ -->
+<div id="toolbar">
+  <button class="btn" onclick="newLevel()">📄 Nouveau</button>
+  <button class="btn" onclick="triggerLoad()">📂 Ouvrir</button>
+  <button class="btn" onclick="saveLevel()">💾 Sauvegarder</button>
+  <div class="sep"></div>
+  <button class="btn tool-btn active" data-tool="select" onclick="setTool('select')" title="Sélect / Déplacer (V)">✋ Sélect</button>
+  <button class="btn tool-btn" data-tool="platform" onclick="setTool('platform')" title="Plateforme (P)">▬ Plate.</button>
+  <button class="btn tool-btn" data-tool="skeleton" onclick="setTool('skeleton')" title="Squelette (K)">💀 Squelette</button>
+  <button class="btn tool-btn" data-tool="goblin" onclick="setTool('goblin')" title="Goblin (G)">👺 Goblin</button>
+  <button class="btn tool-btn" data-tool="weapon" onclick="setTool('weapon')" title="Arme au sol (W)">⚔️ Arme</button>
+  <button class="btn tool-btn" data-tool="item" onclick="setTool('item')" title="Item auto-ramassage (I)">🧪 Item</button>
+  <button class="btn tool-btn" data-tool="interactable" onclick="setTool('interactable')" title="Objet interactif touche E (U)">📦 Interactif</button>
+  <button class="btn tool-btn" data-tool="svg" onclick="setTool('svg')" title="Décoration SVG (D)">🖼️ SVG</button>
+  <button class="btn tool-btn" data-tool="spawn" onclick="setTool('spawn')" title="Point départ (X)">🏁 Départ</button>
+  <button class="btn tool-btn" data-tool="goal" onclick="setTool('goal')" title="Objectif (O)">🏆 Objectif</button>
+  <button class="btn tool-btn" data-tool="coin" onclick="setTool('coin')" title="Pièce (C)">🪙 Pièce</button>
+  <div class="sep"></div>
+  <label><input type="checkbox" id="gridToggle" checked onchange="render()"> Grille</label>
+  <select id="snapSel" onchange="SNAP=+this.value" title="Taille du snap">
+    <option value="5">5</option><option value="10">10</option><option value="20" selected>20</option>
+    <option value="40">40</option><option value="1">Libre</option>
+  </select>
+  <div class="sep"></div>
+  <button class="btn" onclick="undo()" title="Ctrl+Z">↩ Undo</button>
+  <button class="btn" onclick="redo()" title="Ctrl+Y">↪ Redo</button>
+  <div class="sep"></div>
+  <button class="btn primary" onclick="testLevel()" title="Tester dans le jeu">▶ Tester</button>
+</div>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<div id="main">
+
+  <!-- ═══ LEFT PANEL ═══ -->
+  <div id="left-panel">
+    <div class="psec">
+      <h3>Niveau</h3>
+      <div class="prow"><label>Nom</label><input type="text" id="lvlName" value="Nouveau Niveau" oninput="level.name=this.value" style="flex:1"></div>
+      <div class="prow"><label>Dead Y</label><input type="number" id="lvlDead" value="1100" style="width:70px" oninput="level.deadZone=+this.value||1100"></div>
+    </div>
+    <div class="psec">
+      <h3>Ciel (dégradé)</h3>
+      <div class="prow"><label>Haut</label><input type="color" id="skyTop" value="#040610" oninput="level.sky.top=this.value;render()"></div>
+      <div class="prow"><label>Bas</label><input type="color" id="skyBot" value="#0d1828" oninput="level.sky.bottom=this.value;render()"></div>
+    </div>
+    <div class="psec" id="tool-panel">
+      <h3 id="tool-title">Outil</h3>
+      <div id="tool-content"><p class="hint">Sélectionnez un outil</p></div>
+    </div>
+    <div class="psec">
+      <h3>Test – Personnage</h3>
+      <select id="testSkin" style="width:100%">
+        <option value="0">Chevalier Classique</option><option value="1">Rôdeur Sylvestre</option>
+        <option value="2">Chevalier Noir</option><option value="3">Paladin Doré</option>
+        <option value="4">Valkyrie Écarlate</option><option value="5">Chasseresse des Bois</option>
+        <option value="6">Ombre Maudite</option><option value="7">Séraphin Céleste</option>
+      </select>
+    </div>
+    <div class="psec">
+      <h3>Couches</h3>
+      <label style="display:flex;gap:5px;margin-bottom:3px"><input type="checkbox" checked onchange="layerVis.background=this.checked;render()"> Background</label>
+      <label style="display:flex;gap:5px;margin-bottom:3px"><input type="checkbox" checked onchange="layerVis.midground=this.checked;render()"> Midground</label>
+      <label style="display:flex;gap:5px;margin-bottom:3px"><input type="checkbox" checked onchange="layerVis.foreground=this.checked;render()"> Foreground</label>
+      <label style="display:flex;gap:5px"><input type="checkbox" checked onchange="layerVis.gameplay=this.checked;render()"> Gameplay</label>
+    </div>
+    <div class="psec">
+      <h3>Navigation</h3>
+      <p class="hint">Molette : zoom<br>Clic droit / Alt : pan<br>F : cadrer sélection<br>Home : tout cadrer</p>
+    </div>
+  </div>
+
+  <!-- ═══ CANVAS ═══ -->
+  <div id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <!-- ═══ RIGHT PANEL ═══ -->
+  <div id="right-panel">
+    <h2>Propriétés</h2>
+    <div id="props"></div>
+  </div>
+
+</div>
+
+<!-- ═══ STATUS ═══ -->
+<div id="sbar">
+  <span id="s-xy">x: 0, y: 0</span>
+  <span id="s-zoom">Zoom: 100%</span>
+  <span id="s-sel">—</span>
+  <span id="s-count">0 plat.</span>
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="fileInput" accept=".json" style="display:none" onchange="onFileLoad(event)">
+<input type="file" id="svgFileInput" accept=".svg,image/svg+xml" style="display:none" onchange="onSVGLoad(event)">
+
+<script>
+'use strict';
+
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+const SURF_COL = {
+    stone:  { top:'#636f80', mid:'#454d5a', bot:'#1e2228', edge:'#8090a0' },
+    gravel: { top:'#727272', mid:'#525252', bot:'#2a2a2a', edge:'#909090' },
+    grass:  { top:'#3a8030', mid:'#5c3d1e', bot:'#2e1a08', edge:'#50b040' },
+    wood:   { top:'#9c6835', mid:'#7a4e28', bot:'#3a220a', edge:'#c08848' },
+    water:  { top:'#3a90d8', mid:'#173468', bot:'#060e22', edge:'#60b0ff' },
+    sand:   { top:'#d4b464', mid:'#b09040', bot:'#7a5820', edge:'#e8c870' },
+};
+const SURFACES = Object.keys(SURF_COL);
+const WEAPONS  = ['sword','bow','hammer','staff'];
+const W_ICON   = { sword:'⚔️', bow:'🏹', hammer:'🔨', staff:'🪄' };
+const W_NAME   = { sword:'Épée', bow:'Arc', hammer:'Marteau', staff:'Bâton' };
+const ITEMS    = ['potion','force'];
+const I_ICON   = { potion:'🧪', force:'⚡' };
+const I_NAME   = { potion:'Potion de soin', force:'Élixir de force' };
+const LAYERS   = ['background','midground','foreground'];
+let SNAP = 20;
+
+// ─── LEVEL DATA ──────────────────────────────────────────────────────────────
+function freshLevel() {
+    return {
+        name: 'Nouveau Niveau',
+        sky: { top: '#040610', bottom: '#0d1828' },
+        spawnPoint: { x: 100, y: 450 },
+        goal: { x: 2200, y: 490, width: 180, height: 20 },
+        deadZone: 1100,
+        parallax: { background: [], midground: [], foreground: [] },
+        platforms: [],
+        skeletons: [], goblins: [], coins: [],
+        droppedWeapons: [], items: [], interactables: [],
+    };
+}
+let level = freshLevel();
+let _uid = 1;
+const uid = () => _uid++;
+
+// ─── EDITOR STATE ────────────────────────────────────────────────────────────
+let cam = { x: 400, y: 400, zoom: 1.0 };
+let tool = 'select';
+let activeSurface = 'stone';
+let activeWeapon  = 'sword';
+let activeItem    = 'potion';
+let activeIntType = 'weapon_chest';
+let activeIntPayload = 'sword';
+let activeSVGLayer = 'background';
+let activeSVGSpeedX = 0.15;
+let activeSVGSpeedY = 0.0;
+let pendingSVG = null;        // { dataUrl, img, name }
+let layerVis = { background: true, midground: true, foreground: true, gameplay: true };
+let selected  = null;         // { type, obj, layer? }
+let mouseW    = { x: 0, y: 0 };
+let isDrag    = false;
+let dragMode  = null;         // 'move'|'resize'|'platdraw'|'pan'
+let dragStart = {};
+let dragObj   = null;
+let resizeHnd = null;
+const svgCache = {};          // id -> HTMLImageElement
+let history = [], future = [];
+
+// ─── CANVAS ──────────────────────────────────────────────────────────────────
+const wrap   = document.getElementById('canvas-wrap');
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+function resizeCanvas() { canvas.width = wrap.clientWidth; canvas.height = wrap.clientHeight; render(); }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// ─── COORDINATES ─────────────────────────────────────────────────────────────
+const s2w = (sx, sy) => ({ x: (sx - canvas.width/2) / cam.zoom + cam.x, y: (sy - canvas.height/2) / cam.zoom + cam.y });
+const w2s = (wx, wy) => ({ x: (wx - cam.x)*cam.zoom + canvas.width/2,   y: (wy - cam.y)*cam.zoom + canvas.height/2 });
+const snp = v => SNAP ? Math.round(v/SNAP)*SNAP : Math.round(v);
+
+// ─── UNDO/REDO ────────────────────────────────────────────────────────────────
+function saveState() {
+    history.push(JSON.stringify(level));
+    if (history.length > 80) history.shift();
+    future = [];
+}
+function undo() {
+    if (!history.length) return;
+    future.push(JSON.stringify(level));
+    level = JSON.parse(history.pop());
+    selected = null; rebuildCache(); render(); updateProps(); updateStatus();
+}
+function redo() {
+    if (!future.length) return;
+    history.push(JSON.stringify(level));
+    level = JSON.parse(future.pop());
+    selected = null; rebuildCache(); render(); updateProps(); updateStatus();
+}
+function rebuildCache() {
+    LAYERS.forEach(l => level.parallax[l].forEach(it => {
+        if (!svgCache[it.id]) { const img = new Image(); img.src = it.dataUrl; svgCache[it.id] = img; }
+    }));
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function render() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0,0,W,H);
+
+    // Sky
+    const sg = ctx.createLinearGradient(0,0,0,H);
+    sg.addColorStop(0,   level.sky.top);
+    sg.addColorStop(0.7, level.sky.bottom);
+    sg.addColorStop(1,   level.sky.bottom);
+    ctx.fillStyle = sg; ctx.fillRect(0,0,W,H);
+
+    ctx.save();
+    ctx.translate(W/2, H/2);
+    ctx.scale(cam.zoom, cam.zoom);
+    ctx.translate(-cam.x, -cam.y);
+
+    if (document.getElementById('gridToggle').checked) drawGrid(W, H);
+    if (layerVis.background) drawParallax('background');
+    if (layerVis.midground)  drawParallax('midground');
+
+    if (layerVis.gameplay) {
+        level.platforms.forEach(drawPlatform);
+        drawGoal(); drawSpawn();
+        level.skeletons.forEach(e => drawEnemy(e,'skeleton'));
+        level.goblins.forEach(e => drawEnemy(e,'goblin'));
+        level.coins.forEach(drawCoin);
+        level.droppedWeapons.forEach(drawDropWeapon);
+        level.items.forEach(drawItem);
+        level.interactables.forEach(drawInteractable);
+    }
+
+    if (layerVis.foreground) drawParallax('foreground');
+    if (selected) drawSelection();
+    if (isDrag && dragMode === 'platdraw') drawPlatPreview();
+
+    ctx.restore();
+    updateStatus();
+}
+
+function drawGrid(W, H) {
+    const gs = SNAP || 20;
+    const ox = Math.floor((cam.x - W/cam.zoom/2) / gs) * gs;
+    const oy = Math.floor((cam.y - H/cam.zoom/2) / gs) * gs;
+    const ex = ox + W/cam.zoom + gs*2, ey = oy + H/cam.zoom + gs*2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 0.5/cam.zoom;
+    ctx.beginPath();
+    for (let x = ox; x <= ex; x += gs) { ctx.moveTo(x,oy); ctx.lineTo(x,ey); }
+    for (let y = oy; y <= ey; y += gs) { ctx.moveTo(ox,y); ctx.lineTo(ex,y); }
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1/cam.zoom;
+    ctx.beginPath();
+    ctx.moveTo(0,oy); ctx.lineTo(0,ey);
+    ctx.moveTo(ox,0); ctx.lineTo(ex,0);
+    ctx.stroke();
+}
+
+function drawParallax(layer) {
+    level.parallax[layer].forEach(it => {
+        const img = svgCache[it.id];
+        if (!img || !img.complete || !img.naturalWidth) return;
+        const w = img.naturalWidth * it.scale, h = img.naturalHeight * it.scale;
+        ctx.save();
+        ctx.globalAlpha = layer === 'background' ? 0.65 : layer === 'midground' ? 0.8 : 0.9;
+        ctx.drawImage(img, it.x, it.y, w, h);
+        // Layer indicator badge
+        const bx = it.x, by = it.y - 14/cam.zoom;
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = layer === 'background' ? '#1a2a4a' : layer === 'midground' ? '#1a3a1a' : '#3a2a1a';
+        ctx.fillRect(bx, by, 80/cam.zoom, 13/cam.zoom);
+        ctx.fillStyle = layer === 'background' ? '#44aaff' : layer === 'midground' ? '#44ff88' : '#ffaa44';
+        ctx.font = `bold ${10/cam.zoom}px Segoe UI`;
+        ctx.fillText(`${layer} spd:${it.speedX}`, bx + 3/cam.zoom, by + 10/cam.zoom);
+        if (selected && selected.obj === it) {
+            ctx.strokeStyle = '#8855ff'; ctx.lineWidth = 2/cam.zoom;
+            ctx.strokeRect(it.x, it.y, w, h);
+        }
+        ctx.restore();
+    });
+}
+
+function drawPlatform(p) {
+    const c = SURF_COL[p.surface] || SURF_COL.stone;
+    const isSel = selected && selected.obj === p;
+    ctx.save();
+    const g = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.height);
+    g.addColorStop(0, c.top); g.addColorStop(0.45, c.mid); g.addColorStop(1, c.bot);
+    ctx.fillStyle = g;
+    ctx.fillRect(p.x, p.y, p.width, p.height);
+    ctx.fillStyle = c.edge;
+    ctx.fillRect(p.x, p.y, p.width, Math.min(3, p.height));
+    if (p.width > 30 && p.height > 14) {
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.font = `${Math.min(12, p.height*0.55)/cam.zoom}px Segoe UI`;
+        ctx.textAlign = 'center';
+        ctx.fillText(p.surface, p.x + p.width/2, p.y + p.height/2 + 4/cam.zoom);
+        ctx.textAlign = 'left';
+    }
+    if (isSel) { ctx.strokeStyle = '#7a44cc'; ctx.lineWidth = 2/cam.zoom; ctx.strokeRect(p.x-1, p.y-1, p.width+2, p.height+2); }
+    ctx.restore();
+}
+
+function drawPlatPreview() {
+    const x = snp(Math.min(dragStart.wx, mouseW.x));
+    const y = snp(Math.min(dragStart.wy, mouseW.y));
+    const w = Math.max(SNAP||1, snp(Math.abs(mouseW.x - dragStart.wx)));
+    const h = Math.max(SNAP||1, snp(Math.abs(mouseW.y - dragStart.wy)));
+    const c = SURF_COL[activeSurface] || SURF_COL.stone;
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = c.top; ctx.fillRect(x, y, w, h);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = c.edge; ctx.lineWidth = 2/cam.zoom;
+    ctx.setLineDash([5/cam.zoom, 4/cam.zoom]);
+    ctx.strokeRect(x, y, w, h);
+    ctx.restore();
+}
+
+function drawEnemy(e, type) {
+    const isSkel = type === 'skeleton';
+    const col    = isSkel ? '#c8c8c8' : '#d05030';
+    const emoji  = isSkel ? '💀' : '👺';
+    const ew = isSkel ? 36 : 28, eh = isSkel ? 52 : 44;
+    const isSel  = selected && selected.obj === e;
+    ctx.save();
+    ctx.strokeStyle = col; ctx.lineWidth = 1.5/cam.zoom;
+    ctx.fillStyle = col + '22';
+    ctx.fillRect(e.x - ew/2, e.y - eh, ew, eh);
+    ctx.strokeRect(e.x - ew/2, e.y - eh, ew, eh);
+    ctx.font = `${16/cam.zoom}px serif`; ctx.textAlign = 'center';
+    ctx.fillStyle = col;
+    ctx.fillText(emoji, e.x, e.y - eh/2 + 6/cam.zoom);
+    ctx.font = `${9/cam.zoom}px Segoe UI`;
+    ctx.fillText(isSkel ? 'Squelette' : 'Goblin', e.x, e.y - eh - 4/cam.zoom);
+    ctx.textAlign = 'left';
+    if (isSel) { ctx.strokeStyle = '#7a44cc'; ctx.lineWidth = 2/cam.zoom; ctx.strokeRect(e.x - ew/2 - 2, e.y - eh - 2, ew+4, eh+4); }
+    ctx.restore();
+}
+
+function drawCoin(c) {
+    const isSel = selected && selected.obj === c;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(c.x, c.y, 8, 0, Math.PI*2);
+    ctx.fillStyle = '#ffee44'; ctx.fill();
+    ctx.strokeStyle = isSel ? '#7a44cc' : '#cc9900'; ctx.lineWidth = isSel ? 2/cam.zoom : 1/cam.zoom; ctx.stroke();
+    ctx.font = `${8/cam.zoom}px serif`; ctx.textAlign = 'center';
+    ctx.fillStyle = '#aa7700'; ctx.fillText('🪙', c.x, c.y + 4/cam.zoom);
+    ctx.textAlign = 'left';
+    ctx.restore();
+}
+
+function drawDropWeapon(w) {
+    const isSel = selected && selected.obj === w;
+    ctx.save();
+    ctx.strokeStyle = isSel ? '#7a44cc' : '#22aa44'; ctx.lineWidth = 1.5/cam.zoom;
+    ctx.fillStyle = isSel ? '#7a44cc22' : '#22aa4418';
+    ctx.fillRect(w.x-14, w.y-14, 28, 28); ctx.strokeRect(w.x-14, w.y-14, 28, 28);
+    ctx.font = `${13/cam.zoom}px serif`; ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(W_ICON[w.weaponId]||'⚔️', w.x, w.y + 5/cam.zoom);
+    ctx.font = `${8/cam.zoom}px Segoe UI`; ctx.fillStyle = '#66dd88';
+    ctx.fillText(W_NAME[w.weaponId], w.x, w.y - 17/cam.zoom);
+    ctx.fillStyle = '#33aa55'; ctx.fillText('⚡auto/E', w.x, w.y + 21/cam.zoom);
+    ctx.textAlign = 'left';
+    ctx.restore();
+}
+
+function drawItem(it) {
+    const isSel = selected && selected.obj === it;
+    ctx.save();
+    ctx.strokeStyle = isSel ? '#7a44cc' : '#aa44aa'; ctx.lineWidth = 1.5/cam.zoom;
+    ctx.strokeRect(it.x-11, it.y-11, 22, 22);
+    ctx.font = `${12/cam.zoom}px serif`; ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(I_ICON[it.itemId]||'?', it.x, it.y + 5/cam.zoom);
+    ctx.font = `${8/cam.zoom}px Segoe UI`; ctx.fillStyle = '#ee88ff';
+    ctx.fillText(I_NAME[it.itemId]||it.itemId, it.x, it.y - 14/cam.zoom);
+    ctx.fillStyle = '#994499'; ctx.fillText('⚡auto', it.x, it.y + 20/cam.zoom);
+    ctx.textAlign = 'left';
+    ctx.restore();
+}
+
+function drawInteractable(it) {
+    const isSel = selected && selected.obj === it;
+    const icons = { weapon_chest:'📦', item_chest:'🎁', sign:'📜' };
+    ctx.save();
+    ctx.fillStyle = '#2a1a0a'; ctx.fillRect(it.x-16, it.y-14, 32, 28);
+    ctx.strokeStyle = isSel ? '#7a44cc' : '#ffaa44'; ctx.lineWidth = 1.5/cam.zoom;
+    ctx.strokeRect(it.x-16, it.y-14, 32, 28);
+    ctx.font = `${13/cam.zoom}px serif`; ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(icons[it.type]||'📦', it.x, it.y + 5/cam.zoom);
+    ctx.font = `${8/cam.zoom}px Segoe UI`; ctx.fillStyle = '#ffaa44';
+    ctx.fillText('[E] '+(it.label||it.type), it.x, it.y - 17/cam.zoom);
+    ctx.textAlign = 'left';
+    ctx.restore();
+}
+
+function drawSpawn() {
+    const s = level.spawnPoint;
+    const isSel = selected && selected.type === 'spawn';
+    ctx.save();
+    ctx.strokeStyle = isSel ? '#7a44cc' : '#44ff88'; ctx.lineWidth = 2/cam.zoom;
+    ctx.fillStyle = '#44ff8818'; ctx.fillRect(s.x-20, s.y-50, 40, 50); ctx.strokeRect(s.x-20, s.y-50, 40, 50);
+    ctx.font = `${18/cam.zoom}px serif`; ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff'; ctx.fillText('🏁', s.x, s.y - 12/cam.zoom);
+    ctx.font = `bold ${9/cam.zoom}px Segoe UI`; ctx.fillStyle = '#44ff88';
+    ctx.fillText('SPAWN', s.x, s.y - 54/cam.zoom);
+    ctx.textAlign = 'left';
+    ctx.restore();
+}
+
+function drawGoal() {
+    const g = level.goal;
+    const isSel = selected && selected.type === 'goal';
+    ctx.save();
+    ctx.fillStyle = '#2a2a08'; ctx.fillRect(g.x, g.y, g.width, g.height);
+    ctx.strokeStyle = isSel ? '#7a44cc' : '#ffdd44'; ctx.lineWidth = 2/cam.zoom;
+    ctx.strokeRect(g.x, g.y, g.width, g.height);
+    ctx.font = `${11/cam.zoom}px Segoe UI`; ctx.textAlign = 'center'; ctx.fillStyle = '#ffdd44';
+    ctx.fillText('🏆 OBJECTIF', g.x + g.width/2, g.y - 5/cam.zoom);
+    ctx.textAlign = 'left';
+    ctx.restore();
+}
+
+function drawSelection() {
+    const t = selected.type;
+    if (t === 'platform') drawHandles(selected.obj.x, selected.obj.y, selected.obj.width, selected.obj.height);
+    else if (t === 'goal') drawHandles(level.goal.x, level.goal.y, level.goal.width, level.goal.height);
+}
+
+function drawHandles(x, y, w, h) {
+    getHandles(x, y, w, h).forEach(({hx, hy}) => {
+        const s = 6/cam.zoom;
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = '#7a44cc'; ctx.lineWidth = 1.5/cam.zoom;
+        ctx.fillRect(hx-s/2, hy-s/2, s, s); ctx.strokeRect(hx-s/2, hy-s/2, s, s);
+    });
+}
+
+function getHandles(x, y, w, h) {
+    return [
+        {n:'nw',hx:x,    hy:y   }, {n:'n', hx:x+w/2,hy:y   }, {n:'ne',hx:x+w,hy:y   },
+        {n:'w', hx:x,    hy:y+h/2}, {n:'e', hx:x+w,  hy:y+h/2},
+        {n:'sw',hx:x,    hy:y+h }, {n:'s', hx:x+w/2,hy:y+h }, {n:'se',hx:x+w,hy:y+h },
+    ];
+}
+
+// ─── HIT TEST ────────────────────────────────────────────────────────────────
+function hitAll(wx, wy) {
+    // Resize handles first
+    if (selected && (selected.type === 'platform' || selected.type === 'goal')) {
+        const o = selected.type === 'goal' ? level.goal : selected.obj;
+        const hs = 8/cam.zoom;
+        for (const h of getHandles(o.x, o.y, o.width, o.height)) {
+            if (Math.abs(wx-h.hx) < hs && Math.abs(wy-h.hy) < hs)
+                return { type:'resize', handle:h.n, obj:o };
+        }
+    }
+    // SVG layers
+    for (const l of ['foreground','midground','background']) {
+        const items = level.parallax[l];
+        for (let i = items.length-1; i >= 0; i--) {
+            const it = items[i]; const img = svgCache[it.id];
+            if (!img) continue;
+            const w = img.naturalWidth * it.scale, h = img.naturalHeight * it.scale;
+            if (wx >= it.x && wx <= it.x+w && wy >= it.y && wy <= it.y+h)
+                return { type:'svg', layer:l, obj:it };
+        }
+    }
+    // Goal
+    const g = level.goal;
+    if (wx>=g.x && wx<=g.x+g.width && wy>=g.y && wy<=g.y+g.height) return { type:'goal', obj:g };
+    // Spawn
+    const s = level.spawnPoint;
+    if (wx>=s.x-20 && wx<=s.x+20 && wy>=s.y-50 && wy<=s.y) return { type:'spawn', obj:s };
+    // Interactables
+    for (let i = level.interactables.length-1; i >= 0; i--) {
+        const it = level.interactables[i];
+        if (wx>=it.x-16&&wx<=it.x+16&&wy>=it.y-14&&wy<=it.y+14) return { type:'interactable', obj:it };
+    }
+    // Items
+    for (let i = level.items.length-1; i >= 0; i--) {
+        const it = level.items[i];
+        if (Math.abs(wx-it.x)<13&&Math.abs(wy-it.y)<13) return { type:'item', obj:it };
+    }
+    // Dropped weapons
+    for (let i = level.droppedWeapons.length-1; i >= 0; i--) {
+        const w = level.droppedWeapons[i];
+        if (Math.abs(wx-w.x)<15&&Math.abs(wy-w.y)<15) return { type:'droppedWeapon', obj:w };
+    }
+    // Coins
+    for (let i = level.coins.length-1; i >= 0; i--) {
+        const c = level.coins[i];
+        if (Math.hypot(wx-c.x, wy-c.y) < 10) return { type:'coin', obj:c };
+    }
+    // Goblins
+    for (let i = level.goblins.length-1; i >= 0; i--) {
+        const e = level.goblins[i];
+        if (Math.abs(wx-e.x)<15&&wy>=e.y-44&&wy<=e.y) return { type:'goblin', obj:e };
+    }
+    // Skeletons
+    for (let i = level.skeletons.length-1; i >= 0; i--) {
+        const e = level.skeletons[i];
+        if (Math.abs(wx-e.x)<19&&wy>=e.y-52&&wy<=e.y) return { type:'skeleton', obj:e };
+    }
+    // Platforms
+    for (let i = level.platforms.length-1; i >= 0; i--) {
+        const p = level.platforms[i];
+        if (wx>=p.x&&wx<=p.x+p.width&&wy>=p.y&&wy<=p.y+p.height) return { type:'platform', obj:p };
+    }
+    return null;
+}
+
+// ─── MOUSE EVENTS ────────────────────────────────────────────────────────────
+canvas.addEventListener('mousedown', onMD);
+canvas.addEventListener('mousemove', onMM);
+canvas.addEventListener('mouseup',   onMU);
+canvas.addEventListener('wheel',     onWheel, { passive:false });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+function getWP(e) {
+    const r = canvas.getBoundingClientRect();
+    return s2w(e.clientX - r.left, e.clientY - r.top);
+}
+
+function onMD(e) {
+    const r  = canvas.getBoundingClientRect();
+    const sx = e.clientX - r.left, sy = e.clientY - r.top;
+    const wp = s2w(sx, sy);
+
+    if (e.button === 1 || e.button === 2 || (e.button === 0 && e.altKey)) {
+        isDrag = true; dragMode = 'pan';
+        dragStart = { sx, sy, cx:cam.x, cy:cam.y };
+        canvas.style.cursor = 'grabbing';
+        e.preventDefault(); return;
+    }
+    if (e.button !== 0) return;
+
+    if (tool === 'select') {
+        const hit = hitAll(wp.x, wp.y);
+        if (hit) {
+            if (hit.type === 'resize') {
+                saveState();
+                isDrag = true; dragMode = 'resize'; resizeHnd = hit.handle; dragObj = hit.obj;
+                dragStart = { wx:wp.x, wy:wp.y, ox:hit.obj.x, oy:hit.obj.y, ow:hit.obj.width, oh:hit.obj.height };
+            } else {
+                setSel(hit); saveState();
+                isDrag = true; dragMode = 'move';
+                dragObj = hit.type==='spawn' ? level.spawnPoint : hit.type==='goal' ? level.goal : hit.obj;
+                dragStart = { wx:wp.x, wy:wp.y, ox:dragObj.x, oy:dragObj.y };
+            }
+        } else {
+            setSel(null);
+        }
+        render(); updateProps();
+
+    } else if (tool === 'platform') {
+        saveState(); isDrag = true; dragMode = 'platdraw';
+        dragStart = { wx:snp(wp.x), wy:snp(wp.y) };
+        render();
+
+    } else if (tool === 'svg') {
+        if (pendingSVG) {
+            const it = { id:uid(), name:pendingSVG.name, dataUrl:pendingSVG.dataUrl,
+                x:snp(wp.x), y:snp(wp.y), scale:1, speedX:activeSVGSpeedX, speedY:activeSVGSpeedY };
+            saveState();
+            level.parallax[activeSVGLayer].push(it);
+            svgCache[it.id] = pendingSVG.img;
+            setSel({ type:'svg', layer:activeSVGLayer, obj:it });
+            render(); updateProps();
+        } else {
+            const hit = hitAll(wp.x, wp.y);
+            if (hit && hit.type === 'svg') { setSel(hit); render(); updateProps(); }
+        }
+
+    } else {
+        saveState();
+        placeObj(tool, wp.x, wp.y);
+        render(); updateProps();
+    }
+}
+
+function onMM(e) {
+    const r  = canvas.getBoundingClientRect();
+    const sx = e.clientX - r.left, sy = e.clientY - r.top;
+    const wp = s2w(sx, sy);
+    mouseW = wp;
+    document.getElementById('s-xy').textContent = `x: ${Math.round(wp.x)}, y: ${Math.round(wp.y)}`;
+
+    if (!isDrag) {
+        if (tool === 'select') {
+            const hit = hitAll(wp.x, wp.y);
+            canvas.style.cursor = hit ? (hit.type==='resize' ? cursorForHandle(hit.handle) : 'move') : 'default';
+        } else {
+            canvas.style.cursor = tool === 'platform' ? 'crosshair' : 'cell';
+        }
+        return;
+    }
+
+    if (dragMode === 'pan') {
+        cam.x = dragStart.cx - (sx - dragStart.sx)/cam.zoom;
+        cam.y = dragStart.cy - (sy - dragStart.sy)/cam.zoom;
+        render(); return;
+    }
+    if (dragMode === 'move' && dragObj) {
+        const dx = wp.x - dragStart.wx, dy = wp.y - dragStart.wy;
+        dragObj.x = snp(dragStart.ox + dx);
+        dragObj.y = snp(dragStart.oy + dy);
+        render(); updateProps(); return;
+    }
+    if (dragMode === 'resize' && dragObj) {
+        applyResize(dragObj, dragStart, resizeHnd, wp.x - dragStart.wx, wp.y - dragStart.wy);
+        render(); updateProps(); return;
+    }
+    if (dragMode === 'platdraw') { render(); return; }
+}
+
+function onMU(e) {
+    if (!isDrag) return;
+    const wp = getWP(e);
+
+    if (dragMode === 'platdraw') {
+        const x = snp(Math.min(dragStart.wx, wp.x));
+        const y = snp(Math.min(dragStart.wy, wp.y));
+        const w = Math.max(SNAP||5, snp(Math.abs(wp.x - dragStart.wx)));
+        const h = Math.max(SNAP||5, snp(Math.abs(wp.y - dragStart.wy)));
+        if (w >= 4 && h >= 4) {
+            const p = { id:uid(), x, y, width:w, height:h, surface:activeSurface };
+            level.platforms.push(p);
+            setSel({ type:'platform', obj:p });
+            updateProps();
+        }
+    }
+    isDrag = false; dragMode = null; dragObj = null;
+    canvas.style.cursor = tool === 'select' ? 'default' : tool === 'platform' ? 'crosshair' : 'cell';
+    render();
+}
+
+function onWheel(e) {
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect();
+    const wp = s2w(e.clientX - r.left, e.clientY - r.top);
+    const f = e.deltaY < 0 ? 1.1 : 0.9091;
+    const nz = Math.max(0.08, Math.min(10, cam.zoom * f));
+    cam.x = wp.x - (wp.x - cam.x) * (nz/cam.zoom);
+    cam.y = wp.y - (wp.y - cam.y) * (nz/cam.zoom);
+    cam.zoom = nz;
+    document.getElementById('s-zoom').textContent = `Zoom: ${Math.round(cam.zoom*100)}%`;
+    render();
+}
+
+function cursorForHandle(h) {
+    return { n:'n-resize',s:'s-resize',e:'e-resize',w:'w-resize',ne:'ne-resize',nw:'nw-resize',se:'se-resize',sw:'sw-resize' }[h] || 'move';
+}
+
+function applyResize(o, ds, h, dx, dy) {
+    const mn = SNAP||4;
+    if (h.includes('e')) o.width  = Math.max(mn, snp(ds.ow + dx));
+    if (h.includes('s')) o.height = Math.max(mn, snp(ds.oh + dy));
+    if (h.includes('w')) { const nw=Math.max(mn,snp(ds.ow-dx)); o.x=ds.ox+(ds.ow-nw); o.width=nw; }
+    if (h.includes('n')) { const nh=Math.max(mn,snp(ds.oh-dy)); o.y=ds.oy+(ds.oh-nh); o.height=nh; }
+}
+
+// ─── PLACEMENT ────────────────────────────────────────────────────────────────
+function placeObj(t, wx, wy) {
+    const x = snp(wx), y = snp(wy);
+    switch (t) {
+        case 'skeleton':     level.skeletons.push({ id:uid(), x, y }); break;
+        case 'goblin':       level.goblins.push({ id:uid(), x, y }); break;
+        case 'coin':         level.coins.push({ id:uid(), x, y }); break;
+        case 'weapon':       level.droppedWeapons.push({ id:uid(), x, y, weaponId:activeWeapon }); break;
+        case 'item':         level.items.push({ id:uid(), x, y, itemId:activeItem }); break;
+        case 'interactable': level.interactables.push({ id:uid(), x, y, type:activeIntType, label:activeIntPayload, payload:activeIntPayload }); break;
+        case 'spawn':        level.spawnPoint.x = x; level.spawnPoint.y = y; setSel({ type:'spawn', obj:level.spawnPoint }); break;
+        case 'goal':         level.goal.x = x; level.goal.y = y; setSel({ type:'goal', obj:level.goal }); break;
+    }
+}
+
+// ─── SELECTION ────────────────────────────────────────────────────────────────
+function setSel(hit) { selected = hit; updateProps(); updateStatus(); }
+
+function delSel() {
+    if (!selected) return;
+    saveState();
+    const { type, obj, layer } = selected;
+    if (type==='platform')     level.platforms     = level.platforms.filter(p=>p!==obj);
+    else if (type==='skeleton')     level.skeletons     = level.skeletons.filter(e=>e!==obj);
+    else if (type==='goblin')       level.goblins       = level.goblins.filter(e=>e!==obj);
+    else if (type==='coin')         level.coins         = level.coins.filter(c=>c!==obj);
+    else if (type==='droppedWeapon')level.droppedWeapons= level.droppedWeapons.filter(w=>w!==obj);
+    else if (type==='item')         level.items         = level.items.filter(i=>i!==obj);
+    else if (type==='interactable') level.interactables = level.interactables.filter(i=>i!==obj);
+    else if (type==='svg')          level.parallax[layer] = level.parallax[layer].filter(i=>i!==obj);
+    setSel(null); render();
+}
+
+function dupSel() {
+    if (!selected||selected.type==='spawn'||selected.type==='goal') return;
+    const clone = JSON.parse(JSON.stringify(selected.obj));
+    clone.id = uid(); clone.x += 40;
+    saveState();
+    if (selected.type==='platform')      level.platforms.push(clone);
+    else if (selected.type==='skeleton') level.skeletons.push(clone);
+    else if (selected.type==='goblin')   level.goblins.push(clone);
+    else if (selected.type==='coin')     level.coins.push(clone);
+    else if (selected.type==='droppedWeapon') level.droppedWeapons.push(clone);
+    else if (selected.type==='item')     level.items.push(clone);
+    else if (selected.type==='interactable') level.interactables.push(clone);
+    else if (selected.type==='svg') {
+        level.parallax[selected.layer].push(clone);
+        svgCache[clone.id] = svgCache[selected.obj.id];
+    }
+    setSel({ type:selected.type, layer:selected.layer, obj:clone });
+    render(); updateProps();
+}
+
+// ─── KEYBOARD ────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+    if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+    if (e.ctrlKey) {
+        if (e.key==='z') { e.preventDefault(); undo(); return; }
+        if (e.key==='y') { e.preventDefault(); redo(); return; }
+        if (e.key==='s') { e.preventDefault(); saveLevel(); return; }
+        if (e.key==='d') { e.preventDefault(); dupSel(); return; }
+    }
+    if (e.key==='Delete'||e.key==='Backspace') { delSel(); return; }
+    if (e.key==='Escape') { setSel(null); pendingSVG=null; render(); updateProps(); updateToolUI(); return; }
+    if (e.key==='f') { frameSelected(); return; }
+    if (e.key==='Home') { frameAll(); return; }
+    // Tool shortcuts
+    const tm = { v:'select',p:'platform',k:'skeleton',g:'goblin',w:'weapon',i:'item',u:'interactable',d:'svg',x:'spawn',o:'goal',c:'coin' };
+    if (!e.ctrlKey && tm[e.key]) { setTool(tm[e.key]); return; }
+    // Arrow nudge
+    if (selected && e.key.startsWith('Arrow')) {
+        e.preventDefault();
+        const step = e.shiftKey ? (SNAP*5||100) : (SNAP||20);
+        const dx = e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0;
+        const dy = e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;
+        const o = selected.type==='spawn'?level.spawnPoint:selected.type==='goal'?level.goal:selected.obj;
+        if (o) { saveState(); o.x+=dx; o.y+=dy; render(); updateProps(); }
+    }
+});
+
+function frameSelected() {
+    const o = selected?.type==='spawn'?level.spawnPoint:selected?.type==='goal'?level.goal:selected?.obj;
+    if (!o) { frameAll(); return; }
+    cam.x = o.x + (o.width||0)/2;
+    cam.y = o.y + (o.height||0)/2;
+    render();
+}
+
+function frameAll() {
+    const all = level.platforms;
+    if (!all.length) { cam.x=0; cam.y=400; cam.zoom=1; render(); return; }
+    let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+    all.forEach(p => { x0=Math.min(x0,p.x);y0=Math.min(y0,p.y);x1=Math.max(x1,p.x+p.width);y1=Math.max(y1,p.y+p.height); });
+    cam.x=(x0+x1)/2; cam.y=(y0+y1)/2;
+    cam.zoom=Math.min(canvas.width/(x1-x0+200), canvas.height/(y1-y0+200), 2);
+    render();
+}
+
+// ─── TOOL SWITCHING ───────────────────────────────────────────────────────────
+function setTool(t) {
+    tool = t; pendingSVG = null;
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool===t));
+    canvas.style.cursor = t==='select'?'default':t==='platform'?'crosshair':'cell';
+    updateToolUI();
+}
+
+function updateToolUI() {
+    const titles = { select:'Sélection', platform:'Plateforme', skeleton:'Squelette', goblin:'Goblin',
+        weapon:'Arme (sol)', item:'Item auto', interactable:'Interactif (E)', svg:'SVG décoratif',
+        spawn:'Point départ', goal:'Objectif', coin:'Pièce' };
+    document.getElementById('tool-title').textContent = titles[tool]||tool;
+    const c = document.getElementById('tool-content');
+    if (tool==='platform') {
+        c.innerHTML = `<p class="hint" style="margin-bottom:5px">Clic+drag pour placer</p>`
+            + SURFACES.map(s => {
+                const col = SURF_COL[s];
+                return `<div class="sopt${activeSurface===s?' sel':''}" onclick="activeSurface='${s}';document.querySelectorAll('.sopt').forEach(e=>e.classList.toggle('sel',e.dataset.s==='${s}'))"><div class="swatch" style="background:linear-gradient(${col.top},${col.bot})"></div><span style="font-size:11px">${s}</span></div>`.replace('data-s=',`data-s="${s}" style="display:flex;align-items:center;gap:5px;padding:3px 5px;border:1px solid ${activeSurface===s?'#7a44cc':'#2a2a44'};border-radius:3px;cursor:pointer;margin-bottom:2px" data-s=`);
+            }).join('');
+        // Re-render surface buttons cleanly
+        c.innerHTML = `<p class="hint" style="margin-bottom:5px">Clic+drag pour placer. Surface :</p>`
+            + SURFACES.map(s => {
+                const col = SURF_COL[s];
+                return `<div class="sopt ${activeSurface===s?'sel':''}" data-s="${s}" onclick="activeSurface='${s}';document.querySelectorAll('.sopt').forEach(x=>x.classList.toggle('sel',x.dataset.s==='${s}'))">`
+                    + `<div class="swatch" style="background:linear-gradient(to bottom,${col.top},${col.mid},${col.bot})"></div>`
+                    + `<span style="font-size:11px">${s.charAt(0).toUpperCase()+s.slice(1)}</span></div>`;
+            }).join('');
+    } else if (tool==='weapon') {
+        c.innerHTML = `<p class="hint" style="margin-bottom:5px">Auto si libre, sinon E :</p>`
+            + `<select onchange="activeWeapon=this.value" style="width:100%">`
+            + WEAPONS.map(w=>`<option value="${w}" ${activeWeapon===w?'selected':''}>${W_ICON[w]} ${W_NAME[w]}</option>`).join('')
+            + `</select>`;
+    } else if (tool==='item') {
+        c.innerHTML = `<p class="hint" style="margin-bottom:5px">Ramassage automatique :</p>`
+            + `<select onchange="activeItem=this.value" style="width:100%">`
+            + ITEMS.map(i=>`<option value="${i}" ${activeItem===i?'selected':''}>${I_ICON[i]} ${I_NAME[i]}</option>`).join('')
+            + `</select>`;
+    } else if (tool==='interactable') {
+        c.innerHTML = `<p class="hint" style="margin-bottom:5px">Nécessite touche E :</p>`
+            + `<div class="prow"><label>Type</label><select id="itype" onchange="activeIntType=this.value;updateIntPayload()" style="flex:1">`
+            + `<option value="weapon_chest">📦 Coffre arme</option><option value="item_chest">🎁 Coffre item</option><option value="sign">📜 Panneau</option>`
+            + `</select></div><div id="ipayrow" class="prow"><label>Contenu</label>`
+            + `<select id="ipay" onchange="activeIntPayload=this.value" style="flex:1">`
+            + WEAPONS.map(w=>`<option value="${w}">${W_NAME[w]}</option>`).join('') + `</select></div>`;
+    } else if (tool==='svg') {
+        c.innerHTML = `<button class="btn" onclick="document.getElementById('svgFileInput').click()" style="width:100%;margin-bottom:6px">📁 Importer SVG</button>`
+            + (pendingSVG ? `<p style="font-size:11px;color:#44ff88;margin-bottom:6px">✓ ${pendingSVG.name} — clic sur le canvas</p>` : `<p class="hint" style="margin-bottom:6px">Importer puis cliquer</p>`)
+            + `<div class="prow"><label>Couche</label><select onchange="activeSVGLayer=this.value" style="flex:1">`
+            + LAYERS.map(l=>`<option value="${l}" ${activeSVGLayer===l?'selected':''}>${l}</option>`).join('')
+            + `</select></div>`
+            + `<div class="prow"><label>Vitesse X</label><input type="number" step="0.05" min="0" max="2" value="${activeSVGSpeedX}" onchange="activeSVGSpeedX=+this.value" style="flex:1"></div>`
+            + `<div class="prow"><label>Vitesse Y</label><input type="number" step="0.05" min="0" max="2" value="${activeSVGSpeedY}" onchange="activeSVGSpeedY=+this.value" style="flex:1"></div>`;
+    } else if (tool==='select') {
+        c.innerHTML = `<p class="hint">Clic — sélectionner<br>Drag — déplacer<br>Del — supprimer<br>Ctrl+D — dupliquer<br>Flèches — nudger<br>F — cadrer<br>Home — tout cadrer</p>`;
+    } else {
+        c.innerHTML = `<p class="hint">Clic sur le canvas pour placer</p>`;
+    }
+}
+
+function updateIntPayload() {
+    activeIntType = document.getElementById('itype')?.value || 'weapon_chest';
+    const row = document.getElementById('ipayrow');
+    if (!row) return;
+    if (activeIntType==='weapon_chest') {
+        row.innerHTML = `<label>Arme</label><select id="ipay" onchange="activeIntPayload=this.value" style="flex:1">${WEAPONS.map(w=>`<option value="${w}">${W_NAME[w]}</option>`).join('')}</select>`;
+    } else if (activeIntType==='item_chest') {
+        row.innerHTML = `<label>Item</label><select id="ipay" onchange="activeIntPayload=this.value" style="flex:1">${ITEMS.map(i=>`<option value="${i}">${I_NAME[i]}</option>`).join('')}</select>`;
+    } else {
+        row.innerHTML = `<label>Texte</label><input id="ipay" type="text" placeholder="Message..." onchange="activeIntPayload=this.value" style="flex:1">`;
+    }
+    activeIntPayload = document.getElementById('ipay')?.value || WEAPONS[0];
+}
+
+// ─── PROPERTIES PANEL ────────────────────────────────────────────────────────
+function setObjProp(key, val) {
+    if (!selected) return;
+    const o = selected.type==='spawn'?level.spawnPoint:selected.type==='goal'?level.goal:selected.obj;
+    saveState(); o[key] = +val||0; render(); updateStatus();
+}
+function setObjStr(key, val) {
+    if (!selected||!selected.obj) return;
+    saveState(); selected.obj[key] = val; render();
+}
+
+function nf(label, key, val, min='') {
+    return `<div class="prop-row"><label>${label}</label><input type="number" value="${val??0}" ${min!==''?`min="${min}"`:''}
+        style="flex:1" onchange="setObjProp('${key}',this.value)"></div>`;
+}
+
+function updateProps() {
+    const el = document.getElementById('props');
+    if (!selected) { el.innerHTML = `<p style="color:#44446a;font-size:11px;font-style:italic">Aucun objet sélectionné</p>`; return; }
+    const { type, obj, layer } = selected;
+    const tagMap = { platform:'t-plat',skeleton:'t-skel',goblin:'t-gob',droppedWeapon:'t-wep',item:'t-item',interactable:'t-int',svg:'t-svg',spawn:'t-spawn',goal:'t-goal',coin:'t-coin' };
+    const nameMap = { platform:'Plateforme',skeleton:'Squelette',goblin:'Goblin',droppedWeapon:'Arme sol',item:'Item',interactable:'Interactif',svg:'SVG',spawn:'Spawn',goal:'Objectif',coin:'Pièce' };
+    let h = `<div class="tag ${tagMap[type]||''}">${nameMap[type]||type}</div>`;
+    const o = type==='spawn'?level.spawnPoint:type==='goal'?level.goal:obj;
+
+    if (type==='platform') {
+        h += nf('X', 'x', o.x) + nf('Y', 'y', o.y) + nf('Larg.', 'width', o.width, 4) + nf('Haut.', 'height', o.height, 4);
+        h += `<div class="prop-row"><label>Surface</label><select onchange="saveState();selected.obj.surface=this.value;render()" style="flex:1">`
+            + SURFACES.map(s=>`<option value="${s}" ${o.surface===s?'selected':''}>${s}</option>`).join('') + `</select></div>`;
+    } else if (type==='skeleton'||type==='goblin') {
+        h += nf('X','x',o.x) + nf('Y','y',o.y);
+        h += `<p class="hint" style="margin-top:4px">Patrouille auto ±100px</p>`;
+    } else if (type==='coin') {
+        h += nf('X','x',o.x) + nf('Y','y',o.y);
+    } else if (type==='droppedWeapon') {
+        h += nf('X','x',o.x) + nf('Y','y',o.y);
+        h += `<div class="prop-row"><label>Arme</label><select onchange="saveState();selected.obj.weaponId=this.value;render()" style="flex:1">`
+            + WEAPONS.map(w=>`<option value="${w}" ${o.weaponId===w?'selected':''}>${W_ICON[w]} ${W_NAME[w]}</option>`).join('') + `</select></div>`;
+        h += `<p class="hint" style="margin-top:4px">Auto si libre, sinon touche E</p>`;
+    } else if (type==='item') {
+        h += nf('X','x',o.x) + nf('Y','y',o.y);
+        h += `<div class="prop-row"><label>Item</label><select onchange="saveState();selected.obj.itemId=this.value;render()" style="flex:1">`
+            + ITEMS.map(i=>`<option value="${i}" ${o.itemId===i?'selected':''}>${I_ICON[i]} ${I_NAME[i]}</option>`).join('') + `</select></div>`;
+        h += `<p class="hint" style="margin-top:4px">Ramassage automatique</p>`;
+    } else if (type==='interactable') {
+        h += nf('X','x',o.x) + nf('Y','y',o.y);
+        h += `<div class="prop-row"><label>Type</label><select onchange="saveState();selected.obj.type=this.value;render()" style="flex:1">`
+            + `<option value="weapon_chest" ${o.type==='weapon_chest'?'selected':''}>📦 Coffre arme</option>`
+            + `<option value="item_chest" ${o.type==='item_chest'?'selected':''}>🎁 Coffre item</option>`
+            + `<option value="sign" ${o.type==='sign'?'selected':''}>📜 Panneau</option></select></div>`;
+        h += `<div class="prop-row"><label>Contenu</label><input type="text" value="${o.payload||''}" style="flex:1" onchange="saveState();selected.obj.payload=this.value;selected.obj.label=this.value;render()"></div>`;
+        h += `<p class="hint" style="margin-top:4px">Nécessite touche E</p>`;
+    } else if (type==='svg') {
+        h += `<div class="prop-row"><label>Nom</label><input type="text" value="${o.name||''}" style="flex:1" onchange="selected.obj.name=this.value;render()"></div>`;
+        h += nf('X','x',o.x) + nf('Y','y',o.y);
+        h += `<div class="prop-row"><label>Échelle</label><input type="number" value="${o.scale||1}" step="0.1" min="0.05" style="flex:1" onchange="saveState();selected.obj.scale=+this.value||1;render()"></div>`;
+        h += `<div class="prop-row"><label>Couche</label><select onchange="moveSVGLayer(this.value)" style="flex:1">`
+            + LAYERS.map(l=>`<option value="${l}" ${layer===l?'selected':''}>${l}</option>`).join('') + `</select></div>`;
+        h += `<div class="prop-row"><label>Vit. X</label><input type="number" value="${o.speedX||0}" step="0.05" min="0" max="2" style="flex:1" onchange="saveState();selected.obj.speedX=+this.value;render()"></div>`;
+        h += `<div class="prop-row"><label>Vit. Y</label><input type="number" value="${o.speedY||0}" step="0.05" min="0" max="2" style="flex:1" onchange="saveState();selected.obj.speedY=+this.value;render()"></div>`;
+    } else if (type==='spawn') {
+        h += nf('X','x',o.x) + nf('Y','y',o.y);
+        h += `<p class="hint" style="margin-top:4px">Position de départ du joueur</p>`;
+    } else if (type==='goal') {
+        h += nf('X','x',o.x) + nf('Y','y',o.y) + nf('Larg.','width',o.width,20) + nf('Haut.','height',o.height,5);
+    }
+
+    h += `<hr style="border-color:#2a2a44;margin:8px 0">
+          <button class="btn danger" onclick="delSel()" style="width:100%">🗑️ Supprimer (Del)</button>`;
+    if (type!=='spawn'&&type!=='goal')
+        h += `<button class="btn" onclick="dupSel()" style="width:100%;margin-top:4px">📋 Dupliquer (Ctrl+D)</button>`;
+    el.innerHTML = h;
+}
+
+function moveSVGLayer(nl) {
+    if (!selected||selected.type!=='svg') return;
+    saveState();
+    level.parallax[selected.layer] = level.parallax[selected.layer].filter(i=>i!==selected.obj);
+    level.parallax[nl].push(selected.obj);
+    selected.layer = nl; render();
+}
+
+// ─── STATUS ───────────────────────────────────────────────────────────────────
+function updateStatus() {
+    const nm = { platform:'Plat.',skeleton:'Squelette',goblin:'Goblin',droppedWeapon:'Arme',item:'Item',interactable:'Interactif',svg:'SVG',spawn:'Spawn',goal:'Goal',coin:'Pièce' };
+    document.getElementById('s-sel').textContent = selected
+        ? `Sélection: ${nm[selected.type]||selected.type} (${Math.round(selected.obj?.x||0)}, ${Math.round(selected.obj?.y||0)})`
+        : '—';
+    const np = level.parallax.background.length + level.parallax.midground.length + level.parallax.foreground.length;
+    document.getElementById('s-count').textContent =
+        `${level.platforms.length} plat. / ${level.skeletons.length+level.goblins.length} ennemis / ${level.coins.length} pièces / ${level.droppedWeapons.length+level.items.length+level.interactables.length} items / ${np} SVG`;
+    document.getElementById('s-zoom').textContent = `Zoom: ${Math.round(cam.zoom*100)}%`;
+}
+
+// ─── SVG IMPORT ───────────────────────────────────────────────────────────────
+function onSVGLoad(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const dataUrl = ev.target.result;
+        const img = new Image();
+        img.onload = () => { pendingSVG = { dataUrl, img, name: file.name.replace(/\.svg$/i,'') }; updateToolUI(); };
+        img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+    setTool('svg');
+}
+
+// ─── SAVE / LOAD ─────────────────────────────────────────────────────────────
+function exportLevel() {
+    const strip = arr => arr.map(o => { const c={...o}; delete c.id; return c; });
+    return {
+        name: level.name, sky: level.sky, spawnPoint: level.spawnPoint,
+        goal: level.goal, deadZone: level.deadZone,
+        parallax: {
+            background: strip(level.parallax.background),
+            midground:  strip(level.parallax.midground),
+            foreground: strip(level.parallax.foreground),
+        },
+        platforms:      strip(level.platforms),
+        skeletons:      strip(level.skeletons),
+        goblins:        strip(level.goblins),
+        coins:          strip(level.coins),
+        droppedWeapons: strip(level.droppedWeapons),
+        items:          strip(level.items),
+        interactables:  strip(level.interactables),
+    };
+}
+
+function saveLevel() {
+    const blob = new Blob([JSON.stringify(exportLevel(), null, 2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (level.name||'niveau').replace(/\s+/g,'_') + '.json';
+    a.click(); URL.revokeObjectURL(a.href);
+}
+
+function triggerLoad() { document.getElementById('fileInput').click(); }
+
+function onFileLoad(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        try { importLevel(JSON.parse(ev.target.result)); }
+        catch(err) { alert('Erreur JSON : '+err.message); }
+    };
+    reader.readAsText(file); e.target.value = '';
+}
+
+function importLevel(data) {
+    const addId = arr => (arr||[]).map(o=>({...o,id:uid()}));
+    level = {
+        name: data.name||'Niveau',
+        sky: data.sky||{ top:'#040610', bottom:'#0d1828' },
+        spawnPoint: data.spawnPoint||{ x:100, y:450 },
+        goal: data.goal||{ x:2200, y:490, width:180, height:20 },
+        deadZone: data.deadZone||1100,
+        parallax: {
+            background: addId(data.parallax?.background),
+            midground:  addId(data.parallax?.midground),
+            foreground: addId(data.parallax?.foreground),
+        },
+        platforms:      addId(data.platforms),
+        skeletons:      addId(data.skeletons),
+        goblins:        addId(data.goblins),
+        coins:          addId(data.coins),
+        droppedWeapons: addId(data.droppedWeapons),
+        items:          addId(data.items),
+        interactables:  addId(data.interactables),
+    };
+    document.getElementById('lvlName').value = level.name;
+    document.getElementById('lvlDead').value = level.deadZone;
+    document.getElementById('skyTop').value  = level.sky.top;
+    document.getElementById('skyBot').value  = level.sky.bottom;
+    selected = null; svgCache._all = null;
+    rebuildCache();
+    frameAll(); render(); updateProps(); updateStatus();
+}
+
+function newLevel() {
+    if (!confirm('Nouveau niveau ? Les modifications non sauvegardées seront perdues.')) return;
+    level = freshLevel();
+    document.getElementById('lvlName').value = level.name;
+    document.getElementById('lvlDead').value = level.deadZone;
+    document.getElementById('skyTop').value  = level.sky.top;
+    document.getElementById('skyBot').value  = level.sky.bottom;
+    cam = { x:400, y:400, zoom:1 }; selected = null;
+    render(); updateProps(); updateStatus();
+}
+
+// ─── TEST MODE ────────────────────────────────────────────────────────────────
+function testLevel() {
+    const skin = parseInt(document.getElementById('testSkin').value)||0;
+    localStorage.setItem('sck_editor_level', JSON.stringify(exportLevel()));
+    localStorage.setItem('sck_editor_skin',  String(skin));
+    window.open('index.html?editorTest=1', '_blank');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+setTool('select');
+updateToolUI();
+updateProps();
+updateStatus();
+</script>
+</body>
+</html>

@@ -3865,7 +3865,9 @@
     let coins = [];
     let clouds = [];
     let enemies = [];
-    let items = []; 
+    let items = [];
+    let levelInteractables = [];
+    let _parallaxImgs = {};
     
     // Listes pour le système de sang (VFX)
     let hitEffects = [];
@@ -4036,6 +4038,18 @@
     };
 
     let currentLevelData = defaultLevelData;
+
+    // ── Chargement depuis l'éditeur de niveaux ──────────────────────────────
+    if (new URLSearchParams(window.location.search).get('editorTest')) {
+        try {
+            const _el = localStorage.getItem('sck_editor_level');
+            if (_el) currentLevelData = JSON.parse(_el);
+            const _es = localStorage.getItem('sck_editor_skin');
+            if (_es !== null) currentSkinIndex = parseInt(_es) || 0;
+        } catch(e) {}
+        localStorage.removeItem('sck_editor_level');
+        localStorage.removeItem('sck_editor_skin');
+    }
 
     document.getElementById('levelLoader').addEventListener('change', function(e) {
         const file = e.target.files[0];
@@ -5800,8 +5814,8 @@
         }
 
         reset() {
-            this.x = 100;
-            this.y = 0;
+            this.x = currentLevelData?.spawnPoint ? currentLevelData.spawnPoint.x : 100;
+            this.y = currentLevelData?.spawnPoint ? currentLevelData.spawnPoint.y : 0;
             this.vx = 0;
             this.vy = 0;
             // ── INVENTAIRE D'ARMES ──────────────────────────────────────
@@ -9504,7 +9518,70 @@
             ? currentLevelData.deadZone
             : lowestPlat + 500;
 
+        // ── Armes pré-placées (éditeur) ──────────────────────────────
+        if (currentLevelData.droppedWeapons) {
+            currentLevelData.droppedWeapons.forEach(w => droppedWeapons.push(new DroppedWeapon(w.x, w.y, w.weaponId)));
+        }
+        // ── Items pré-placés (éditeur) ────────────────────────────────
+        if (currentLevelData.items) {
+            currentLevelData.items.forEach(it => items.push(new ItemDrop(it.x, it.y, it.itemId)));
+        }
+        // ── Objets interactifs (éditeur) ──────────────────────────────
+        levelInteractables = [];
+        if (currentLevelData.interactables) {
+            currentLevelData.interactables.forEach(it => levelInteractables.push(new LevelInteractable(it)));
+        }
+        // ── Préchargement SVG parallaxe ───────────────────────────────
+        _parallaxImgs = {};
+        ['background','midground','foreground'].forEach(l => {
+            (currentLevelData.parallax?.[l] || []).forEach(it => {
+                if (it.dataUrl && !_parallaxImgs[it.dataUrl]) {
+                    const img = new Image(); img.src = it.dataUrl; _parallaxImgs[it.dataUrl] = img;
+                }
+            });
+        });
         // pas de nuages — fond nuit statique
+    }
+
+    // ── Rendu couche parallaxe (espace écran) ─────────────────────────────────
+    function _drawParallaxLayer(layer) {
+        const its = currentLevelData?.parallax?.[layer];
+        if (!its?.length) return;
+        its.forEach(it => {
+            const img = _parallaxImgs[it.dataUrl];
+            if (!img?.complete || !img.naturalWidth) return;
+            const sx = it.x - cameraX * (it.speedX ?? 0.2);
+            const sy = it.y - cameraY * (it.speedY ?? 0);
+            ctx.drawImage(img, sx, sy, img.naturalWidth * (it.scale||1), img.naturalHeight * (it.scale||1));
+        });
+    }
+
+    // ── Objet interactif de niveau (coffres, panneaux) ─────────────────────────
+    class LevelInteractable {
+        constructor(d) {
+            this.x = d.x; this.y = d.y;
+            this.type = d.type;
+            this.label = d.label || d.payload || d.type;
+            this.payload = d.payload;
+            this.used = false;
+            this.bobT = Math.random() * 100;
+        }
+        draw() {
+            if (this.used) return;
+            this.bobT++;
+            const bob = Math.sin(this.bobT * 0.06) * 3;
+            const icons = { weapon_chest: '📦', item_chest: '🎁', sign: '📜' };
+            ctx.save();
+            ctx.fillStyle = '#2a1a08'; ctx.strokeStyle = '#c8841a'; ctx.lineWidth = 2;
+            ctx.fillRect(this.x - 16, this.y - 14 + bob, 32, 28);
+            ctx.strokeRect(this.x - 16, this.y - 14 + bob, 32, 28);
+            ctx.font = '14px serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+            ctx.fillText(icons[this.type] || '📦', this.x, this.y + 5 + bob);
+            ctx.font = 'bold 9px Segoe UI'; ctx.fillStyle = '#ffaa44';
+            ctx.fillText('[E]', this.x, this.y - 19 + bob);
+            ctx.textAlign = 'left';
+            ctx.restore();
+        }
     }
 
     // --- BOUCLE PRINCIPALE ---
@@ -9560,6 +9637,29 @@
                 }
             });
             droppedWeapons = droppedWeapons.filter(dw => !dw._collected);
+
+            // ── Objets interactifs (coffres, panneaux) ─────────────────
+            const _justInteractNow = keys.interact && !player._lastInteract;
+            levelInteractables.forEach(it => {
+                if (it.used) return;
+                const dist = Math.hypot((player.x + 25) - it.x, (player.y + 25) - it.y);
+                if (dist < 55) {
+                    if (_hintEl) { _hintEl.innerHTML = `${it.type==='sign'?'📜':'📦'} <b>${it.label}</b> — <kbd style="background:#1a1a1a;border:1px solid #c8841a;padding:1px 5px;border-radius:3px;font-family:monospace">E</kbd> pour interagir`; _showHint = true; }
+                    if (_justInteractNow) {
+                        it.used = true;
+                        if (it.type === 'weapon_chest') {
+                            droppedWeapons.push(new DroppedWeapon(it.x, it.y - 20, it.payload));
+                            showNotification(`⚔️ ${WEAPON_DATA[it.payload]?.name || it.payload} !`, '#ffaa44');
+                        } else if (it.type === 'item_chest') {
+                            items.push(new ItemDrop(it.x, it.y - 20, it.payload));
+                            showNotification(`🎁 Objet obtenu !`, '#ffaa44');
+                        } else if (it.type === 'sign') {
+                            showNotification(`📜 ${it.payload}`, '#ffcc44');
+                        }
+                    }
+                }
+            });
+
             if (_hintEl) _hintEl.style.display = _showHint ? 'block' : 'none';
 
             // ── Revive partenaire (coop) ──────────────────────────────
@@ -9647,12 +9747,12 @@
             }
         }
 
-        // ── Fond nuit dégradé ──────────────────────────────────────
+        // ── Fond dégradé (couleurs éditeur ou nuit par défaut) ────────
+        const _sky = currentLevelData?.sky;
         const _bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        _bgGrad.addColorStop(0,   '#040610');  // zénith : nuit profonde
-        _bgGrad.addColorStop(0.45,'#07101e');  // ciel nuit
-        _bgGrad.addColorStop(0.75,'#0d1828');  // horizon bas
-        _bgGrad.addColorStop(1,   '#060c18');  // sol lointain
+        _bgGrad.addColorStop(0,    _sky?.top    || '#040610');
+        _bgGrad.addColorStop(0.55, _sky?.bottom || '#0d1828');
+        _bgGrad.addColorStop(1,    _sky?.bottom || '#060c18');
         ctx.fillStyle = _bgGrad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         // étoiles statiques basées sur canvas size
@@ -9664,9 +9764,13 @@
             const _sr  = _si % 7 === 0 ? 1.5 : 0.8;
             ctx.beginPath(); ctx.arc(_sx2, _sy2, _sr, 0, Math.PI * 2); ctx.fill();
         }
+        // ── Couches parallaxe (espace écran, avant la camera) ─────────
+        _drawParallaxLayer('background');
+        _drawParallaxLayer('midground');
+
         ctx.save();
         ctx.translate(-cameraX + shakeOffsetX, -cameraY + shakeOffsetY);
-        
+
         // On dessine le sang au sol en premier, AVANT les plateformes pour un bel effet d'intégration (ou juste au dessus)
         platforms.forEach(p => p.draw());
         floorBloods.forEach(fb => fb.draw());
@@ -9677,6 +9781,7 @@
         coins.forEach(c => c.draw());
         items.forEach(i => i.draw());
         droppedWeapons.forEach(dw => dw.draw());
+        levelInteractables.forEach(it => it.draw());
 
         if (currentLevelData.goal) {
             drawFlag(currentLevelData.goal.x + 50, currentLevelData.goal.y - 100);
@@ -9708,6 +9813,9 @@
         damageNumbers.forEach(dn => dn.draw());
 
         ctx.restore();
+
+        // ── Couche foreground parallaxe (devant tout) ─────────────────
+        _drawParallaxLayer('foreground');
 
         // ── Indicateur hors-écran (hors du ctx.save camera) ──
         if (roomCode && remotePlayer.visible) drawOffscreenIndicator(remotePlayer);

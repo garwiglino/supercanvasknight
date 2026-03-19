@@ -1155,11 +1155,45 @@ function newLevel() {
 }
 
 // ─── TEST MODE ────────────────────────────────────────────────────────────────
-function testLevel() {
-    const skin = parseInt(document.getElementById('testSkin').value)||0;
-    localStorage.setItem('sck_editor_level', JSON.stringify(exportLevel()));
-    localStorage.setItem('sck_editor_skin',  String(skin));
-    window.open('index.html?editorTest=1', '_blank');
+async function testLevel() {
+    const skin = parseInt(document.getElementById('testSkin').value) || 0;
+    const levelJSON = JSON.stringify(exportLevel());
+
+    // Fetch the full game source
+    let html;
+    try {
+        const resp = await fetch('index.html');
+        if (!resp.ok) throw new Error(resp.status);
+        html = await resp.text();
+    } catch(e) {
+        alert('Impossible de charger index.html : ' + e.message);
+        return;
+    }
+
+    // 1. Base href → tous les assets relatifs (avatars, fonts, JSON…) résolvent sur localhost:3000
+    html = html.replace('<head>', `<head><base href="${location.origin}/">`);
+
+    // 2. Forcer _EDITOR_TEST = true directement dans le source (bypass auth garanti)
+    html = html.replace(
+        /const _EDITOR_TEST\s*=\s*!![^;]+;/,
+        'const _EDITOR_TEST = true;'
+    );
+
+    // 3. Pré-injecter le niveau et le skin dans localStorage avant toute logique de jeu
+    const injection = `\n;(function(){try{` +
+        `localStorage.setItem('sck_editor_level',${JSON.stringify(levelJSON)});` +
+        `localStorage.setItem('sck_editor_skin','${skin}');` +
+        `}catch(e){}})();\n`;
+    // Insérer juste après la première balise <script> du body principal (ligne ~1508)
+    html = html.replace(/(<script>\s*\n\s*\/\/ ── Mode test éditeur)/, injection + '$1');
+
+    // 4. Ouvrir dans une nouvelle fenêtre via Blob URL
+    const blob = new Blob([html], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    const win  = window.open(url, '_blank');
+    if (!win) alert('Autorisez les popups pour ce site.');
+    // Libérer l'URL après ouverture
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────

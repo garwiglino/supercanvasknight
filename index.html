@@ -1897,13 +1897,13 @@
             // ── VFX de combat reçu (sang + hitEffect) ───────────────────
             if (event.type === 'combat-vfx') {
                 hitEffects.push(new HitEffect(event.x, event.y));
-                const dc = 3 + Math.floor(Math.random() * 4);
+                const dc = 2 + Math.floor(Math.random() * 2);
                 for (let i = 0; i < dc; i++) {
                     bloodDrops.push(new BloodDrop(event.x, event.y,
                         event.dir * 2 + (Math.random()*6-3),
                         -2 - Math.random()*6));
                 }
-                for (let i = 0; i < 3+Math.floor(Math.random()*3); i++) {
+                for (let i = 0; i < 1+Math.floor(Math.random()*2); i++) {
                     bloodDrops.push(new BloodDrop(event.x, event.y,
                         event.dir + (Math.random()*4-2),
                         -1 - Math.random()*4,
@@ -1917,9 +1917,9 @@
                 if (e && e.state !== 'DEAD' && e.state !== 'DYING') {
                     triggerShake(11, 14);
                     const _edx = event.x + (e.width||50)/2, _edy = event.y + (e.height||50)/2;
-                    const _ebc = event.wasCrit ? 28 : 18;
+                    const _ebc = event.wasCrit ? 12 : 8;
                     for(let i=0; i<_ebc; i++) { const a=Math.random()*Math.PI*2, s=2+Math.random()*8; bloodDrops.push(new BloodDrop(_edx,_edy,Math.cos(a)*s,Math.sin(a)*s-2)); }
-                    for(let i=0; i<8+Math.floor(Math.random()*4); i++) bloodDrops.push(new BloodDrop(_edx,_edy,(Math.random()-0.5)*5,-1-Math.random()*3,0.15+Math.random()*0.2));
+                    for(let i=0; i<3; i++) bloodDrops.push(new BloodDrop(_edx,_edy,(Math.random()-0.5)*5,-1-Math.random()*3,0.15+Math.random()*0.2));
                     if (event.wasCrit) {
                         e.state = 'DEAD';
                         decapHeads.push(new DecapHead(event.x + (e.width||50)/2, event.y, true, event.enemyType || 'skeleton'));
@@ -4382,7 +4382,6 @@
             this.life = 300;
             this.maxLife = 300;
             this.scale = scale;
-            this.angle = Math.random() * Math.PI;
         }
         update() {
             this.life--;
@@ -4392,7 +4391,6 @@
             ctx.save();
             ctx.globalAlpha = alpha;
             ctx.translate(this.x, this.y);
-            ctx.rotate(this.angle);
             ctx.fillStyle = '#5c0000';
             const s = this.scale;
             ctx.beginPath(); ctx.ellipse(0, 0, 16*s, 5*s, 0, 0, Math.PI*2); ctx.fill();
@@ -5859,14 +5857,13 @@
             hitEffects.push(new HitEffect(hitX, hitY));
             
             // 2. Gouttes de sang projetées
-            let dropCount = 3 + Math.floor(Math.random() * 4); // 3 à 6 gouttes
+            let dropCount = 2 + Math.floor(Math.random() * 2);
             for(let i=0; i<dropCount; i++) {
-                // On projette le sang un peu dans la direction du coup
                 let vx = (knockbackDir * 2) + (Math.random() * 6 - 3);
                 let vy = -2 - Math.random() * 6;
                 bloodDrops.push(new BloodDrop(hitX, hitY, vx, vy));
             }
-            for(let i=0; i<4+Math.floor(Math.random()*3); i++) {
+            for(let i=0; i<1+Math.floor(Math.random()*2); i++) {
                 bloodDrops.push(new BloodDrop(hitX, hitY,
                     (knockbackDir * 1) + (Math.random() * 4 - 2),
                     -1 - Math.random() * 4,
@@ -5912,8 +5909,8 @@
                     this.deathTimer = 60;
                     this.vx = knockbackDir * 8;
                     this.vy = -6;
-                    for(let i=0; i<25; i++) { const a=Math.random()*Math.PI*2, s=2+Math.random()*9; bloodDrops.push(new BloodDrop(hitX,hitY,Math.cos(a)*s,Math.sin(a)*s-3)); }
-                    for(let i=0; i<10; i++) bloodDrops.push(new BloodDrop(hitX,hitY,(Math.random()-0.5)*5,-1-Math.random()*3,0.15+Math.random()*0.2));
+                    for(let i=0; i<10; i++) { const a=Math.random()*Math.PI*2, s=2+Math.random()*9; bloodDrops.push(new BloodDrop(hitX,hitY,Math.cos(a)*s,Math.sin(a)*s-3)); }
+                    for(let i=0; i<4; i++) bloodDrops.push(new BloodDrop(hitX,hitY,(Math.random()-0.5)*5,-1-Math.random()*3,0.15+Math.random()*0.2));
                     triggerShake(12, 18);
                     if (socket && socket.connected && roomCode) {
                         socket.emit('game-event', { type: 'player-dying', x: this.x, y: this.y, dir: knockbackDir });
@@ -7613,13 +7610,13 @@
                         const hitX = this.x + this.width / 2;
                         const hitY = this.y + this.height / 2;
                         hitEffects.push(new HitEffect(hitX, hitY));
-                        const dc = 3 + Math.floor(Math.random() * 4);
+                        const dc = 2 + Math.floor(Math.random() * 2);
                         for (let i = 0; i < dc; i++) {
                             bloodDrops.push(new BloodDrop(hitX, hitY,
                                 (player.facingRight ? 2 : -2) + (Math.random()*6-3),
                                 -2 - Math.random()*6));
                         }
-                        for (let i = 0; i < 3+Math.floor(Math.random()*3); i++) {
+                        for (let i = 0; i < 1+Math.floor(Math.random()*2); i++) {
                             bloodDrops.push(new BloodDrop(hitX, hitY,
                                 (player.facingRight ? 1 : -1) + (Math.random()*4-2),
                                 -1 - Math.random()*4,
@@ -7919,13 +7916,13 @@
                     hitEffects.push(new HitEffect(hitX, hitY));
                     damageNumbers.push(new DamageNumber(hitX, this.y - 10, damage, isCrit));
 
-                    let dropCount = isCrit ? 6 + Math.floor(Math.random() * 4) : 3 + Math.floor(Math.random() * 4);
+                    let dropCount = isCrit ? 4 + Math.floor(Math.random() * 2) : 2 + Math.floor(Math.random() * 2);
                     for(let i=0; i<dropCount; i++) {
                         let vx = (player.facingRight ? 2 : -2) + (Math.random() * 6 - 3);
                         let vy = -2 - Math.random() * 6;
                         bloodDrops.push(new BloodDrop(hitX, hitY, vx, vy));
                     }
-                    for(let i=0; i<4+Math.floor(Math.random()*4); i++) {
+                    for(let i=0; i<1+Math.floor(Math.random()*2); i++) {
                         bloodDrops.push(new BloodDrop(hitX, hitY,
                             (player.facingRight ? 1 : -1) + (Math.random()*4-2),
                             -1 - Math.random()*4,
@@ -7950,13 +7947,13 @@
                         if (isCrit) {
                             this.state = 'DEAD';
                             decapHeads.push(new DecapHead(this.x + this.width/2, this.y, player.facingRight, 'skeleton'));
-                            for(let i=0; i<30; i++) { const a=Math.random()*Math.PI*2, s=2+Math.random()*9; bloodDrops.push(new BloodDrop(_sdx,_sdy,Math.cos(a)*s,Math.sin(a)*s-3)); }
-                            for(let i=0; i<12; i++) bloodDrops.push(new BloodDrop(_sdx,_sdy,(Math.random()-0.5)*5,-1-Math.random()*3,0.15+Math.random()*0.2));
+                            for(let i=0; i<12; i++) { const a=Math.random()*Math.PI*2, s=2+Math.random()*9; bloodDrops.push(new BloodDrop(_sdx,_sdy,Math.cos(a)*s,Math.sin(a)*s-3)); }
+                            for(let i=0; i<4; i++) bloodDrops.push(new BloodDrop(_sdx,_sdy,(Math.random()-0.5)*5,-1-Math.random()*3,0.15+Math.random()*0.2));
                         } else {
                             this.state = 'DYING';
                             this.deathTimer = 55;
-                            for(let i=0; i<18; i++) { const a=Math.random()*Math.PI*2, s=1.5+Math.random()*7; bloodDrops.push(new BloodDrop(_sdx,_sdy,Math.cos(a)*s,Math.sin(a)*s-2)); }
-                            for(let i=0; i<8; i++) bloodDrops.push(new BloodDrop(_sdx,_sdy,(Math.random()-0.5)*4,-1-Math.random()*3,0.15+Math.random()*0.2));
+                            for(let i=0; i<8; i++) { const a=Math.random()*Math.PI*2, s=1.5+Math.random()*7; bloodDrops.push(new BloodDrop(_sdx,_sdy,Math.cos(a)*s,Math.sin(a)*s-2)); }
+                            for(let i=0; i<3; i++) bloodDrops.push(new BloodDrop(_sdx,_sdy,(Math.random()-0.5)*4,-1-Math.random()*3,0.15+Math.random()*0.2));
                         }
                         triggerShake(11, 14);
                         player.gainXp(10);
@@ -8260,13 +8257,13 @@
                         const hitX = this.x + this.width / 2;
                         const hitY = this.y + this.height / 2;
                         hitEffects.push(new HitEffect(hitX, hitY));
-                        const dc = 2 + Math.floor(Math.random() * 3);
+                        const dc = 2 + Math.floor(Math.random() * 2);
                         for (let i = 0; i < dc; i++) {
                             bloodDrops.push(new BloodDrop(hitX, hitY,
                                 (player.facingRight ? 2 : -2) + (Math.random() * 6 - 3),
                                 -2 - Math.random() * 6));
                         }
-                        for (let i = 0; i < 3+Math.floor(Math.random()*3); i++) {
+                        for (let i = 0; i < 1+Math.floor(Math.random()*2); i++) {
                             bloodDrops.push(new BloodDrop(hitX, hitY,
                                 (player.facingRight ? 1 : -1) + (Math.random()*4-2),
                                 -1 - Math.random()*4,
@@ -8544,13 +8541,13 @@
                     let hitY = this.y + this.height / 2;
                     hitEffects.push(new HitEffect(hitX, hitY));
                     damageNumbers.push(new DamageNumber(hitX, this.y - 10, damage, isCritG));
-                    let dropCount = isCritG ? 5 + Math.floor(Math.random() * 4) : 2 + Math.floor(Math.random() * 3);
+                    let dropCount = isCritG ? 3 + Math.floor(Math.random() * 2) : 2 + Math.floor(Math.random() * 2);
                     for (let i = 0; i < dropCount; i++) {
                         bloodDrops.push(new BloodDrop(hitX, hitY,
                             (player.facingRight ? 2 : -2) + (Math.random() * 6 - 3),
                             -2 - Math.random() * 6));
                     }
-                    for(let i=0; i<3+Math.floor(Math.random()*3); i++) {
+                    for(let i=0; i<1+Math.floor(Math.random()*2); i++) {
                         bloodDrops.push(new BloodDrop(hitX, hitY,
                             (player.facingRight ? 1 : -1) + (Math.random()*4-2),
                             -1 - Math.random()*4,
@@ -8579,13 +8576,13 @@
                         if (isCritG) {
                             this.state = 'DEAD';
                             decapHeads.push(new DecapHead(this.x + this.width/2, this.y, player.facingRight, 'goblin'));
-                            for(let i=0; i<28; i++) { const a=Math.random()*Math.PI*2, s=2+Math.random()*9; bloodDrops.push(new BloodDrop(_gdx,_gdy,Math.cos(a)*s,Math.sin(a)*s-3)); }
-                            for(let i=0; i<10; i++) bloodDrops.push(new BloodDrop(_gdx,_gdy,(Math.random()-0.5)*5,-1-Math.random()*3,0.15+Math.random()*0.2));
+                            for(let i=0; i<10; i++) { const a=Math.random()*Math.PI*2, s=2+Math.random()*9; bloodDrops.push(new BloodDrop(_gdx,_gdy,Math.cos(a)*s,Math.sin(a)*s-3)); }
+                            for(let i=0; i<3; i++) bloodDrops.push(new BloodDrop(_gdx,_gdy,(Math.random()-0.5)*5,-1-Math.random()*3,0.15+Math.random()*0.2));
                         } else {
                             this.state = 'DYING';
                             this.deathTimer = 55;
-                            for(let i=0; i<15; i++) { const a=Math.random()*Math.PI*2, s=1.5+Math.random()*6; bloodDrops.push(new BloodDrop(_gdx,_gdy,Math.cos(a)*s,Math.sin(a)*s-2)); }
-                            for(let i=0; i<6; i++) bloodDrops.push(new BloodDrop(_gdx,_gdy,(Math.random()-0.5)*4,-1-Math.random()*3,0.15+Math.random()*0.2));
+                            for(let i=0; i<7; i++) { const a=Math.random()*Math.PI*2, s=1.5+Math.random()*6; bloodDrops.push(new BloodDrop(_gdx,_gdy,Math.cos(a)*s,Math.sin(a)*s-2)); }
+                            for(let i=0; i<2; i++) bloodDrops.push(new BloodDrop(_gdx,_gdy,(Math.random()-0.5)*4,-1-Math.random()*3,0.15+Math.random()*0.2));
                         }
 
                         let dropRoll = Math.random();
@@ -9455,6 +9452,7 @@
             wallBloods.forEach(wb => wb.update());
             wallBloods = wallBloods.filter(wb => wb.life > 0);
             
+            if (bloodDrops.length > 60) bloodDrops.splice(0, bloodDrops.length - 60);
             bloodDrops.forEach(bd => bd.update(platforms));
             bloodDrops = bloodDrops.filter(bd => bd.life > 0);
             

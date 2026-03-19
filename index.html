@@ -3118,7 +3118,7 @@
             armor: ['#e0c8d0', '#b8889a', '#7a4a5e'],
             tunic: '#8B0000', trim: '#FFD700',
             cape: '#600000', hair: '#c0392b', hairTip: '#e74c3c',
-            eyes: '#ff80ab'
+            eyes: '#ff80ab', hairStyle: 'braid'
         },
         {
             // Cagoule de cuir à capuchon — contour organique, oreilles pointues, visage ouvert
@@ -3127,7 +3127,7 @@
             armor: ['#cfe0cc', '#7aaa72', '#3d6b38'],
             tunic: '#5d3a1a', trim: '#a5d6a7',
             cape: '#1b3815', hair: '#4a2c0a', hairTip: '#7d4e1f',
-            eyes: '#69f0ae'
+            eyes: '#69f0ae', hairStyle: 'ponytail'
         },
         {
             // Masque-crâne intégral — orbites vides lumineuses, dents gravées sur la visière
@@ -3136,7 +3136,7 @@
             armor: ['#555566', '#2e2e44', '#0d0d1a'],
             tunic: '#3a0a4a', trim: '#b39ddb',
             cape: '#0d0014', hair: '#1a0033', hairTip: '#9c27b0',
-            eyes: '#ea80fc'
+            eyes: '#ea80fc', hairStyle: 'wild'
         },
         {
             // Tiare angélique ouverte — arcades dorées, ailes repliées sur les côtés, nimbe discret
@@ -3145,7 +3145,7 @@
             armor: ['#f5f0ff', '#d4c5f9', '#9e82e8'],
             tunic: '#e8e0ff', trim: '#ffe082',
             cape: '#d4c5f9', hair: '#f5f5f5', hairTip: '#ffe082',
-            eyes: '#ffe57f'
+            eyes: '#ffe57f', hairStyle: 'flowing'
         }
     ];
     let currentSkinIndex = 0;
@@ -3659,17 +3659,55 @@
         const cx    = px + W / 2;
         const headY = py + 18;
 
-        const anchors = facingRight ? [
-            { ax: cx - 6,  ay: headY, baseW: 7 },
-            { ax: cx - 10, ay: headY, baseW: 5 },
-            { ax: cx - 2,  ay: headY, baseW: 4 },
-            { ax: cx + 8,  ay: headY, baseW: 3 },
-        ] : [
-            { ax: cx + 6,  ay: headY, baseW: 7 },
-            { ax: cx + 10, ay: headY, baseW: 5 },
-            { ax: cx + 2,  ay: headY, baseW: 4 },
-            { ax: cx - 8,  ay: headY, baseW: 3 },
-        ];
+        const style = skin.hairStyle || 'default';
+        const back = facingRight ? -1 : 1; // direction "derrière"
+        let anchors;
+        if (style === 'braid') {
+            // Tresse épaisse — 3 mèches épaisses depuis la nuque, très groupées
+            anchors = [
+                { ax: cx + back * 7,  ay: headY + 2, baseW: 9 },
+                { ax: cx + back * 11, ay: headY,     baseW: 7 },
+                { ax: cx + back * 5,  ay: headY + 4, baseW: 6 },
+            ];
+        } else if (style === 'ponytail') {
+            // Queue de cheval — 3 mèches fines très regroupées au milieu de la tête
+            anchors = [
+                { ax: cx + back * 8,  ay: headY - 2, baseW: 4 },
+                { ax: cx + back * 10, ay: headY,     baseW: 3 },
+                { ax: cx + back * 9,  ay: headY + 3, baseW: 3 },
+            ];
+        } else if (style === 'wild') {
+            // Sauvage — 5 mèches qui partent dans des directions diverses depuis le sommet
+            anchors = [
+                { ax: cx + back * 4,  ay: headY - 4, baseW: 5 },
+                { ax: cx + back * 9,  ay: headY - 2, baseW: 4 },
+                { ax: cx + back * 13, ay: headY + 2, baseW: 4 },
+                { ax: cx,             ay: headY - 6, baseW: 3 },
+                { ax: cx + back * 6,  ay: headY + 5, baseW: 3 },
+            ];
+        } else if (style === 'flowing') {
+            // Fluide angélique — 5 mèches fines réparties sur tout le dessus du crâne
+            anchors = [
+                { ax: cx + back * 3,  ay: headY - 5, baseW: 4 },
+                { ax: cx + back * 7,  ay: headY - 3, baseW: 3 },
+                { ax: cx + back * 11, ay: headY,     baseW: 3 },
+                { ax: cx + back * 1,  ay: headY - 7, baseW: 2 },
+                { ax: cx + back * 14, ay: headY + 3, baseW: 2 },
+            ];
+        } else {
+            // Défaut générique
+            anchors = facingRight ? [
+                { ax: cx - 6,  ay: headY, baseW: 7 },
+                { ax: cx - 10, ay: headY, baseW: 5 },
+                { ax: cx - 2,  ay: headY, baseW: 4 },
+                { ax: cx + 8,  ay: headY, baseW: 3 },
+            ] : [
+                { ax: cx + 6,  ay: headY, baseW: 7 },
+                { ax: cx + 10, ay: headY, baseW: 5 },
+                { ax: cx + 2,  ay: headY, baseW: 4 },
+                { ax: cx - 8,  ay: headY, baseW: 3 },
+            ];
+        }
 
         const strands = getHairState(skin.name, anchors);
         stepHair(strands, anchors, vx || 0, vy || 0, grounded !== false, isMoving || false, facingRight);
@@ -4420,9 +4458,12 @@
             ctx.beginPath(); ctx.ellipse(6*s, -5*s, 3.5*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(-5*s, 5*s, 3*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(11*s, -4*s, 2*s, 1.5*s, 0, 0, Math.PI*2); ctx.fill();
-            // Reflet brillant
-            ctx.fillStyle = 'rgba(255,80,80,0.18)';
+            // Reflet brillant principal
+            ctx.fillStyle = 'rgba(255,90,90,0.42)';
             ctx.beginPath(); ctx.ellipse(-4*s, -1.5*s, 7*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
+            // Point spéculaire blanc
+            ctx.fillStyle = 'rgba(255,220,220,0.28)';
+            ctx.beginPath(); ctx.ellipse(-5*s, -2*s, 3*s, 0.9*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.restore();
         }
     }
@@ -4453,9 +4494,12 @@
             ctx.beginPath(); ctx.ellipse(d*7*s, -9*s, 3.5*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(d*6*s, 7*s, 3*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(d*3*s, -16*s, 2*s, 1.5*s, 0, 0, Math.PI*2); ctx.fill();
-            // Reflet brillant
-            ctx.fillStyle = 'rgba(255,80,80,0.18)';
+            // Reflet brillant principal
+            ctx.fillStyle = 'rgba(255,90,90,0.42)';
             ctx.beginPath(); ctx.ellipse(d*2*s, -3*s, 1.5*s, 5*s, 0, 0, Math.PI*2); ctx.fill();
+            // Point spéculaire blanc
+            ctx.fillStyle = 'rgba(255,220,220,0.28)';
+            ctx.beginPath(); ctx.ellipse(d*1.5*s, -4*s, 0.8*s, 2.5*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.restore();
         }
     }
@@ -4497,9 +4541,12 @@
             // Pendants (gouttes qui pendent)
             ctx.beginPath(); ctx.ellipse(3*s, 6*s, 2*s, 4*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(-5*s, 5*s, 1.5*s, 3*s, 0, 0, Math.PI*2); ctx.fill();
-            // Reflet brillant
-            ctx.fillStyle = 'rgba(255,80,80,0.18)';
+            // Reflet brillant principal
+            ctx.fillStyle = 'rgba(255,90,90,0.42)';
             ctx.beginPath(); ctx.ellipse(-3*s, -1*s, 6*s, 1.5*s, 0, 0, Math.PI*2); ctx.fill();
+            // Point spéculaire blanc
+            ctx.fillStyle = 'rgba(255,220,220,0.28)';
+            ctx.beginPath(); ctx.ellipse(-4*s, -1.2*s, 2.5*s, 0.7*s, 0, 0, Math.PI*2); ctx.fill();
             ctx.restore();
         }
     }

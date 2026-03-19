@@ -212,8 +212,6 @@ async function tryAuth() {
     if (hash === _AUTH_HASH) {
         sessionStorage.setItem('sck_editor_auth', '1');
         document.getElementById('auth-overlay').remove();
-        document.getElementById('auth-input')?.remove();
-        initEditor();
     } else {
         const err = document.getElementById('auth-error');
         err.textContent = 'Mot de passe incorrect';
@@ -223,19 +221,12 @@ async function tryAuth() {
     }
 }
 
-// Déjà authentifié dans cette session ?
+// Déjà authentifié dans cette session → retire l'overlay directement
 if (sessionStorage.getItem('sck_editor_auth') === '1') {
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('auth-overlay').remove();
-        initEditor();
-    });
+    document.addEventListener('DOMContentLoaded', () => document.getElementById('auth-overlay').remove());
 } else {
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('auth-input').focus();
-    });
+    document.addEventListener('DOMContentLoaded', () => document.getElementById('auth-input').focus());
 }
-
-function initEditor() {
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 const SURF_COL = {
@@ -1177,7 +1168,6 @@ updateToolUI();
 updateProps();
 updateStatus();
 
-} // fin initEditor()
 </script>
 </body>
 </html>

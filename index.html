@@ -3961,6 +3961,7 @@
     let items = [];
     let levelInteractables = [];
     let _parallaxImgs = {};
+    let _parallaxBitmaps = {};
     
     // Listes pour le système de sang (VFX)
     let hitEffects = [];
@@ -7786,8 +7787,8 @@
     // ── Coups critiques ───────────────────────────────────────────────────
     const CRIT_CHANCE        = 0.15; // 15 % de chance
     const CRIT_MULTIPLIER    = 2.0;
-    const PARRY_WINDOW_SKEL  = 6;   // frames de fenêtre de parade — squelette (~0.1s)
-    const PARRY_WINDOW_GOB   = 5;   // frames de fenêtre de parade — goblin (~0.08s)
+    const PARRY_WINDOW_SKEL  = 50;  // frames de fenêtre de parade — squelette (~0.83s)
+    const PARRY_WINDOW_GOB   = 40;  // frames de fenêtre de parade — goblin (~0.67s)
     const PARRY_STUN_FRAMES  = 200; // durée étourdissement (~3.3 s)
     const PARRY_RANGE        = 105; // portée de parade (px)
 
@@ -8106,7 +8107,7 @@
                         this.blockCooldown = 220;
                         this.blockSustainFrames = 0;
                         this.state = 'ATTACK';
-                        this.windupTimer = 18;
+                        this.windupTimer = PARRY_WINDOW_SKEL;
                     }
                 } else {
                     this.blockSustainFrames = 0;
@@ -8119,14 +8120,14 @@
                 // Blocage réactif : le joueur attaque face à l'ennemi
                 const _playerFacingMe = (player.facingRight  && player.x < this.x) ||
                                         (!player.facingRight && player.x > this.x);
-                if (_bDist < 140 && (player.isAttacking || player.attackHitbox) && _playerFacingMe && Math.random() < 0.50) {
+                if (_bDist < 140 && (player.isAttacking || player.attackHitbox) && _playerFacingMe && Math.random() < 0.20) {
                     // Réaction à l'attaque imminente
-                    this.blockTimer    = 55 + Math.floor(Math.random() * 30);
-                    this.blockCooldown = 180 + Math.floor(Math.random() * 90);
-                } else if (_bDist < 160 && _playerFacingMe && Math.random() < 0.018) {
+                    this.blockTimer    = 35 + Math.floor(Math.random() * 20);
+                    this.blockCooldown = 240 + Math.floor(Math.random() * 120);
+                } else if (_bDist < 160 && _playerFacingMe && Math.random() < 0.006) {
                     // Garde préventive
-                    this.blockTimer    = 65 + Math.floor(Math.random() * 35);
-                    this.blockCooldown = 250 + Math.floor(Math.random() * 100);
+                    this.blockTimer    = 45 + Math.floor(Math.random() * 20);
+                    this.blockCooldown = 300 + Math.floor(Math.random() * 120);
                 }
             }
 
@@ -8551,25 +8552,30 @@
                 ctx.fillRect(this.x + 1, this.y - 21, ((this.width - 2) * this.hp) / this.maxHp, 4);
             }
 
-            // ── TÉLÉGRAPHE D'ATTAQUE (!) ──────────────────────────────────
+            // ── TÉLÉGRAPHE D'ATTAQUE : cercle qui rétrécit ────────────────
             if (this.windupTimer > 0) {
-                const _blink = Math.floor(Date.now() / 60) % 2 === 0;
-                if (_blink) {
-                    const _cx = this.x + this.width / 2, _cy = this.y - 38;
-                    ctx.save();
-                    ctx.globalAlpha = 0.92;
-                    ctx.fillStyle = '#B71C1C';
-                    ctx.beginPath(); ctx.arc(_cx, _cy, 13, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#FF5252';
-                    ctx.beginPath(); ctx.arc(_cx, _cy, 11, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 20px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('!', _cx, _cy + 1);
-                    ctx.textBaseline = 'alphabetic';
-                    ctx.restore();
-                }
+                const _cx = this.x + this.width / 2, _cy = this.y - 38;
+                const _ratio = this.windupTimer / PARRY_WINDOW_SKEL; // 1→0
+                const _shrinkR = 13 + _ratio * 28; // 41→13
+                ctx.save();
+                // Anneau qui se rapproche
+                ctx.globalAlpha = 0.82;
+                ctx.strokeStyle = `rgb(255,${Math.round(60 + 120 * _ratio)},${Math.round(60 * _ratio)})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(_cx, _cy, _shrinkR, 0, Math.PI * 2); ctx.stroke();
+                // Indicateur fixe "!"
+                ctx.globalAlpha = 0.95;
+                ctx.fillStyle = '#B71C1C';
+                ctx.beginPath(); ctx.arc(_cx, _cy, 13, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#FF5252';
+                ctx.beginPath(); ctx.arc(_cx, _cy, 11, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 20px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('!', _cx, _cy + 1);
+                ctx.textBaseline = 'alphabetic';
+                ctx.restore();
             }
 
             // ── SPIRALE ÉTOURDISSEMENT ────────────────────────────────────
@@ -8747,7 +8753,7 @@
                         this.blockCooldown = 200;
                         this.blockSustainFrames = 0;
                         this.state = 'ATTACK';
-                        this.windupTimer = 14;
+                        this.windupTimer = PARRY_WINDOW_GOB;
                     }
                 } else {
                     this.blockSustainFrames = 0;
@@ -8759,12 +8765,12 @@
                 const _gbDist2 = Math.abs((player.x + 19) - (this.x + 19));
                 const _gbFace2 = (player.facingRight && player.x < this.x) ||
                                  (!player.facingRight && player.x > this.x);
-                if (_gbDist2 < 120 && (player.isAttacking || player.attackHitbox) && _gbFace2 && Math.random() < 0.45) {
-                    this.blockTimer    = 45 + Math.floor(Math.random() * 25);
-                    this.blockCooldown = 160 + Math.floor(Math.random() * 80);
-                } else if (_gbDist2 < 140 && _gbFace2 && Math.random() < 0.015) {
-                    this.blockTimer    = 55 + Math.floor(Math.random() * 30);
-                    this.blockCooldown = 220 + Math.floor(Math.random() * 90);
+                if (_gbDist2 < 120 && (player.isAttacking || player.attackHitbox) && _gbFace2 && Math.random() < 0.18) {
+                    this.blockTimer    = 28 + Math.floor(Math.random() * 18);
+                    this.blockCooldown = 220 + Math.floor(Math.random() * 100);
+                } else if (_gbDist2 < 140 && _gbFace2 && Math.random() < 0.005) {
+                    this.blockTimer    = 38 + Math.floor(Math.random() * 18);
+                    this.blockCooldown = 280 + Math.floor(Math.random() * 100);
                 }
             }
 
@@ -9198,25 +9204,28 @@
                 ctx.fillRect(this.x + 1, this.y - 21, ((this.width - 2) * this.hp) / this.maxHp, 4);
             }
 
-            // ── TÉLÉGRAPHE D'ATTAQUE (!) ──────────────────────────────────
+            // ── TÉLÉGRAPHE D'ATTAQUE : cercle qui rétrécit ────────────────
             if (this.windupTimer > 0) {
-                const _blink = Math.floor(Date.now() / 55) % 2 === 0;
-                if (_blink) {
-                    const _cx = this.x + this.width / 2, _cy = this.y - 36;
-                    ctx.save();
-                    ctx.globalAlpha = 0.92;
-                    ctx.fillStyle = '#B71C1C';
-                    ctx.beginPath(); ctx.arc(_cx, _cy, 12, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#FF5252';
-                    ctx.beginPath(); ctx.arc(_cx, _cy, 10, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 18px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('!', _cx, _cy + 1);
-                    ctx.textBaseline = 'alphabetic';
-                    ctx.restore();
-                }
+                const _cx = this.x + this.width / 2, _cy = this.y - 36;
+                const _ratio = this.windupTimer / PARRY_WINDOW_GOB;
+                const _shrinkR = 10 + _ratio * 25; // 35→10
+                ctx.save();
+                ctx.globalAlpha = 0.82;
+                ctx.strokeStyle = `rgb(255,${Math.round(60 + 120 * _ratio)},${Math.round(60 * _ratio)})`;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath(); ctx.arc(_cx, _cy, _shrinkR, 0, Math.PI * 2); ctx.stroke();
+                ctx.globalAlpha = 0.95;
+                ctx.fillStyle = '#B71C1C';
+                ctx.beginPath(); ctx.arc(_cx, _cy, 12, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#FF5252';
+                ctx.beginPath(); ctx.arc(_cx, _cy, 10, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('!', _cx, _cy + 1);
+                ctx.textBaseline = 'alphabetic';
+                ctx.restore();
             }
 
             // ── SPIRALE ÉTOURDISSEMENT ────────────────────────────────────
@@ -9813,30 +9822,65 @@
         }
         // ── Préchargement SVG parallaxe ───────────────────────────────
         _parallaxImgs = {};
+        _parallaxBitmaps = {};
         ['background','midground','foreground'].forEach(l => {
             (currentLevelData.parallax?.[l] || []).forEach(it => {
                 if (it.dataUrl && !_parallaxImgs[it.dataUrl]) {
-                    const img = new Image(); img.src = it.dataUrl; _parallaxImgs[it.dataUrl] = img;
+                    const img = new Image();
+                    img.onload = () => {
+                        if (!img.naturalWidth) return;
+                        let w = img.naturalWidth, h = img.naturalHeight;
+                        const cap = 4096;
+                        if (w > cap || h > cap) { const r = Math.min(cap/w, cap/h); w = Math.round(w*r); h = Math.round(h*r); }
+                        createImageBitmap(img, { resizeWidth: Math.max(1,w), resizeHeight: Math.max(1,h), resizeQuality: 'high' })
+                            .then(bmp => { _parallaxBitmaps[it.dataUrl] = bmp; })
+                            .catch(() => {});
+                    };
+                    img.src = it.dataUrl;
+                    _parallaxImgs[it.dataUrl] = img;
                 }
             });
         });
         // pas de nuages — fond nuit statique
     }
 
-    // ── Rendu couche parallaxe (espace monde, à appeler dans la camera transform) ──
-    // Formule : world_x = it.x + cameraX*(1-speedX) → écran = world_x - cameraX = it.x - cameraX*speedX
-    // Identique visuellement à l'ancien espace-écran, mais compatible avec le référentiel monde de l'éditeur.
+    // ── Rendu couche parallaxe ──
+    // speedX=1 (défaut) → objet monde pur, identique à l'éditeur.
+    // speedX<1 → parallaxe : dérive lente par rapport au monde (effet profondeur).
     function _drawParallaxLayer(layer) {
         const its = currentLevelData?.parallax?.[layer];
         if (!its?.length) return;
+        const cW = canvas.width, cH = canvas.height;
         ctx.save();
         its.forEach(it => {
             const img = _parallaxImgs[it.dataUrl];
             if (!img?.complete || !img.naturalWidth) return;
-            const wx = it.x + cameraX * (1 - (it.speedX ?? 0.2));
-            const wy = it.y + cameraY * (1 - (it.speedY ?? 0));
+            const spd  = it.speedX ?? 1;
+            const spdY = it.speedY ?? 1;
+            // speedX=1 → wx=it.x (monde pur, identique éditeur)
+            // speedX=0 → fixé à l'écran (screen_x = it.x)
+            // Formule : wx = it.x + cameraX*(1-spd)
+            // → screen_x = wx - cameraX = it.x - cameraX*spd
+            const wx = it.x + cameraX * (1 - spd);
+            const wy = it.y + cameraY * (1 - spdY);
+            const dw = img.naturalWidth  * (it.scale||1);
+            const dh = img.naturalHeight * (it.scale||1);
+            // Frustum culling en coordonnées ÉCRAN (wx est en monde, inside ctx.translate(-cameraX))
+            const sx = wx - cameraX, sy = wy - cameraY;
+            if (sx + dw < 0 || sx > cW || sy + dh < 0 || sy > cH) return;
+            const src = _parallaxBitmaps[it.dataUrl] || img;
             ctx.globalAlpha = it.opacity ?? 1;
-            ctx.drawImage(img, wx, wy, img.naturalWidth * (it.scale||1), img.naturalHeight * (it.scale||1));
+            if (it.blur) {
+                const b = it.blur * 2.5;
+                ctx.save();
+                ctx.beginPath(); ctx.rect(wx, wy, dw, dh); ctx.clip();
+                ctx.filter = `blur(${it.blur}px)`;
+                ctx.drawImage(src, wx - b, wy - b, dw + b*2, dh + b*2);
+                ctx.filter = 'none';
+                ctx.restore();
+            } else {
+                ctx.drawImage(src, wx, wy, dw, dh);
+            }
         });
         ctx.restore();
     }

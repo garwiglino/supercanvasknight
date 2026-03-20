@@ -1,0 +1,40 @@
+{
+  "name": "8BitDo SN30 Pro",
+  "description": "8BitDo SN30 Pro — mode D-Input USB (boutons SNES, D-pad hat-switch axes 6/7)",
+  "idPatterns": ["8bitdo", "2dc8 product: 6001", "sn30", "sn pro"],
+  "gp": {
+    "right":       "gp:axis0+",
+    "left":        "gp:axis0-",
+    "up":          "gp:button0",
+    "attack":      "gp:button2",
+    "block":       "gp:button5",
+    "parry":       "gp:button4",
+    "dash":        "gp:button1",
+    "ability":     "gp:button3",
+    "interact":    "gp:button0",
+    "weaponWheel": "gp:button6",
+    "pause":       "gp:button9",
+    "menu":        "gp:button8",
+    "weapons":     "gp:axis7-",
+    "quests":      "gp:axis7+",
+    "shield":      "gp:button7",
+    "chat":        "gp:button10"
+  },
+  "notes": {
+    "layout":      "B=bas, A=droite, Y=gauche, X=haut (layout SNES physique)",
+    "up/interact": "B (button0) = sauter + interagir (contextuel)",
+    "attack":      "Y (button2) = attaquer",
+    "ability":     "X (button3) = capacité spéciale",
+    "dash":        "A (button1) = dash",
+    "block":       "R (button5) = bloquer",
+    "parry":       "L (button4) = parade",
+    "weaponWheel": "ZL (button6) maintenu = roue d'armes",
+    "shield":      "ZR (button7) = boucliers",
+    "menu":        "Select (button8) = Inventaire",
+    "pause":       "Start (button9) = Pause",
+    "weapons":     "D-haut (axis7-) = liste armes",
+    "quests":      "D-bas (axis7+) = quêtes",
+    "chat":        "L3 (button10) = chat",
+    "dpad":        "D-pad encodé en axes 6 (G/D) et 7 (H/B) — détecté par le seuil 0.15"
+  }
+}

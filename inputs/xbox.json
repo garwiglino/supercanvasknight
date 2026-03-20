@@ -1,0 +1,33 @@
+{
+  "name": "Xbox / XInput",
+  "description": "Xbox 360, Xbox One, Xbox Series — mode XInput standard",
+  "idPatterns": ["xbox", "xinput", "045e"],
+  "gp": {
+    "right":       "gp:axis0+",
+    "left":        "gp:axis0-",
+    "up":          "gp:button0",
+    "attack":      "gp:button2",
+    "block":       "gp:button5",
+    "parry":       "gp:button4",
+    "dash":        "gp:button1",
+    "ability":     "gp:button3",
+    "interact":    "gp:button0",
+    "weaponWheel": "gp:button6",
+    "pause":       "gp:button9",
+    "menu":        "gp:button8",
+    "weapons":     "gp:button12",
+    "quests":      "gp:button13",
+    "shield":      "gp:button7",
+    "chat":        "gp:button10"
+  },
+  "notes": {
+    "up/interact": "A (bouton0) sert à la fois pour sauter et interagir (contextuel)",
+    "weaponWheel": "LT maintenu ouvre la roue d'armes",
+    "menu":        "Back/View = Inventaire",
+    "pause":       "Start/Menu = Pause",
+    "weapons":     "D-haut = liste armes",
+    "quests":      "D-bas = quêtes",
+    "shield":      "RT = boucliers",
+    "chat":        "L3 = chat (multijoueur)"
+  }
+}

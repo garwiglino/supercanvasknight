@@ -25,8 +25,12 @@ label { font-size: 11px; color: #8888aa; }
 /* ── Main layout ── */
 #main { display: flex; flex: 1; overflow: hidden; }
 
+/* ── Panel resize handles ── */
+.panel-resize { width: 5px; background: #14142a; cursor: ew-resize; flex-shrink: 0; transition: background .12s; z-index: 10; }
+.panel-resize:hover, .panel-resize.resizing { background: #5544aa; }
+
 /* ── Left panel ── */
-#left-panel { width: 190px; background: #0a0a14; border-right: 1px solid #2a2a44; padding: 8px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex-shrink: 0; }
+#left-panel { width: 190px; min-width: 130px; max-width: 380px; background: #0a0a14; border-right: 1px solid #2a2a44; padding: 8px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex-shrink: 0; }
 .psec { background: #12122a; border: 1px solid #2a2a44; border-radius: 5px; padding: 7px; }
 .psec h3 { font-size: 10px; text-transform: uppercase; color: #6668aa; margin-bottom: 7px; letter-spacing: .6px; }
 .prow { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
@@ -40,12 +44,26 @@ label { font-size: 11px; color: #8888aa; }
 .swatch { width: 18px; height: 11px; border-radius: 2px; flex-shrink: 0; }
 
 /* ── Canvas ── */
-#canvas-wrap { flex: 1; position: relative; overflow: hidden; background: #0a0a14; cursor: default; }
+#canvas-wrap { flex: 1; position: relative; overflow: hidden; background: #0a0a14; cursor: default; min-width: 200px; }
 #canvas { position: absolute; top: 0; left: 0; }
 
 /* ── Right panel ── */
-#right-panel { width: 210px; background: #0a0a14; border-left: 1px solid #2a2a44; padding: 8px; overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; }
+#right-panel { width: 220px; min-width: 150px; max-width: 420px; background: #0a0a14; border-left: 1px solid #2a2a44; padding: 0; flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; }
 #right-panel h2 { font-size: 10px; text-transform: uppercase; color: #6668aa; letter-spacing: .6px; }
+
+/* ── Outliner ── */
+#outliner-wrap { padding: 6px 8px 4px; border-bottom: 1px solid #2a2a44; display: flex; flex-direction: column; min-height: 80px; max-height: 42%; }
+#outliner-wrap .rp-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; flex-shrink: 0; }
+#outliner { overflow-y: auto; flex: 1; }
+#props-wrap { padding: 6px 8px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.ol-group { margin-bottom: 2px; }
+.ol-ghead { font-size: 9px; text-transform: uppercase; color: #5568aa; letter-spacing: .4px; padding: 2px 3px; display: flex; justify-content: space-between; background: #0e0e1e; border-radius: 2px; margin-bottom: 1px; user-select: none; }
+.ol-cnt { background: #1e1e3a; padding: 0 4px; border-radius: 8px; }
+.ol-item { display: flex; align-items: center; gap: 4px; padding: 2px 4px 2px 10px; cursor: pointer; border-radius: 3px; font-size: 11px; border: 1px solid transparent; }
+.ol-item:hover { background: #1a1a30; }
+.ol-item.ol-sel { background: #1a0a38; border-color: #5544aa; color: #c090ff; }
+.ol-icon { font-size: 10px; flex-shrink: 0; }
+.ol-lbl { color: #9090c0; font-size: 10px; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .prop-row { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
 .prop-row label { font-size: 11px; color: #8888aa; min-width: 52px; }
 .prop-row input, .prop-row select { flex: 1; font-size: 11px; }
@@ -60,6 +78,48 @@ label { font-size: 11px; color: #8888aa; }
 .t-spawn { background: #0a3a1a; color: #44ff88; }
 .t-goal { background: #3a3a0a; color: #ffdd44; }
 .t-coin { background: #2a2a0a; color: #ffee44; }
+.t-civ   { background: #0a2a3a; color: #88ccff; }
+.t-qnpc  { background: #2a0a3a; color: #cc88ff; }
+.t-torch  { background: #3a2000; color: #ffaa33; }
+.t-reverb { background: #0a1a3a; color: #88aaff; }
+
+.dd-section { font-size: 9px; text-transform: uppercase; color: #5a5a8a; letter-spacing: .5px; padding: 4px 6px 2px; }
+
+/* ── Toolbar dropdowns ── */
+.dropdown { position: relative; display: inline-flex; align-items: center; }
+.dropdown-btn { padding: 4px 9px; border: 1px solid #3a3a5a; border-radius: 4px; background: #1e1e32; color: #d0d0e8; cursor: pointer; font-size: 12px; white-space: nowrap; transition: background .12s, border-color .12s; }
+.dropdown-btn:hover { background: #2a2a4a; border-color: #5a5a8a; }
+.dropdown-btn.active { background: #3a2460; border-color: #7a44cc; color: #fff; }
+.dropdown-menu { display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 200; background: #0d0d1e; border: 1px solid #3a3a5a; border-radius: 5px; padding: 4px; min-width: 150px; flex-direction: column; gap: 2px; box-shadow: 0 6px 20px rgba(0,0,0,.6); }
+.dropdown.open .dropdown-menu { display: flex; }
+.dropdown-menu .btn { text-align: left; width: 100%; }
+.dd-soon { font-size: 10px; color: #44446a; font-style: italic; padding: 3px 6px; }
+
+/* ── Level name indicator ── */
+.lvl-indicator { font-size: 12px; color: #7a6aaa; padding: 3px 10px; border: 1px solid #2a2a44; border-radius: 4px; cursor: pointer; white-space: nowrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis; display: inline-block; line-height: 1.6; transition: border-color .12s, color .12s; }
+.lvl-indicator:hover { border-color: #5a5a8a; color: #aaaacc; }
+.lvl-indicator.dirty { color: #ffaa44; border-color: #5a3a0a; }
+.lvl-indicator.dirty::after { content: ' ●'; }
+
+/* ── Dropdown divider / kbd ── */
+.dd-divider { height: 1px; background: #2a2a44; margin: 3px 2px; }
+.dd-kbd { float: right; font-size: 10px; color: #44446a; margin-left: 10px; }
+
+/* ── Level browser modal ── */
+#lvl-browser-overlay { display:none; position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,.78); align-items:center; justify-content:center; }
+#lvl-browser { background:#0d0d1e; border:1px solid #3a3a5a; border-radius:8px; width:540px; max-height:72vh; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,.9); }
+.lvl-bwr-hdr { padding:12px 16px; border-bottom:1px solid #2a2a44; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.lvl-bwr-hdr h2 { font-size:14px; color:#aa88ff; font-weight:600; }
+.lvl-bwr-hdr .close-btn { background:none; border:none; color:#5555aa; cursor:pointer; font-size:18px; padding:0 4px; line-height:1; }
+.lvl-bwr-hdr .close-btn:hover { color:#cc88ff; }
+#lvl-browser-list { overflow-y:auto; flex:1; padding:8px; display:flex; flex-direction:column; gap:6px; }
+.lvl-bwr-ftr { padding:8px 12px; border-top:1px solid #2a2a44; display:flex; gap:6px; flex-shrink:0; }
+.lvl-card { background:#12122a; border:1px solid #2a2a44; border-radius:6px; padding:10px 12px; cursor:pointer; transition:border-color .12s, background .12s; }
+.lvl-card:hover { border-color:#4a4a7a; background:#16163a; }
+.lvl-card.open { border-color:#7a44cc; background:#1a0a2e; }
+.lvl-card-name { font-size:13px; font-weight:600; color:#d0d0e8; margin-bottom:3px; }
+.lvl-card-meta { font-size:11px; color:#5a5a8a; margin-bottom:8px; }
+.lvl-card-actions { display:flex; gap:4px; }
 
 /* ── Status bar ── */
 #sbar { padding: 3px 8px; background: #0a0a14; border-top: 1px solid #2a2a44; font-size: 11px; color: #555577; display: flex; gap: 18px; flex-shrink: 0; }
@@ -98,23 +158,122 @@ label { font-size: 11px; color: #8888aa; }
   <span id="auth-error"></span>
 </div>
 
+<!-- ═══════════════ LEVEL BROWSER MODAL ═══════════════ -->
+<div id="lvl-browser-overlay" onclick="if(event.target===this)closeLevelBrowser()">
+  <div id="lvl-browser">
+    <div class="lvl-bwr-hdr">
+      <h2>🗂️ Niveaux sauvegardés</h2>
+      <button class="close-btn" onclick="closeLevelBrowser()">✕</button>
+    </div>
+    <div id="lvl-browser-list"></div>
+    <div class="lvl-bwr-ftr">
+      <button class="btn" onclick="cmdImportJSON();closeLevelBrowser()">📥 Importer un JSON…</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ TOOLBAR ═══════════════ -->
 <div id="toolbar">
-  <button class="btn" onclick="newLevel()">📄 Nouveau</button>
-  <button class="btn" onclick="triggerLoad()">📂 Ouvrir</button>
-  <button class="btn" onclick="saveLevel()">💾 Sauvegarder</button>
+  <!-- ── Fichier ── -->
+  <div class="dropdown" id="dd-fichier">
+    <button class="btn dropdown-btn" onclick="toggleDropdown('dd-fichier')">📁 Fichier ▾</button>
+    <div class="dropdown-menu" style="min-width:210px">
+      <button class="btn" onclick="cmdNew();closeDropdowns()">📄 Nouveau <span class="dd-kbd">Ctrl+N</span></button>
+      <div class="dd-divider"></div>
+      <button class="btn" onclick="cmdOpen()">📂 Ouvrir… <span class="dd-kbd">Ctrl+O</span></button>
+      <div class="dd-divider"></div>
+      <button class="btn" onclick="cmdSave();closeDropdowns()">💾 Enregistrer <span class="dd-kbd">Ctrl+S</span></button>
+      <button class="btn" onclick="cmdSaveAs();closeDropdowns()">✏️ Enregistrer sous…</button>
+      <div class="dd-divider"></div>
+      <button class="btn" onclick="cmdExportJSON();closeDropdowns()">📤 Exporter JSON…</button>
+      <button class="btn" onclick="cmdImportJSON();closeDropdowns()">📥 Importer JSON…</button>
+      <div class="dd-divider"></div>
+      <button class="btn danger" id="dd-btn-delete" onclick="cmdDelete()" disabled style="opacity:.4;cursor:not-allowed">🗑️ Supprimer ce niveau</button>
+    </div>
+  </div>
+  <span id="lvl-indicator" class="lvl-indicator" onclick="promptRename()" title="Clic pour renommer">Nouveau Niveau</span>
   <div class="sep"></div>
-  <button class="btn tool-btn active" data-tool="select" onclick="setTool('select')" title="Sélect / Déplacer (V)">✋ Sélect</button>
-  <button class="btn tool-btn" data-tool="platform" onclick="setTool('platform')" title="Plateforme (P)">▬ Plate.</button>
-  <button class="btn tool-btn" data-tool="skeleton" onclick="setTool('skeleton')" title="Squelette (K)">💀 Squelette</button>
-  <button class="btn tool-btn" data-tool="goblin" onclick="setTool('goblin')" title="Goblin (G)">👺 Goblin</button>
-  <button class="btn tool-btn" data-tool="weapon" onclick="setTool('weapon')" title="Arme au sol (W)">⚔️ Arme</button>
-  <button class="btn tool-btn" data-tool="item" onclick="setTool('item')" title="Item auto-ramassage (I)">🧪 Item</button>
-  <button class="btn tool-btn" data-tool="interactable" onclick="setTool('interactable')" title="Objet interactif touche E (U)">📦 Interactif</button>
-  <button class="btn tool-btn" data-tool="svg" onclick="setTool('svg')" title="Décoration SVG (D)">🖼️ SVG</button>
-  <button class="btn tool-btn" data-tool="spawn" onclick="setTool('spawn')" title="Point départ (X)">🏁 Départ</button>
-  <button class="btn tool-btn" data-tool="goal" onclick="setTool('goal')" title="Objectif (O)">🏆 Objectif</button>
-  <button class="btn tool-btn" data-tool="coin" onclick="setTool('coin')" title="Pièce (C)">🪙 Pièce</button>
+  <button class="btn tool-btn active" data-tool="select" onclick="setTool('select');closeDropdowns()" title="Sélectionner / Déplacer (V)">✋ Sélect</button>
+  <div class="sep"></div>
+
+  <!-- ── Terrain ── -->
+  <div class="dropdown" id="dd-terrain">
+    <button class="btn dropdown-btn" onclick="toggleDropdown('dd-terrain')">▬ Terrain ▾</button>
+    <div class="dropdown-menu">
+      <button class="btn tool-btn" data-tool="platform" onclick="setTool('platform');closeDropdowns()" title="(P)">▬ Plateforme</button>
+      <button class="btn tool-btn" data-tool="svg" onclick="setTool('svg');closeDropdowns()" title="(D)">🖼️ SVG décoratif</button>
+    </div>
+  </div>
+
+  <!-- ── Ennemis ── -->
+  <div class="dropdown" id="dd-ennemis">
+    <button class="btn dropdown-btn" onclick="toggleDropdown('dd-ennemis')">👹 Ennemis ▾</button>
+    <div class="dropdown-menu">
+      <button class="btn tool-btn" data-tool="skeleton" onclick="setTool('skeleton');closeDropdowns()" title="(K)">💀 Squelette</button>
+      <button class="btn tool-btn" data-tool="goblin" onclick="setTool('goblin');closeDropdowns()" title="(G)">👺 Goblin</button>
+    </div>
+  </div>
+
+  <!-- ── Civils ── -->
+  <div class="dropdown" id="dd-civils">
+    <button class="btn dropdown-btn" onclick="toggleDropdown('dd-civils')">🧑 Civils ▾</button>
+    <div class="dropdown-menu">
+      <button class="btn tool-btn" data-tool="civilian" disabled style="opacity:.4;cursor:not-allowed">🧑 Civil</button>
+      <p class="dd-soon">D'autres à venir…</p>
+    </div>
+  </div>
+
+  <!-- ── Quêtes ── -->
+  <div class="dropdown" id="dd-quetes">
+    <button class="btn dropdown-btn" onclick="toggleDropdown('dd-quetes')">📋 Quêtes ▾</button>
+    <div class="dropdown-menu">
+      <button class="btn tool-btn" data-tool="questnpc" disabled style="opacity:.4;cursor:not-allowed">📋 PNJ Quête</button>
+      <p class="dd-soon">D'autres à venir…</p>
+    </div>
+  </div>
+
+  <!-- ── Objets ── -->
+  <div class="dropdown" id="dd-objets">
+    <button class="btn dropdown-btn" onclick="toggleDropdown('dd-objets')">📦 Objets ▾</button>
+    <div class="dropdown-menu">
+      <p class="dd-section">Armes</p>
+      <button class="btn tool-btn" data-tool="weapon" data-sub="sword"       onclick="pickWeapon('sword')"   title="(W)">⚔️ Épée Classique</button>
+      <button class="btn tool-btn" data-tool="weapon" data-sub="bow"         onclick="pickWeapon('bow')"     title="">🏹 Arc Long</button>
+      <button class="btn tool-btn" data-tool="weapon" data-sub="hammer"      onclick="pickWeapon('hammer')"  title="">🔨 Marteau de Guerre</button>
+      <button class="btn tool-btn" data-tool="weapon" data-sub="staff"       onclick="pickWeapon('staff')"   title="">🪄 Bâton Arcanique</button>
+      <p class="dd-section">Items</p>
+      <button class="btn tool-btn" data-tool="item"   data-sub="potion"      onclick="pickItem('potion')"    title="(I)">🧪 Potion de soin</button>
+      <button class="btn tool-btn" data-tool="item"   data-sub="force"       onclick="pickItem('force')"     title="">⚡ Élixir de force</button>
+      <p class="dd-section">Autres</p>
+      <button class="btn tool-btn" data-tool="interactable" onclick="setTool('interactable');closeDropdowns()" title="(U)">📦 Interactif (E)</button>
+      <button class="btn tool-btn" data-tool="coin"         onclick="setTool('coin');closeDropdowns()"         title="(C)">🪙 Pièce</button>
+    </div>
+  </div>
+
+  <!-- ── Lumière ── -->
+  <div class="dropdown" id="dd-light">
+    <button class="btn dropdown-btn" onclick="toggleDropdown('dd-light')">💡 Lumière ▾</button>
+    <div class="dropdown-menu">
+      <button class="btn tool-btn" data-tool="torch" onclick="setTool('torch');closeDropdowns()" title="(T)">🔦 Torche</button>
+    </div>
+  </div>
+
+  <!-- ── Zones ── -->
+  <div class="dropdown" id="dd-zones">
+    <button class="btn dropdown-btn" onclick="toggleDropdown('dd-zones')">🔷 Zones ▾</button>
+    <div class="dropdown-menu">
+      <button class="btn tool-btn" data-tool="reverb" onclick="setTool('reverb');closeDropdowns()" title="(R)">〜 Reverb</button>
+    </div>
+  </div>
+
+  <!-- ── Marqueurs ── -->
+  <div class="dropdown" id="dd-marqueurs">
+    <button class="btn dropdown-btn" onclick="toggleDropdown('dd-marqueurs')">📍 Marqueurs ▾</button>
+    <div class="dropdown-menu">
+      <button class="btn tool-btn" data-tool="spawn" onclick="setTool('spawn');closeDropdowns()" title="(X)">🏁 Spawn</button>
+      <button class="btn tool-btn" data-tool="goal" onclick="setTool('goal');closeDropdowns()" title="(O)">🏆 Objectif</button>
+    </div>
+  </div>
   <div class="sep"></div>
   <label><input type="checkbox" id="gridToggle" checked onchange="render()"> Grille</label>
   <select id="snapSel" onchange="SNAP=+this.value" title="Taille du snap">
@@ -135,8 +294,21 @@ label { font-size: 11px; color: #8888aa; }
   <div id="left-panel">
     <div class="psec">
       <h3>Niveau</h3>
-      <div class="prow"><label>Nom</label><input type="text" id="lvlName" value="Nouveau Niveau" oninput="level.name=this.value" style="flex:1"></div>
+      <div class="prow"><label>Nom</label><input type="text" id="lvlName" value="Nouveau Niveau" oninput="level.name=this.value;_updateTitleIndicator()" style="flex:1"></div>
       <div class="prow"><label>Dead Y</label><input type="number" id="lvlDead" value="1100" style="width:70px" oninput="level.deadZone=+this.value||1100"></div>
+      <div class="prow" style="margin-bottom:0">
+        <label>☀️ Lumière</label>
+        <input type="range" id="globalLightSlider" min="0" max="1" step="0.05" value="1" style="flex:1"
+          oninput="level.globalLight=+this.value;document.getElementById('lightPct').textContent=Math.round(this.value*100)+'%';render()">
+        <span id="lightPct" style="font-size:10px;min-width:30px;text-align:right;color:#8888aa">100%</span>
+      </div>
+      <div class="prow" style="margin-bottom:0">
+        <label>🎨 Teinte</label>
+        <input type="color" id="tintColor" value="#ff0000" oninput="level.tint.color=this.value;markDirty();render()">
+        <input type="range" id="tintOpacity" min="0" max="1" step="0.01" value="0" style="flex:1"
+          oninput="level.tint.opacity=+this.value;document.getElementById('tintPct').textContent=Math.round(this.value*100)+'%';markDirty();render()">
+        <span id="tintPct" style="font-size:10px;min-width:30px;text-align:right;color:#8888aa">0%</span>
+      </div>
     </div>
     <div class="psec">
       <h3>Ciel (dégradé)</h3>
@@ -169,15 +341,28 @@ label { font-size: 11px; color: #8888aa; }
     </div>
   </div>
 
+  <div class="panel-resize" id="resize-left"></div>
+
   <!-- ═══ CANVAS ═══ -->
   <div id="canvas-wrap">
     <canvas id="canvas"></canvas>
   </div>
 
+  <div class="panel-resize" id="resize-right"></div>
+
   <!-- ═══ RIGHT PANEL ═══ -->
   <div id="right-panel">
-    <h2>Propriétés</h2>
-    <div id="props"></div>
+    <div id="outliner-wrap">
+      <div class="rp-hdr">
+        <h2>Scène</h2>
+        <span id="ol-count" style="font-size:9px;color:#44446a"></span>
+      </div>
+      <div id="outliner"></div>
+    </div>
+    <div id="props-wrap">
+      <h2>Propriétés</h2>
+      <div id="props"></div>
+    </div>
   </div>
 
 </div>
@@ -247,17 +432,49 @@ const I_NAME   = { potion:'Potion de soin', force:'Élixir de force' };
 const LAYERS   = ['background','midground','foreground'];
 let SNAP = 20;
 
+// ─── DROPDOWN MAP ────────────────────────────────────────────────────────────
+const TOOL_GROUP = {
+    platform:'dd-terrain', svg:'dd-terrain',
+    skeleton:'dd-ennemis', goblin:'dd-ennemis',
+    civilian:'dd-civils',  questnpc:'dd-quetes',
+    weapon:'dd-objets',    item:'dd-objets', interactable:'dd-objets', coin:'dd-objets',
+    spawn:'dd-marqueurs',  goal:'dd-marqueurs',
+    torch:'dd-light',
+};
+const DD_DEFAULT = {
+    'dd-terrain':'▬ Terrain',    'dd-ennemis':'👹 Ennemis',
+    'dd-civils':'🧑 Civils',     'dd-quetes':'📋 Quêtes',
+    'dd-objets':'📦 Objets',     'dd-marqueurs':'📍 Marqueurs',
+    'dd-light':'💡 Lumière',
+};
+const TOOL_LABEL = {
+    platform:'▬ Plateforme', svg:'🖼️ SVG',
+    skeleton:'💀 Squelette',  goblin:'👺 Goblin',
+    interactable:'📦 Interactif', coin:'🪙 Pièce',
+    spawn:'🏁 Spawn',        goal:'🏆 Objectif',
+    torch:'🔦 Torche',
+};
+
+function pickWeapon(id) { activeWeapon = id; setTool('weapon'); closeDropdowns(); }
+function pickItem(id)   { activeItem   = id; setTool('item');   closeDropdowns(); }
+
 // ─── LEVEL DATA ──────────────────────────────────────────────────────────────
 function freshLevel() {
     return {
         name: 'Nouveau Niveau',
         sky: { top: '#040610', bottom: '#0d1828' },
+        globalLight: 1.0,
+        tint: { color: '#ff8800', opacity: 0 },
         spawnPoint: { x: 100, y: 450 },
         goal: { x: 2200, y: 490, width: 180, height: 20 },
         deadZone: 1100,
         parallax: { background: [], midground: [], foreground: [] },
         platforms: [],
-        skeletons: [], goblins: [], coins: [],
+        skeletons: [], goblins: [],
+        civilians: [], questNpcs: [],
+        torches: [],
+        reverbZones: [],
+        coins: [],
         droppedWeapons: [], items: [], interactables: [],
     };
 }
@@ -281,7 +498,7 @@ let layerVis = { background: true, midground: true, foreground: true, gameplay: 
 let selected  = null;         // { type, obj, layer? }
 let mouseW    = { x: 0, y: 0 };
 let isDrag    = false;
-let dragMode  = null;         // 'move'|'resize'|'platdraw'|'pan'
+let dragMode  = null;         // 'move'|'resize'|'platdraw'|'revdraw'|'pan'
 let dragStart = {};
 let dragObj   = null;
 let resizeHnd = null;
@@ -306,6 +523,7 @@ function saveState() {
     history.push(JSON.stringify(level));
     if (history.length > 80) history.shift();
     future = [];
+    markDirty();
 }
 function undo() {
     if (!history.length) return;
@@ -355,13 +573,29 @@ function render() {
         level.droppedWeapons.forEach(drawDropWeapon);
         level.items.forEach(drawItem);
         level.interactables.forEach(drawInteractable);
+        level.reverbZones.forEach(drawReverbZone);
+        level.torches.forEach(drawTorch);
     }
 
     if (layerVis.foreground) drawParallax('foreground');
     if (selected) drawSelection();
     if (isDrag && dragMode === 'platdraw') drawPlatPreview();
+    if (isDrag && dragMode === 'revdraw')  drawReverbPreview();
 
     ctx.restore();
+
+    // Overlay lumière (espace écran, après restore)
+    if ((level.globalLight ?? 1) < 0.999) drawLightingOverlay();
+
+    // Teinte globale (espace écran)
+    if ((level.tint?.opacity ?? 0) > 0.001) {
+        const [cr, cg, cb] = _hexToRgb(level.tint.color);
+        ctx.save();
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${level.tint.opacity})`;
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+    }
+
     updateStatus();
 }
 
@@ -426,6 +660,26 @@ function drawPlatform(p) {
         ctx.textAlign = 'left';
     }
     if (isSel) { ctx.strokeStyle = '#7a44cc'; ctx.lineWidth = 2/cam.zoom; ctx.strokeRect(p.x-1, p.y-1, p.width+2, p.height+2); }
+    ctx.restore();
+}
+
+function drawReverbPreview() {
+    const x = snp(Math.min(dragStart.wx, mouseW.x));
+    const y = snp(Math.min(dragStart.wy, mouseW.y));
+    const w = Math.max(SNAP||1, snp(Math.abs(mouseW.x - dragStart.wx)));
+    const h = Math.max(SNAP||1, snp(Math.abs(mouseW.y - dragStart.wy)));
+    ctx.save();
+    ctx.fillStyle = 'rgba(60,100,220,0.15)';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = '#5588dd';
+    ctx.lineWidth = 2/cam.zoom;
+    ctx.setLineDash([6/cam.zoom, 4/cam.zoom]);
+    ctx.strokeRect(x, y, w, h);
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#99bbff';
+    ctx.font = `bold ${11/cam.zoom}px sans-serif`;
+    ctx.textBaseline = 'top';
+    ctx.fillText(`〜 ${w}×${h}`, x + 4/cam.zoom, y + 4/cam.zoom);
     ctx.restore();
 }
 
@@ -525,6 +779,225 @@ function drawInteractable(it) {
     ctx.restore();
 }
 
+// ─── FLAME HELPERS ───────────────────────────────────────────────────────────
+// Calcule le scintillement organique d'une torche (retourne -1..+1)
+// ─── TORCH HELPERS ───────────────────────────────────────────────────────────
+
+// Hash per-position → phase unique, torches jamais en sync
+function _torchFlicker(tx, ty, now) {
+    const h = Math.sin(tx * 127.1 + ty * 311.7) * 43758.5453;
+    const phase = (h - Math.floor(h)) * 628.3; // 0..2π×100
+    const t = now * 0.001;
+    return Math.sin(t * 7.3  + phase)        * 0.50
+         + Math.sin(t * 13.1 + phase * 1.31) * 0.30
+         + Math.sin(t *  4.7 + phase * 0.71) * 0.20;
+}
+
+// Hex '#rrggbb' → [r, g, b]
+function _hexToRgb(hex) {
+    const n = parseInt((hex || '#ffaa44').replace('#', ''), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+// ── Étincelles ───────────────────────────────────────────────────────────────
+const _sparks = new Map(); // torchId → [{x,y,vx,vy,life,decay,r}]
+
+function _tickSparks(id, bx, tipY, sc) {
+    if (!_sparks.has(id)) _sparks.set(id, []);
+    const pool = _sparks.get(id);
+    // Spawn rare (~2.5 % / frame → ~1.5 étincelles/s à 60fps)
+    if (pool.length < 6 && Math.random() < 0.025) {
+        pool.push({
+            x:  bx + (Math.random() - 0.5) * 5 * sc,
+            y:  tipY,
+            vx: (Math.random() - 0.5) * 0.9 * sc,
+            vy: -(Math.random() * 1.1 + 0.4) * sc,
+            life: 1.0,
+            decay: Math.random() * 0.022 + 0.014,
+            r: (Math.random() * 1.2 + 0.6) * sc,
+        });
+    }
+    for (let i = pool.length - 1; i >= 0; i--) {
+        const s = pool[i];
+        s.x += s.vx;  s.y += s.vy;
+        s.vy += 0.04 * sc;  s.vx *= 0.97;
+        s.life -= s.decay;
+        if (s.life <= 0) pool.splice(i, 1);
+    }
+    return pool;
+}
+
+function _drawSparks(c, pool) {
+    if (!pool?.length) return;
+    c.save();
+    for (const s of pool) {
+        c.globalAlpha = s.life * 0.88;
+        c.fillStyle = s.life > 0.55 ? '#ffee44' : s.life > 0.25 ? '#ff8800' : '#cc2200';
+        c.beginPath(); c.arc(s.x, s.y, Math.max(0.3, s.r * s.life), 0, Math.PI * 2); c.fill();
+    }
+    c.globalAlpha = 1;
+    c.restore();
+}
+
+// ── Canvas offscreen persistant (évite new canvas chaque frame) ──────────────
+let _lightOff = null, _lightOc = null;
+function _getLightOff(w, h) {
+    if (!_lightOff || _lightOff.width !== w || _lightOff.height !== h) {
+        _lightOff = document.createElement('canvas');
+        _lightOff.width = w; _lightOff.height = h;
+        _lightOc = _lightOff.getContext('2d');
+    }
+    return _lightOc;
+}
+
+// Templates pré-rendus (créés une seule fois)
+let _lightTemplate = null;
+const _colorTemplates = new Map();
+function _getLightTemplate() {
+    if (_lightTemplate) return _lightTemplate;
+    const S = 256, c = document.createElement('canvas');
+    c.width = c.height = S;
+    const x = c.getContext('2d');
+    const g = x.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
+    g.addColorStop(0,    'rgba(255,255,255,1)');
+    g.addColorStop(0.55, 'rgba(255,255,255,0.4)');
+    g.addColorStop(1,    'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, S, S);
+    return (_lightTemplate = c);
+}
+function _getColorTemplate(color) {
+    const key = color || '#ffb950';
+    if (_colorTemplates.has(key)) return _colorTemplates.get(key);
+    const S = 128, c = document.createElement('canvas');
+    c.width = c.height = S;
+    const x = c.getContext('2d');
+    const [cr, cg, cb] = _hexToRgb(key);
+    const g = x.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
+    g.addColorStop(0, `rgba(${cr},${cg},${cb},1)`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = g; x.fillRect(0, 0, S, S);
+    _colorTemplates.set(key, c);
+    return c;
+}
+
+// ── Flamme ───────────────────────────────────────────────────────────────────
+function _drawFlame(c, x, y, now, scale) {
+    const h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    const phase = (h - Math.floor(h)) * 628.3;
+    const t = now * 0.001;
+    const f = Math.sin(t * 7.1  + phase)        * 0.45
+            + Math.sin(t * 12.7 + phase * 1.27) * 0.30
+            + Math.sin(t *  4.9 + phase * 0.49) * 0.25;
+    const wobble = Math.sin(t * 5.3 + phase * 0.53) * 3.0 * scale;
+    const fh = (26 + f * 7) * scale;
+    const fw =  8 * scale;
+    const layers = [
+        { c:'#7a0a00', a:0.55, sw:1.40, sh:1.20 },
+        { c:'#cc2200', a:0.70, sw:1.10, sh:1.05 },
+        { c:'#ff6600', a:0.82, sw:0.80, sh:0.88 },
+        { c:'#ffcc00', a:0.90, sw:0.50, sh:0.65 },
+        { c:'#fff4cc', a:0.80, sw:0.22, sh:0.38 },
+    ];
+    c.save();
+    for (const l of layers) {
+        const lw = fw * l.sw, lh = fh * l.sh, ox = wobble * l.sw;
+        c.beginPath();
+        c.moveTo(x + ox, y);
+        c.bezierCurveTo(x+lw+ox*0.5, y-lh*0.28, x+lw*0.5+ox, y-lh*0.75, x+ox, y-lh);
+        c.bezierCurveTo(x-lw*0.5+ox, y-lh*0.75, x-lw+ox*0.5, y-lh*0.28, x+ox, y);
+        c.globalAlpha = l.a; c.fillStyle = l.c; c.fill();
+    }
+    c.globalAlpha = 1; c.restore();
+}
+
+function drawTorch(t) {
+    const isSel = selected && selected.obj === t;
+    const now   = performance.now();
+    const sc    = 1 / cam.zoom;
+    const [cr, cg, cb] = _hexToRgb(t.color);
+
+    // Socle + petit halo local (rayon fixe court → pas de gradient géant)
+    ctx.save();
+    const lr = Math.min(36, 22 / cam.zoom); // petit halo fixe, jamais plus de 36px monde
+    const sg = ctx.createRadialGradient(t.x, t.y - 8*sc, 0, t.x, t.y, lr);
+    sg.addColorStop(0,   `rgba(${cr},${cg},${cb},0.5)`);
+    sg.addColorStop(1,   `rgba(${cr},${cg},${cb},0)`);
+    ctx.fillStyle = sg;
+    ctx.beginPath(); ctx.arc(t.x, t.y, lr, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#6b3a1f'; ctx.fillRect(t.x - 3*sc, t.y - 14*sc, 6*sc, 14*sc);
+    ctx.fillStyle = '#8b5a2b'; ctx.fillRect(t.x - 4*sc, t.y - 16*sc, 8*sc, 4*sc);
+    // Cercle de rayon (stroke seulement, pas de fill — cheap)
+    ctx.strokeStyle = isSel ? '#7a44cc' : `rgba(${cr},${cg},${cb},0.35)`;
+    ctx.lineWidth   = 1.5 / cam.zoom;
+    ctx.setLineDash([6/cam.zoom, 4/cam.zoom]);
+    ctx.beginPath(); ctx.arc(t.x, t.y, t.radius, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = `${9/cam.zoom}px Segoe UI`; ctx.fillStyle = `rgba(${cr},${cg},${cb},0.75)`; ctx.textAlign = 'center';
+    ctx.fillText('r=' + t.radius, t.x, t.y - t.radius - 5/cam.zoom);
+    ctx.textAlign = 'left';
+    ctx.restore();
+
+    // Flamme + étincelles (save interne dans _drawFlame)
+    const tipY = t.y - (16 + 26) * sc;
+    const pool = _tickSparks(t.id, t.x, tipY, sc);
+    _drawFlame(ctx, t.x, t.y - 16*sc, now, sc);
+    _drawSparks(ctx, pool);
+}
+
+function drawReverbZone(z) {
+    const isSel = selected?.obj === z;
+    ctx.save();
+    ctx.fillStyle = `rgba(60,100,220,${0.10 + z.amount * 0.12})`;
+    ctx.fillRect(z.x, z.y, z.w, z.h);
+    ctx.strokeStyle = isSel ? '#7a44cc' : '#5588dd';
+    ctx.lineWidth = (isSel ? 2 : 1) / cam.zoom;
+    ctx.setLineDash([6/cam.zoom, 4/cam.zoom]);
+    ctx.strokeRect(z.x, z.y, z.w, z.h);
+    ctx.setLineDash([]);
+    ctx.fillStyle = isSel ? '#ccddff' : '#99bbff';
+    ctx.font = `bold ${11/cam.zoom}px sans-serif`;
+    ctx.textBaseline = 'top';
+    ctx.fillText(`〜 ×${Math.round(z.amount*100)}%  ${z.decay}s`, z.x + 4/cam.zoom, z.y + 4/cam.zoom);
+    ctx.restore();
+}
+
+function drawLightingOverlay() {
+    const W = canvas.width, H = canvas.height;
+    const now = performance.now();
+    const oc  = _getLightOff(W, H);
+    const tmpl = _getLightTemplate();
+    const alpha = 1 - (level.globalLight ?? 1);
+    oc.globalCompositeOperation = 'source-over';
+    oc.globalAlpha = 1;
+    oc.clearRect(0, 0, W, H);
+    oc.fillStyle = `rgba(0,4,18,${alpha})`;
+    oc.fillRect(0, 0, W, H);
+    oc.globalCompositeOperation = 'destination-out';
+    level.torches.forEach(t => {
+        const s  = w2s(t.x, t.y);
+        const fl = _torchFlicker(t.x, t.y, now);
+        const r  = t.radius * cam.zoom * (1 + fl * 0.07);
+        // Culling viewport
+        if (s.x + r < 0 || s.x - r > W || s.y + r < 0 || s.y - r > H) return;
+        oc.globalAlpha = Math.min(1, (t.intensity ?? 0.85) * (1 + fl * 0.10));
+        oc.drawImage(tmpl, s.x - r, s.y - r, r * 2, r * 2);
+    });
+    oc.globalAlpha = 1;
+    ctx.drawImage(_lightOff, 0, 0);
+    // Pass 2 : teinte colorée (template par couleur)
+    ctx.save();
+    level.torches.forEach(t => {
+        const s  = w2s(t.x, t.y);
+        const fl = _torchFlicker(t.x, t.y, now);
+        const r  = t.radius * cam.zoom * (1 + fl * 0.07) * 0.65;
+        if (s.x + r < 0 || s.x - r > W || s.y + r < 0 || s.y - r > H) return;
+        ctx.globalAlpha = Math.min(1, (t.intensity ?? 0.85) * (1 + fl * 0.10)) * 0.28;
+        ctx.drawImage(_getColorTemplate(t.color), s.x - r, s.y - r, r * 2, r * 2);
+    });
+    ctx.globalAlpha = 1;
+    ctx.restore();
+}
+
 function drawSpawn() {
     const s = level.spawnPoint;
     const isSel = selected && selected.type === 'spawn';
@@ -617,6 +1090,16 @@ function hitAll(wx, wy) {
         const w = level.droppedWeapons[i];
         if (Math.abs(wx-w.x)<15&&Math.abs(wy-w.y)<15) return { type:'droppedWeapon', obj:w };
     }
+    // Reverb zones (larges, testées en premier par rapport aux points)
+    for (let i = level.reverbZones.length-1; i >= 0; i--) {
+        const z = level.reverbZones[i];
+        if (wx>=z.x && wx<=z.x+z.w && wy>=z.y && wy<=z.y+z.h) return { type:'reverb', obj:z };
+    }
+    // Torches
+    for (let i = level.torches.length-1; i >= 0; i--) {
+        const t = level.torches[i];
+        if (Math.hypot(wx-t.x, wy-t.y) < 18) return { type:'torch', obj:t };
+    }
     // Coins
     for (let i = level.coins.length-1; i >= 0; i--) {
         const c = level.coins[i];
@@ -688,6 +1171,11 @@ function onMD(e) {
         dragStart = { wx:snp(wp.x), wy:snp(wp.y) };
         render();
 
+    } else if (tool === 'reverb') {
+        saveState(); isDrag = true; dragMode = 'revdraw';
+        dragStart = { wx:snp(wp.x), wy:snp(wp.y) };
+        render();
+
     } else if (tool === 'svg') {
         if (pendingSVG) {
             const it = { id:uid(), name:pendingSVG.name, dataUrl:pendingSVG.dataUrl,
@@ -741,7 +1229,7 @@ function onMM(e) {
         applyResize(dragObj, dragStart, resizeHnd, wp.x - dragStart.wx, wp.y - dragStart.wy);
         render(); updateProps(); return;
     }
-    if (dragMode === 'platdraw') { render(); return; }
+    if (dragMode === 'platdraw' || dragMode === 'revdraw') { render(); return; }
 }
 
 function onMU(e) {
@@ -760,8 +1248,22 @@ function onMU(e) {
             updateProps();
         }
     }
+    if (dragMode === 'revdraw') {
+        const x = snp(Math.min(dragStart.wx, wp.x));
+        const y = snp(Math.min(dragStart.wy, wp.y));
+        const w = Math.max(SNAP||5, snp(Math.abs(wp.x - dragStart.wx)));
+        const h = Math.max(SNAP||5, snp(Math.abs(wp.y - dragStart.wy)));
+        if (w >= 20 && h >= 20) {
+            const ra = +(document.getElementById('reverbA')?.value ?? 0.5);
+            const rd = +(document.getElementById('reverbD')?.value ?? 2.0);
+            const z = { id:uid(), x, y, w, h, amount:ra, decay:rd };
+            level.reverbZones.push(z);
+            setSel({ type:'reverb', obj:z });
+            updateProps();
+        }
+    }
     isDrag = false; dragMode = null; dragObj = null;
-    canvas.style.cursor = tool === 'select' ? 'default' : tool === 'platform' ? 'crosshair' : 'cell';
+    canvas.style.cursor = tool === 'select' ? 'default' : (tool === 'platform' || tool === 'reverb') ? 'crosshair' : 'cell';
     render();
 }
 
@@ -775,7 +1277,9 @@ function onWheel(e) {
     cam.y = wp.y - (wp.y - cam.y) * (nz/cam.zoom);
     cam.zoom = nz;
     document.getElementById('s-zoom').textContent = `Zoom: ${Math.round(cam.zoom*100)}%`;
-    render();
+    // Ne pas appeler render() ici : la boucle d'animation s'en charge déjà à 60fps
+    // quand des éléments animés sont présents ; sinon, marquer pour le prochain frame.
+    if (level.torches.length === 0 && (level.globalLight ?? 1) >= 0.999) render();
 }
 
 function cursorForHandle(h) {
@@ -796,6 +1300,13 @@ function placeObj(t, wx, wy) {
     switch (t) {
         case 'skeleton':     level.skeletons.push({ id:uid(), x, y }); break;
         case 'goblin':       level.goblins.push({ id:uid(), x, y }); break;
+        case 'torch': {
+            const r  = +(document.getElementById('torchR')?.value  ?? 200);
+            const ii = +(document.getElementById('torchI')?.value  ?? 0.85);
+            const cc =   document.getElementById('torchC')?.value  ?? '#ffaa44';
+            level.torches.push({ id:uid(), x, y, radius:r, intensity:ii, color:cc });
+            break;
+        }
         case 'coin':         level.coins.push({ id:uid(), x, y }); break;
         case 'weapon':       level.droppedWeapons.push({ id:uid(), x, y, weaponId:activeWeapon }); break;
         case 'item':         level.items.push({ id:uid(), x, y, itemId:activeItem }); break;
@@ -819,6 +1330,8 @@ function delSel() {
     else if (type==='droppedWeapon')level.droppedWeapons= level.droppedWeapons.filter(w=>w!==obj);
     else if (type==='item')         level.items         = level.items.filter(i=>i!==obj);
     else if (type==='interactable') level.interactables = level.interactables.filter(i=>i!==obj);
+    else if (type==='torch')        level.torches       = level.torches.filter(t=>t!==obj);
+    else if (type==='reverb')       level.reverbZones   = level.reverbZones.filter(r=>r!==obj);
     else if (type==='svg')          level.parallax[layer] = level.parallax[layer].filter(i=>i!==obj);
     setSel(null); render();
 }
@@ -835,6 +1348,8 @@ function dupSel() {
     else if (selected.type==='droppedWeapon') level.droppedWeapons.push(clone);
     else if (selected.type==='item')     level.items.push(clone);
     else if (selected.type==='interactable') level.interactables.push(clone);
+    else if (selected.type==='torch')        level.torches.push(clone);
+    else if (selected.type==='reverb')       level.reverbZones.push(clone);
     else if (selected.type==='svg') {
         level.parallax[selected.layer].push(clone);
         svgCache[clone.id] = svgCache[selected.obj.id];
@@ -849,15 +1364,17 @@ document.addEventListener('keydown', e => {
     if (e.ctrlKey) {
         if (e.key==='z') { e.preventDefault(); undo(); return; }
         if (e.key==='y') { e.preventDefault(); redo(); return; }
-        if (e.key==='s') { e.preventDefault(); saveLevel(); return; }
+        if (e.key==='s') { e.preventDefault(); cmdSave(); return; }
         if (e.key==='d') { e.preventDefault(); dupSel(); return; }
+        if (e.key==='n') { e.preventDefault(); cmdNew(); return; }
+        if (e.key==='o') { e.preventDefault(); cmdOpen(); return; }
     }
     if (e.key==='Delete'||e.key==='Backspace') { delSel(); return; }
-    if (e.key==='Escape') { setSel(null); pendingSVG=null; render(); updateProps(); updateToolUI(); return; }
+    if (e.key==='Escape') { setSel(null); pendingSVG=null; closeDropdowns(); render(); updateProps(); updateToolUI(); return; }
     if (e.key==='f') { frameSelected(); return; }
     if (e.key==='Home') { frameAll(); return; }
     // Tool shortcuts
-    const tm = { v:'select',p:'platform',k:'skeleton',g:'goblin',w:'weapon',i:'item',u:'interactable',d:'svg',x:'spawn',o:'goal',c:'coin' };
+    const tm = { v:'select',p:'platform',k:'skeleton',g:'goblin',w:'weapon',i:'item',u:'interactable',d:'svg',x:'spawn',o:'goal',c:'coin',t:'torch',r:'reverb' };
     if (!e.ctrlKey && tm[e.key]) { setTool(tm[e.key]); return; }
     // Arrow nudge
     if (selected && e.key.startsWith('Arrow')) {
@@ -888,10 +1405,45 @@ function frameAll() {
     render();
 }
 
+// ─── DROPDOWNS ────────────────────────────────────────────────────────────────
+function closeDropdowns() {
+    document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+}
+function toggleDropdown(id) {
+    const wasOpen = document.getElementById(id).classList.contains('open');
+    closeDropdowns();
+    if (!wasOpen) document.getElementById(id).classList.add('open');
+}
+document.addEventListener('mousedown', e => {
+    if (!e.target.closest('.dropdown')) closeDropdowns();
+}, true);
+
 // ─── TOOL SWITCHING ───────────────────────────────────────────────────────────
 function setTool(t) {
     tool = t; pendingSVG = null;
-    document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool===t));
+    // Active state — tient compte des sous-types weapon/item
+    document.querySelectorAll('.tool-btn').forEach(b => {
+        let active = b.dataset.tool === t;
+        if (active && b.dataset.sub) {
+            if (t === 'weapon') active = b.dataset.sub === activeWeapon;
+            else if (t === 'item') active = b.dataset.sub === activeItem;
+        }
+        b.classList.toggle('active', active);
+    });
+    // Label des boutons de menu déroulant
+    Object.entries(DD_DEFAULT).forEach(([ddId, def]) => {
+        const btn = document.querySelector(`#${ddId} .dropdown-btn`);
+        if (!btn) return;
+        const isActive = TOOL_GROUP[t] === ddId;
+        let label = def;
+        if (isActive) {
+            if (t === 'weapon') label = (W_ICON[activeWeapon]||'⚔️') + ' ' + (W_NAME[activeWeapon]||'Arme');
+            else if (t === 'item') label = (I_ICON[activeItem]||'🧪') + ' ' + (I_NAME[activeItem]||'Item');
+            else label = TOOL_LABEL[t] || def;
+        }
+        btn.textContent = label + ' ▾';
+        btn.classList.toggle('active', isActive);
+    });
     canvas.style.cursor = t==='select'?'default':t==='platform'?'crosshair':'cell';
     updateToolUI();
 }
@@ -899,7 +1451,7 @@ function setTool(t) {
 function updateToolUI() {
     const titles = { select:'Sélection', platform:'Plateforme', skeleton:'Squelette', goblin:'Goblin',
         weapon:'Arme (sol)', item:'Item auto', interactable:'Interactif (E)', svg:'SVG décoratif',
-        spawn:'Point départ', goal:'Objectif', coin:'Pièce' };
+        spawn:'Point départ', goal:'Objectif', coin:'Pièce', torch:'Torche', reverb:'Zone Reverb' };
     document.getElementById('tool-title').textContent = titles[tool]||tool;
     const c = document.getElementById('tool-content');
     if (tool==='platform') {
@@ -941,6 +1493,19 @@ function updateToolUI() {
             + `</select></div>`
             + `<div class="prow"><label>Vitesse X</label><input type="number" step="0.05" min="0" max="2" value="${activeSVGSpeedX}" onchange="activeSVGSpeedX=+this.value" style="flex:1"></div>`
             + `<div class="prow"><label>Vitesse Y</label><input type="number" step="0.05" min="0" max="2" value="${activeSVGSpeedY}" onchange="activeSVGSpeedY=+this.value" style="flex:1"></div>`;
+    } else if (tool==='torch') {
+        c.innerHTML = `<p class="hint" style="margin-bottom:5px">Clic pour placer une torche</p>`
+            + `<div class="prow"><label>Rayon</label><input type="number" min="20" max="1000" step="10" value="200" id="torchR" onchange="void 0" style="flex:1"></div>`
+            + `<div class="prow"><label>Intensité</label><input type="range" min="0" max="1" step="0.05" value="0.85" id="torchI" style="flex:1"></div>`
+            + `<div class="prow"><label>Couleur</label><input type="color" value="#ffaa44" id="torchC" style="flex:1"></div>`;
+        // Sync les valeurs de placement
+        document.addEventListener('change', function syncTorch(ev) {
+            if (!['torchR','torchI','torchC'].includes(ev.target.id)) return;
+        }, { once: false });
+    } else if (tool==='reverb') {
+        c.innerHTML = `<p class="hint" style="margin-bottom:5px">Clic+drag pour tracer la zone</p>`
+            + `<div class="prow"><label>Quantité</label><input type="range" min="0" max="1" step="0.05" value="0.5" id="reverbA" oninput="document.getElementById('reverbAPct').textContent=Math.round(this.value*100)+'%'" style="flex:1"><span id="reverbAPct" style="font-size:10px;min-width:32px;text-align:right;color:#8888aa">50%</span></div>`
+            + `<div class="prow"><label>Decay (s)</label><input type="range" min="0.2" max="6" step="0.2" value="2" id="reverbD" oninput="document.getElementById('reverbDVal').textContent=this.value+'s'" style="flex:1"><span id="reverbDVal" style="font-size:10px;min-width:32px;text-align:right;color:#8888aa">2s</span></div>`;
     } else if (tool==='select') {
         c.innerHTML = `<p class="hint">Clic — sélectionner<br>Drag — déplacer<br>Del — supprimer<br>Ctrl+D — dupliquer<br>Flèches — nudger<br>F — cadrer<br>Home — tout cadrer</p>`;
     } else {
@@ -979,11 +1544,12 @@ function nf(label, key, val, min='') {
 }
 
 function updateProps() {
+    updateOutliner();
     const el = document.getElementById('props');
     if (!selected) { el.innerHTML = `<p style="color:#44446a;font-size:11px;font-style:italic">Aucun objet sélectionné</p>`; return; }
     const { type, obj, layer } = selected;
-    const tagMap = { platform:'t-plat',skeleton:'t-skel',goblin:'t-gob',droppedWeapon:'t-wep',item:'t-item',interactable:'t-int',svg:'t-svg',spawn:'t-spawn',goal:'t-goal',coin:'t-coin' };
-    const nameMap = { platform:'Plateforme',skeleton:'Squelette',goblin:'Goblin',droppedWeapon:'Arme sol',item:'Item',interactable:'Interactif',svg:'SVG',spawn:'Spawn',goal:'Objectif',coin:'Pièce' };
+    const tagMap = { platform:'t-plat',skeleton:'t-skel',goblin:'t-gob',civilian:'t-civ',questNpc:'t-qnpc',droppedWeapon:'t-wep',item:'t-item',interactable:'t-int',svg:'t-svg',spawn:'t-spawn',goal:'t-goal',coin:'t-coin',torch:'t-torch',reverb:'t-reverb' };
+    const nameMap = { platform:'Plateforme',skeleton:'Squelette',goblin:'Goblin',civilian:'Civil',questNpc:'PNJ Quête',droppedWeapon:'Arme sol',item:'Item',interactable:'Interactif',svg:'SVG',spawn:'Spawn',goal:'Objectif',coin:'Pièce',torch:'Torche',reverb:'Zone Reverb' };
     let h = `<div class="tag ${tagMap[type]||''}">${nameMap[type]||type}</div>`;
     const o = type==='spawn'?level.spawnPoint:type==='goal'?level.goal:obj;
 
@@ -1022,6 +1588,22 @@ function updateProps() {
             + LAYERS.map(l=>`<option value="${l}" ${layer===l?'selected':''}>${l}</option>`).join('') + `</select></div>`;
         h += `<div class="prop-row"><label>Vit. X</label><input type="number" value="${o.speedX||0}" step="0.05" min="0" max="2" style="flex:1" onchange="saveState();selected.obj.speedX=+this.value;render()"></div>`;
         h += `<div class="prop-row"><label>Vit. Y</label><input type="number" value="${o.speedY||0}" step="0.05" min="0" max="2" style="flex:1" onchange="saveState();selected.obj.speedY=+this.value;render()"></div>`;
+    } else if (type==='torch') {
+        h += nf('X','x',o.x) + nf('Y','y',o.y);
+        h += nf('Rayon','radius',o.radius,20);
+        h += `<div class="prop-row"><label>Intensité</label><input type="range" min="0" max="1" step="0.05" value="${o.intensity??0.85}" style="flex:1"
+            onchange="saveState();selected.obj.intensity=+this.value;render()"></div>`;
+        h += `<div class="prop-row"><label>Couleur</label><input type="color" value="${o.color||'#ffaa44'}" style="flex:1"
+            oninput="saveState();selected.obj.color=this.value;render()"></div>`;
+    } else if (type==='reverb') {
+        h += nf('X','x',o.x) + nf('Y','y',o.y);
+        h += nf('Largeur','w',o.w,20) + nf('Hauteur','h',o.h,20);
+        h += `<div class="prop-row"><label>Quantité</label><input type="range" min="0" max="1" step="0.05" value="${o.amount??0.5}" style="flex:1"
+            oninput="saveState();selected.obj.amount=+this.value;render()"></div>`;
+        h += `<div class="prop-row"><label>Decay (s)</label><input type="range" min="0.2" max="6" step="0.2" value="${o.decay??2}" style="flex:1"
+            oninput="saveState();selected.obj.decay=+this.value;render()">
+            <span style="font-size:10px;min-width:32px;color:#8888aa">${(o.decay??2).toFixed(1)}s</span></div>`;
+        h += `<p class="hint" style="margin-top:4px">Le joueur entrant dans la zone active le reverb</p>`;
     } else if (type==='spawn') {
         h += nf('X','x',o.x) + nf('Y','y',o.y);
         h += `<p class="hint" style="margin-top:4px">Position de départ du joueur</p>`;
@@ -1046,13 +1628,13 @@ function moveSVGLayer(nl) {
 
 // ─── STATUS ───────────────────────────────────────────────────────────────────
 function updateStatus() {
-    const nm = { platform:'Plat.',skeleton:'Squelette',goblin:'Goblin',droppedWeapon:'Arme',item:'Item',interactable:'Interactif',svg:'SVG',spawn:'Spawn',goal:'Goal',coin:'Pièce' };
+    const nm = { platform:'Plat.',skeleton:'Squelette',goblin:'Goblin',civilian:'Civil',questNpc:'PNJ Quête',droppedWeapon:'Arme',item:'Item',interactable:'Interactif',svg:'SVG',spawn:'Spawn',goal:'Goal',coin:'Pièce',torch:'Torche',reverb:'Zone Reverb' };
     document.getElementById('s-sel').textContent = selected
         ? `Sélection: ${nm[selected.type]||selected.type} (${Math.round(selected.obj?.x||0)}, ${Math.round(selected.obj?.y||0)})`
         : '—';
     const np = level.parallax.background.length + level.parallax.midground.length + level.parallax.foreground.length;
     document.getElementById('s-count').textContent =
-        `${level.platforms.length} plat. / ${level.skeletons.length+level.goblins.length} ennemis / ${level.coins.length} pièces / ${level.droppedWeapons.length+level.items.length+level.interactables.length} items / ${np} SVG`;
+        `${level.platforms.length} plat. / ${level.skeletons.length+level.goblins.length} ennemis / ${level.torches.length} torches / ${level.reverbZones.length} reverb / ${level.coins.length} pièces / ${level.droppedWeapons.length+level.items.length+level.interactables.length} items / ${np} SVG`;
     document.getElementById('s-zoom').textContent = `Zoom: ${Math.round(cam.zoom*100)}%`;
 }
 
@@ -1076,7 +1658,9 @@ function onSVGLoad(e) {
 function exportLevel() {
     const strip = arr => arr.map(o => { const c={...o}; delete c.id; return c; });
     return {
-        name: level.name, sky: level.sky, spawnPoint: level.spawnPoint,
+        name: level.name, sky: level.sky, globalLight: level.globalLight ?? 1,
+        tint: level.tint || { color:'#ff8800', opacity:0 },
+        spawnPoint: level.spawnPoint,
         goal: level.goal, deadZone: level.deadZone,
         parallax: {
             background: strip(level.parallax.background),
@@ -1086,6 +1670,10 @@ function exportLevel() {
         platforms:      strip(level.platforms),
         skeletons:      strip(level.skeletons),
         goblins:        strip(level.goblins),
+        civilians:      strip(level.civilians),
+        questNpcs:      strip(level.questNpcs),
+        torches:        strip(level.torches),
+        reverbZones:    strip(level.reverbZones),
         coins:          strip(level.coins),
         droppedWeapons: strip(level.droppedWeapons),
         items:          strip(level.items),
@@ -1093,22 +1681,209 @@ function exportLevel() {
     };
 }
 
-function saveLevel() {
+// ─── SAVE SYSTEM ─────────────────────────────────────────────────────────────
+const LEVELS_KEY = 'sck_editor_levels';
+let currentLevelId = null;
+let isDirty = false;
+
+function _getLevels() {
+    try { return JSON.parse(localStorage.getItem(LEVELS_KEY) || '[]'); } catch { return []; }
+}
+function _setLevels(arr) { localStorage.setItem(LEVELS_KEY, JSON.stringify(arr)); }
+
+function markDirty() {
+    if (isDirty) return;
+    isDirty = true; _updateTitleIndicator();
+}
+function markClean() {
+    isDirty = false; _updateTitleIndicator();
+}
+
+function _updateTitleIndicator() {
+    const el = document.getElementById('lvl-indicator');
+    if (el) {
+        el.textContent = level.name || 'Sans titre';
+        el.classList.toggle('dirty', isDirty);
+        el.title = isDirty ? 'Non sauvegardé — clic pour renommer' : 'Clic pour renommer';
+    }
+    const del = document.getElementById('dd-btn-delete');
+    if (del) {
+        del.disabled = !currentLevelId;
+        del.style.opacity  = currentLevelId ? '1' : '.4';
+        del.style.cursor   = currentLevelId ? 'pointer' : 'not-allowed';
+    }
+}
+
+function _syncLeftPanel() {
+    document.getElementById('lvlName').value = level.name;
+    document.getElementById('lvlDead').value = level.deadZone;
+    document.getElementById('skyTop').value  = level.sky.top;
+    document.getElementById('skyBot').value  = level.sky.bottom;
+    const ls = document.getElementById('globalLightSlider');
+    if (ls) { ls.value = level.globalLight ?? 1; document.getElementById('lightPct').textContent = Math.round((level.globalLight??1)*100)+'%'; }
+    const tc = document.getElementById('tintColor');
+    const to = document.getElementById('tintOpacity');
+    if (tc && to) {
+        const t = level.tint || { color:'#ff8800', opacity:0 };
+        tc.value = t.color;
+        to.value = t.opacity;
+        document.getElementById('tintPct').textContent = Math.round(t.opacity*100)+'%';
+    }
+}
+
+function promptRename() {
+    const name = prompt('Renommer le niveau :', level.name);
+    if (name === null || !name.trim()) return;
+    level.name = name.trim();
+    document.getElementById('lvlName').value = level.name;
+    _updateTitleIndicator();
+    if (currentLevelId) markDirty();
+}
+
+// ── Commandes Fichier ────────────────────────────────────────────────────────
+function cmdSave() {
+    if (!currentLevelId) { cmdSaveAs(); return; }
+    const levels = _getLevels();
+    const idx = levels.findIndex(l => l.id === currentLevelId);
+    const entry = { id: currentLevelId, name: level.name, modifiedAt: Date.now(), data: exportLevel() };
+    if (idx >= 0) levels[idx] = entry; else levels.push(entry);
+    _setLevels(levels);
+    markClean();
+}
+
+function cmdSaveAs() {
+    const name = prompt('Nom du niveau :', level.name || 'Nouveau Niveau');
+    if (!name) return;
+    level.name = name.trim();
+    document.getElementById('lvlName').value = level.name;
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    currentLevelId = id;
+    const levels = _getLevels();
+    levels.push({ id, name: level.name, modifiedAt: Date.now(), data: exportLevel() });
+    _setLevels(levels);
+    markClean();
+    closeDropdowns();
+}
+
+function cmdNew() {
+    if (isDirty) {
+        const r = confirm(`Sauvegarder "${level.name}" avant de créer un nouveau niveau ?`);
+        if (r) cmdSave();
+    }
+    level = freshLevel();
+    currentLevelId = null;
+    _syncLeftPanel();
+    cam = { x:400, y:400, zoom:1 }; selected = null; history = []; future = [];
+    markClean();
+    render(); updateProps(); updateStatus();
+    closeDropdowns();
+}
+
+function cmdOpen() { openLevelBrowser(); }
+
+function cmdExportJSON() {
     const blob = new Blob([JSON.stringify(exportLevel(), null, 2)], { type:'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = (level.name||'niveau').replace(/\s+/g,'_') + '.json';
     a.click(); URL.revokeObjectURL(a.href);
+    closeDropdowns();
 }
 
-function triggerLoad() { document.getElementById('fileInput').click(); }
+function cmdImportJSON() { document.getElementById('fileInput').click(); }
 
+function cmdDelete() {
+    if (!currentLevelId) return;
+    if (!confirm(`Supprimer "${level.name}" définitivement ?`)) return;
+    _setLevels(_getLevels().filter(l => l.id !== currentLevelId));
+    currentLevelId = null;
+    isDirty = false; markDirty();
+    closeDropdowns();
+}
+
+// ── Level Browser ────────────────────────────────────────────────────────────
+function openLevelBrowser() {
+    renderLevelBrowser();
+    document.getElementById('lvl-browser-overlay').style.display = 'flex';
+    closeDropdowns();
+}
+function closeLevelBrowser() {
+    document.getElementById('lvl-browser-overlay').style.display = 'none';
+}
+
+function renderLevelBrowser() {
+    const levels = _getLevels().sort((a, b) => b.modifiedAt - a.modifiedAt);
+    const list   = document.getElementById('lvl-browser-list');
+    if (!levels.length) {
+        list.innerHTML = `<p style="color:#44446a;font-style:italic;padding:20px;text-align:center">
+            Aucun niveau sauvegardé.<br><br>
+            Utilisez <b>💾 Enregistrer</b> (Ctrl+S) pour sauvegarder le niveau actuel.</p>`;
+        return;
+    }
+    list.innerHTML = levels.map(l => {
+        const d  = l.data;
+        const dt = new Date(l.modifiedAt);
+        const dateStr = dt.toLocaleDateString('fr-FR') + ' ' + dt.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+        const nP = d.platforms?.length || 0;
+        const nE = (d.skeletons?.length||0) + (d.goblins?.length||0);
+        const nT = d.torches?.length || 0;
+        const nC = d.coins?.length || 0;
+        const isOpen = l.id === currentLevelId;
+        return `
+        <div class="lvl-card${isOpen?' open':''}">
+          <div class="lvl-card-name">${l.name}${isOpen ? ' <span style="font-size:10px;color:#9966dd">● ouvert</span>' : ''}</div>
+          <div class="lvl-card-meta">🕐 ${dateStr} &nbsp;·&nbsp; ${nP} plat. · ${nE} ennemis · ${nC} pièces${nT ? ' · ' + nT + ' 🔦' : ''}</div>
+          <div class="lvl-card-actions">
+            <button class="btn" onclick="loadSaved('${l.id}')">📂 Ouvrir</button>
+            <button class="btn" onclick="exportSaved('${l.id}');event.stopPropagation()">📤 Export</button>
+            <button class="btn danger" onclick="deleteSaved('${l.id}');event.stopPropagation()">🗑️</button>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+function loadSaved(id) {
+    const entry = _getLevels().find(l => l.id === id);
+    if (!entry) return;
+    if (isDirty) {
+        const r = confirm(`Sauvegarder "${level.name}" avant d'ouvrir "${entry.name}" ?`);
+        if (r) cmdSave();
+    }
+    currentLevelId = id;
+    importLevel(entry.data);
+    markClean();
+    closeLevelBrowser();
+}
+
+function exportSaved(id) {
+    const entry = _getLevels().find(l => l.id === id);
+    if (!entry) return;
+    const blob = new Blob([JSON.stringify(entry.data, null, 2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = entry.name.replace(/\s+/g,'_') + '.json';
+    a.click(); URL.revokeObjectURL(a.href);
+}
+
+function deleteSaved(id) {
+    const entry = _getLevels().find(l => l.id === id);
+    if (!entry) return;
+    if (!confirm(`Supprimer "${entry.name}" définitivement ?`)) return;
+    _setLevels(_getLevels().filter(l => l.id !== id));
+    if (currentLevelId === id) { currentLevelId = null; isDirty = false; markDirty(); }
+    renderLevelBrowser();
+}
+
+// ── File I/O (JSON import) ────────────────────────────────────────────────────
 function onFileLoad(e) {
     const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
-        try { importLevel(JSON.parse(ev.target.result)); }
-        catch(err) { alert('Erreur JSON : '+err.message); }
+        try {
+            importLevel(JSON.parse(ev.target.result));
+            currentLevelId = null; // importé depuis disque = pas encore dans localStorage
+            markDirty();
+        } catch(err) { alert('Erreur JSON : ' + err.message); }
     };
     reader.readAsText(file); e.target.value = '';
 }
@@ -1118,6 +1893,8 @@ function importLevel(data) {
     level = {
         name: data.name||'Niveau',
         sky: data.sky||{ top:'#040610', bottom:'#0d1828' },
+        globalLight: data.globalLight ?? 1,
+        tint: data.tint || { color:'#ff8800', opacity:0 },
         spawnPoint: data.spawnPoint||{ x:100, y:450 },
         goal: data.goal||{ x:2200, y:490, width:180, height:20 },
         deadZone: data.deadZone||1100,
@@ -1129,29 +1906,20 @@ function importLevel(data) {
         platforms:      addId(data.platforms),
         skeletons:      addId(data.skeletons),
         goblins:        addId(data.goblins),
+        civilians:      addId(data.civilians),
+        questNpcs:      addId(data.questNpcs),
+        torches:        addId(data.torches),
+        reverbZones:    addId(data.reverbZones),
         coins:          addId(data.coins),
         droppedWeapons: addId(data.droppedWeapons),
         items:          addId(data.items),
         interactables:  addId(data.interactables),
     };
-    document.getElementById('lvlName').value = level.name;
-    document.getElementById('lvlDead').value = level.deadZone;
-    document.getElementById('skyTop').value  = level.sky.top;
-    document.getElementById('skyBot').value  = level.sky.bottom;
+    _syncLeftPanel();
+    _updateTitleIndicator();
     selected = null; svgCache._all = null;
     rebuildCache();
     frameAll(); render(); updateProps(); updateStatus();
-}
-
-function newLevel() {
-    if (!confirm('Nouveau niveau ? Les modifications non sauvegardées seront perdues.')) return;
-    level = freshLevel();
-    document.getElementById('lvlName').value = level.name;
-    document.getElementById('lvlDead').value = level.deadZone;
-    document.getElementById('skyTop').value  = level.sky.top;
-    document.getElementById('skyBot').value  = level.sky.bottom;
-    cam = { x:400, y:400, zoom:1 }; selected = null;
-    render(); updateProps(); updateStatus();
 }
 
 // ─── TEST MODE ────────────────────────────────────────────────────────────────
@@ -1181,7 +1949,7 @@ async function testLevel() {
 
     // 3. Injecter niveau + skin comme variables globales (pas localStorage — Blob a origin null)
     const dataScript = `<script>window._EDITOR_LEVEL_DATA=${levelJSON};window._EDITOR_SKIN_IDX=${skin};<\/script>`;
-    html = html.replace('</body>', dataScript + '\n</body>');
+    html = html.replace('</head>', dataScript + '\n</head>');
 
     // 4. Ouvrir dans une nouvelle fenêtre via Blob URL
     const blob = new Blob([html], { type: 'text/html' });
@@ -1192,11 +1960,156 @@ async function testLevel() {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
+// ─── OUTLINER ────────────────────────────────────────────────────────────────
+function updateOutliner() {
+    const ol = document.getElementById('outliner');
+    const counter = document.getElementById('ol-count');
+    if (!ol) return;
+
+    const groups = [
+        { key: 'platform',      icon: '▬', label: 'Plateformes', arr: () => level.platforms },
+        { key: 'torch',         icon: '🔥', label: 'Torches',     arr: () => level.torches },
+        { key: 'reverb',        icon: '〜', label: 'Reverb',       arr: () => level.reverbZones },
+        { key: 'skeleton',      icon: '💀', label: 'Squelettes',  arr: () => level.skeletons },
+        { key: 'goblin',        icon: '👺', label: 'Goblins',     arr: () => level.goblins },
+        { key: 'coin',          icon: '🪙', label: 'Pièces',      arr: () => level.coins },
+        { key: 'droppedWeapon', icon: '⚔', label: 'Armes sol',   arr: () => level.droppedWeapons },
+        { key: 'item',          icon: '🎒', label: 'Items',       arr: () => level.items },
+        { key: 'interactable',  icon: '🔔', label: 'Interactifs', arr: () => level.interactables },
+        { key: 'civilian',      icon: '🧍', label: 'Civils',      arr: () => level.civilians },
+        { key: 'questNpc',      icon: '❓', label: 'PNJ Quête',   arr: () => level.questNpcs },
+    ];
+    // Special singletons
+    const singles = [];
+    if (level.spawnPoint) singles.push({ key: 'spawn', icon: '🟢', label: 'Spawn', obj: level.spawnPoint });
+    if (level.goal)       singles.push({ key: 'goal',  icon: '🏁', label: 'Objectif', obj: level.goal });
+
+    let html = '';
+    let total = singles.length;
+
+    for (const g of groups) {
+        const arr = g.arr();
+        if (!arr?.length) continue;
+        total += arr.length;
+        html += `<div class="ol-group"><div class="ol-ghead"><span>${g.icon} ${g.label}</span><span class="ol-cnt">${arr.length}</span></div>`;
+        arr.forEach((obj, i) => {
+            const active = selected?.obj === obj;
+            let lbl = '';
+            if (g.key === 'platform') lbl = `${Math.round(obj.x)},${Math.round(obj.y)} ${Math.round(obj.width)}×${Math.round(obj.height)}`;
+            else if (g.key === 'torch') lbl = `${Math.round(obj.x)},${Math.round(obj.y)} r=${obj.radius}`;
+            else if (g.key === 'reverb') lbl = `${Math.round(obj.x)},${Math.round(obj.y)} ${Math.round(obj.w)}×${Math.round(obj.h)}`;
+            else lbl = `${g.label.slice(0,-1)} ${i+1}`;
+            html += `<div class="ol-item${active?' ol-sel':''}" onclick="setSel({type:'${g.key}',obj:level.${_keyForGroup(g.key)}[${i}]});render()"><span class="ol-icon">${g.icon}</span><span class="ol-lbl" title="${lbl}">${lbl}</span></div>`;
+        });
+        html += `</div>`;
+    }
+
+    // SVG parallax layers (need layer info for selection)
+    const svgLayers = ['background','midground','foreground'];
+    const svgItems = [];
+    for (const layer of svgLayers) {
+        (level.parallax?.[layer] || []).forEach(obj => svgItems.push({ obj, layer }));
+    }
+    if (svgItems.length) {
+        total += svgItems.length;
+        html += `<div class="ol-group"><div class="ol-ghead"><span>🖼 SVG</span><span class="ol-cnt">${svgItems.length}</span></div>`;
+        svgItems.forEach(({ obj, layer }, i) => {
+            const active = selected?.obj === obj;
+            const lbl = (obj.src?.split('/').pop() || `svg_${i}`) + ` [${layer.slice(0,3)}]`;
+            html += `<div class="ol-item${active?' ol-sel':''}" onclick="_olSelSvg(${i});render()"><span class="ol-icon">🖼</span><span class="ol-lbl" title="${lbl}">${lbl}</span></div>`;
+        });
+        html += `</div>`;
+    }
+
+    for (const s of singles) {
+        const active = selected?.type === s.key;
+        const lbl = `${Math.round(s.obj.x)},${Math.round(s.obj.y)}`;
+        html += `<div class="ol-item${active?' ol-sel':''}" style="margin-bottom:2px" onclick="setSel({type:'${s.key}',obj:level.${s.key==='spawn'?'spawnPoint':'goal'}});render()"><span class="ol-icon">${s.icon}</span><span class="ol-lbl">${s.label} ${lbl}</span></div>`;
+    }
+    if (!html) html = `<p style="color:#44446a;font-size:10px;font-style:italic;padding:4px">Scène vide</p>`;
+    ol.innerHTML = html;
+    if (counter) counter.textContent = total + ' obj.';
+}
+
+function _keyForGroup(key) {
+    const map = { platform:'platforms', torch:'torches', reverb:'reverbZones', skeleton:'skeletons', goblin:'goblins', coin:'coins', droppedWeapon:'droppedWeapons', item:'items', interactable:'interactables', civilian:'civilians', questNpc:'questNpcs' };
+    return map[key] || key + 's';
+}
+
+function _olSelSvg(flatIdx) {
+    let n = 0;
+    for (const layer of ['background','midground','foreground']) {
+        const arr = level.parallax?.[layer] || [];
+        for (let i = 0; i < arr.length; i++) {
+            if (n === flatIdx) { setSel({ type:'svg', layer, obj:arr[i] }); return; }
+            n++;
+        }
+    }
+}
+
+// ─── PANEL RESIZE ─────────────────────────────────────────────────────────────
+function initPanelResize() {
+    function makeResizer(handleId, panelId, side) {
+        const handle = document.getElementById(handleId);
+        const panel  = document.getElementById(panelId);
+        if (!handle || !panel) return;
+        let startX, startW;
+        handle.addEventListener('mousedown', e => {
+            startX = e.clientX;
+            startW = panel.offsetWidth;
+            handle.classList.add('resizing');
+            document.body.style.cursor = 'ew-resize';
+            document.body.style.userSelect = 'none';
+            const onMove = e2 => {
+                const dx = side === 'left' ? e2.clientX - startX : startX - e2.clientX;
+                const minW = parseInt(getComputedStyle(panel).minWidth) || 130;
+                const maxW = parseInt(getComputedStyle(panel).maxWidth) || 420;
+                panel.style.width = Math.min(maxW, Math.max(minW, startW + dx)) + 'px';
+            };
+            const onUp = () => {
+                handle.classList.remove('resizing');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+            e.preventDefault();
+        });
+    }
+    makeResizer('resize-left',  'left-panel',  'left');
+    makeResizer('resize-right', 'right-panel', 'right');
+}
+
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 setTool('select');
 updateToolUI();
 updateProps();
+updateOutliner();
 updateStatus();
+initPanelResize();
+_updateTitleIndicator();
+
+// Échap ferme aussi le navigateur de niveaux
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        const ov = document.getElementById('lvl-browser-overlay');
+        if (ov && ov.style.display !== 'none') { closeLevelBrowser(); e.stopPropagation(); }
+    }
+}, true);
+
+// Boucle d'animation pour les flammes et scintillements (~25 fps max)
+let _animLast = 0;
+(function editorAnim(now) {
+    requestAnimationFrame(editorAnim);
+    if (now - _animLast < 40) return; // ~25 fps
+    _animLast = now;
+    if (level.torches.length > 0 || (level.globalLight ?? 1) < 0.999) {
+        render();
+        updateOutliner();
+    }
+})();
 
 </script>
 </body>

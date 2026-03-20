@@ -388,21 +388,27 @@
         .opt-content::-webkit-scrollbar { width:5px; }
         .opt-content::-webkit-scrollbar-thumb { background:rgba(100,140,255,.3); border-radius:4px; }
         .opt-bind-row {
-            display:flex; align-items:center; justify-content:space-between;
-            padding:9px 4px; border-bottom:1px solid rgba(255,255,255,0.05);
+            display:flex; align-items:center; gap:6px;
+            padding:7px 4px; border-bottom:1px solid rgba(255,255,255,0.05);
         }
-        .opt-bind-label { color:#a0b8d8; font-size:14px; }
+        .opt-bind-label { color:#a0b8d8; font-size:13px; flex:1; }
         .opt-bind-key {
-            min-width:90px; text-align:center;
-            padding:6px 12px; border-radius:8px;
+            min-width:72px; text-align:center;
+            padding:5px 8px; border-radius:8px;
             background:rgba(255,255,255,0.08); border:1.5px solid rgba(120,160,255,0.2);
-            color:#c8dcff; font-size:13px; font-weight:700; font-family:'Rajdhani',sans-serif;
+            color:#c8dcff; font-size:12px; font-weight:700; font-family:'Rajdhani',sans-serif;
             cursor:pointer; transition:all .15s; white-space:nowrap;
         }
         .opt-bind-key:hover { background:rgba(80,140,255,0.18); border-color:rgba(120,180,255,0.4); }
         .opt-bind-key.waiting { background:rgba(80,60,20,0.5); border-color:rgba(255,180,40,0.6); color:#ffe88a; animation:pulse-key .6s infinite alternate; }
+        .opt-bind-gp { border-color:rgba(80,220,160,0.25); color:#80e8c0; }
+        .opt-bind-gp:hover { background:rgba(40,180,120,0.18); border-color:rgba(80,220,160,0.5); }
         @keyframes pulse-key { from{box-shadow:0 0 0 rgba(255,180,40,0)} to{box-shadow:0 0 10px rgba(255,180,40,0.5)} }
-        .opt-section-title { color:#6080c0; font-size:11px; letter-spacing:2px; text-transform:uppercase; margin:14px 0 6px; font-weight:700; }
+        .opt-bind-header { display:flex; align-items:center; gap:6px; padding:0 4px 4px; }
+        .opt-bind-col-hdr { min-width:72px; text-align:center; font-size:10px; color:#5070a0; letter-spacing:.5px; font-weight:700; text-transform:uppercase; }
+        .gp-status { font-size:11px; color:#50aa80; background:rgba(40,120,80,0.12); border:1px solid rgba(60,160,100,0.2); border-radius:6px; padding:5px 10px; margin-bottom:8px; }
+        .gp-status.disconnected { color:#6070a0; background:rgba(40,50,100,0.12); border-color:rgba(60,80,160,0.2); }
+        .opt-section-title { color:#6080c0; font-size:11px; letter-spacing:2px; text-transform:uppercase; margin:12px 0 4px; font-weight:700; }
         .opt-vol-row { display:flex; align-items:center; gap:12px; padding:12px 4px; }
         .opt-vol-row label { color:#a0b8d8; font-size:14px; min-width:100px; }
         .opt-vol-row input[type=range] {
@@ -1441,23 +1447,31 @@
                     <button id="opt-tab-sound" class="opt-tab" onclick="showOptTab('sound')">Son</button>
                 </div>
                 <div id="opt-content-controls" class="opt-content">
+                    <div id="gp-status" class="gp-status disconnected">🎮 Manette : Non connectée</div>
+                    <div class="opt-bind-header">
+                        <span style="flex:1"></span>
+                        <span class="opt-bind-col-hdr">⌨ Clavier</span>
+                        <span class="opt-bind-col-hdr">🎮 Manette</span>
+                    </div>
                     <div class="opt-section-title">Déplacement</div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Droite</span><button class="opt-bind-key" onclick="startRebind('right',this)"></button></div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Gauche</span><button class="opt-bind-key" onclick="startRebind('left',this)"></button></div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Sauter</span><button class="opt-bind-key" onclick="startRebind('up',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Droite</span><button class="opt-bind-key" onclick="startRebind('right',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('right',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Gauche</span><button class="opt-bind-key" onclick="startRebind('left',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('left',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Sauter</span><button class="opt-bind-key" onclick="startRebind('up',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('up',this,'gp')"></button></div>
                     <div class="opt-section-title">Combat</div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Attaquer</span><button class="opt-bind-key" onclick="startRebind('attack',this)"></button></div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Bloquer</span><button class="opt-bind-key" onclick="startRebind('block',this)"></button></div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Parade</span><button class="opt-bind-key" onclick="startRebind('parry',this)"></button></div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Dash</span><button class="opt-bind-key" onclick="startRebind('dash',this)"></button></div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Capacité</span><button class="opt-bind-key" onclick="startRebind('ability',this)"></button></div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Interagir</span><button class="opt-bind-key" onclick="startRebind('interact',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Attaquer</span><button class="opt-bind-key" onclick="startRebind('attack',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('attack',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Bloquer</span><button class="opt-bind-key" onclick="startRebind('block',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('block',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Parade</span><button class="opt-bind-key" onclick="startRebind('parry',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('parry',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Dash</span><button class="opt-bind-key" onclick="startRebind('dash',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('dash',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Capacité</span><button class="opt-bind-key" onclick="startRebind('ability',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('ability',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Interagir</span><button class="opt-bind-key" onclick="startRebind('interact',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('interact',this,'gp')"></button></div>
                     <div class="opt-section-title">Interface</div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Chat</span><button class="opt-bind-key" onclick="startRebind('chat',this)"></button></div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Inventaire</span><button class="opt-bind-key" onclick="startRebind('menu',this)"></button></div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Quêtes</span><button class="opt-bind-key" onclick="startRebind('quests',this)"></button></div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Armes</span><button class="opt-bind-key" onclick="startRebind('weapons',this)"></button></div>
-                    <div class="opt-bind-row"><span class="opt-bind-label">Menu Boucliers</span><button class="opt-bind-key" onclick="startRebind('shield',this)"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Roue d'armes</span><button class="opt-bind-key" onclick="startRebind('weaponWheel',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('weaponWheel',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Pause</span><button class="opt-bind-key" onclick="startRebind('pause',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('pause',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Chat</span><button class="opt-bind-key" onclick="startRebind('chat',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('chat',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Inventaire</span><button class="opt-bind-key" onclick="startRebind('menu',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('menu',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Quêtes</span><button class="opt-bind-key" onclick="startRebind('quests',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('quests',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Armes</span><button class="opt-bind-key" onclick="startRebind('weapons',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('weapons',this,'gp')"></button></div>
+                    <div class="opt-bind-row"><span class="opt-bind-label">Boucliers</span><button class="opt-bind-key" onclick="startRebind('shield',this,'kb')"></button><button class="opt-bind-key opt-bind-gp" onclick="startRebind('shield',this,'gp')"></button></div>
                 </div>
                 <div id="opt-content-sound" class="opt-content" style="display:none">
                     <div class="opt-section-title">Volume</div>
@@ -1473,7 +1487,8 @@
                     </div>
                 </div>
                 <div class="options-footer">
-                    <button class="btn-sec" onclick="resetKeybinds()">Réinitialiser</button>
+                    <button class="btn-sec" onclick="resetKeybinds()">⌨ Réinit. clavier</button>
+                    <button class="btn-sec" onclick="resetGpBinds()">🎮 Réinit. manette</button>
                     <button onclick="closeOptions()">Fermer</button>
                 </div>
             </div>
@@ -3263,6 +3278,7 @@
             const path = variants[Math.floor(Math.random() * variants.length)];
             const audio = new Audio(path);
             audio.volume = Math.min(1, Math.max(0, volume * _masterVolume));
+            ReverbSystem.connect(audio);
             audio.play().catch(() => {});
         }
 
@@ -3287,6 +3303,68 @@
         function pain(enemy = 'goblin') { play(`pain.${enemy}`, 0.85); }
 
         return { play, swing, hit, step, parry, pain, setVolume, getVolume };
+    })();
+
+    // ── Système de reverb (Web Audio API) ────────────────────────────
+    const ReverbSystem = (() => {
+        let _actx = null, _convolver = null, _dryGain = null, _wetGain = null;
+        let _currentWet = 0, _targetWet = 0, _currentDecay = 2;
+
+        function _ensureInit() {
+            if (_actx) return true;
+            try {
+                _actx = new (window.AudioContext || window.webkitAudioContext)();
+                _dryGain = _actx.createGain(); _dryGain.gain.value = 1;
+                _wetGain = _actx.createGain(); _wetGain.gain.value = 0;
+                _dryGain.connect(_actx.destination);
+                _wetGain.connect(_actx.destination);
+                _buildConvolver(2.0);
+                return true;
+            } catch(e) { return false; }
+        }
+
+        function _buildConvolver(decay) {
+            if (!_actx) return;
+            if (_convolver) _convolver.disconnect();
+            _convolver = _actx.createConvolver();
+            const sr = _actx.sampleRate;
+            const len = Math.ceil(sr * Math.min(decay + 0.5, 5));
+            const ir = _actx.createBuffer(2, len, sr);
+            for (let ch = 0; ch < 2; ch++) {
+                const d = ir.getChannelData(ch);
+                for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, decay * 0.8);
+            }
+            _convolver.buffer = ir;
+            _convolver.connect(_wetGain);
+        }
+
+        function connect(audioEl) {
+            if (!_ensureInit()) return;
+            if (_actx.state === 'suspended') _actx.resume();
+            try {
+                const src = _actx.createMediaElementSource(audioEl);
+                src.connect(_dryGain);
+                src.connect(_convolver);
+            } catch(e) {}
+        }
+
+        function setTarget(wet, decay) {
+            _targetWet = Math.max(0, Math.min(1, wet));
+            if (Math.abs(decay - _currentDecay) > 0.15) {
+                _currentDecay = decay;
+                if (_actx) _buildConvolver(decay);
+            }
+        }
+
+        // Appelé chaque frame de jeu (smooth transition)
+        function update() {
+            if (!_wetGain) return;
+            _currentWet += (_targetWet - _currentWet) * 0.04;
+            _wetGain.gain.value = _currentWet * 0.75;
+            _dryGain.gain.value = 1 - _currentWet * 0.25;
+        }
+
+        return { connect, setTarget, update };
     })();
 
     // ── Musique de fond ───────────────────────────────────────────────
@@ -4093,14 +4171,16 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    const keys = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, interact: false, block: false, parry: false };
+    const keys   = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, interact: false, block: false, parry: false };
+    // État clavier pur (séparé du gamepad) — _pollGamepad recompute keys = _kbKeys | gp chaque frame
+    const _kbKeys = { right: false, left: false, up: false, attack: false, dash: false, ability: false, weaponWheel: false, interact: false, block: false, parry: false };
 
     // ── Keybinds remappables ───────────────────────────────────────
     const KEYBINDS_DEFAULT = {
         right: 'KeyD', left: 'KeyA', up: 'Space',
         attack: 'Digit0', block: 'Digit9', dash: 'ShiftLeft', ability: 'KeyR',
         interact: 'KeyE', chat: 'KeyT', menu: 'KeyI', quests: 'KeyQ', weapons: 'KeyP', shield: 'Digit7',
-        parry: 'Numpad2'
+        parry: 'Numpad2', weaponWheel: 'Digit8', pause: 'Escape'
     };
     let _keybinds = { ...KEYBINDS_DEFAULT };
     (() => {
@@ -4122,33 +4202,210 @@
         return m ? m[2] : code;
     }
 
-    let _rebindAction = null;
-    let _rebindBtn = null;
+    // ── Gamepad binds ───────────────────────────────────────────
+    const GAMEPAD_BINDS_DEFAULT = {
+        right:'gp:axis0+', left:'gp:axis0-', up:'gp:button0',
+        attack:'gp:button2', block:'gp:button5', parry:'gp:button4',
+        dash:'gp:button1', ability:'gp:button3', interact:'gp:button0',
+        weaponWheel:'gp:button6',  // LT = roue d'armes (hold)
+        pause:'gp:button9',        // Start = pause
+        menu:'gp:button8',         // Back/Select = inventaire
+        weapons:'gp:button12',     // D-haut = armes
+        quests:'gp:button13',      // D-bas = quêtes
+        shield:'gp:button7',       // RT = boucliers
+        chat:'gp:button10',        // L3 = chat
+    };
+    let _gpBinds = { ...GAMEPAD_BINDS_DEFAULT };
+    (() => { try { Object.assign(_gpBinds, JSON.parse(localStorage.getItem('sckt_gpbinds') || '{}')); } catch(e) {} })();
+    function saveGpBinds() { localStorage.setItem('sckt_gpbinds', JSON.stringify(_gpBinds)); }
 
-    function startRebind(action, btn) {
-        if (_rebindAction) {
-            _rebindBtn.classList.remove('waiting');
-            _rebindBtn.textContent = keyLabel(_keybinds[_rebindAction]);
+    // ── Profils de manettes ─────────────────────────────────────
+    let _gpProfiles = [];
+    (async function _loadGpProfiles() {
+        const files = ['inputs/xbox.json', 'inputs/8bitdo-sn30pro.json'];
+        for (const f of files) {
+            try {
+                const r = await fetch(f);
+                if (r.ok) _gpProfiles.push(await r.json());
+            } catch(e) {} // silently ignore (file:// ou réseau indisponible)
         }
+    })();
+
+    function _matchGpProfile(gpId) {
+        const id = (gpId || '').toLowerCase();
+        return _gpProfiles.find(p => p.idPatterns?.some(pat => id.includes(pat.toLowerCase())));
+    }
+
+    function resetGpBinds() {
+        const profileName = localStorage.getItem('sckt_gpprofile');
+        const profile = _gpProfiles.find(p => p.name === profileName);
+        _gpBinds = { ...GAMEPAD_BINDS_DEFAULT, ...(profile?.gp || {}) };
+        saveGpBinds();
+        refreshBindLabels();
+    }
+
+    function gpLabel(bind) {
+        if (!bind || !bind.startsWith('gp:')) return '—';
+        const b = bind.slice(3);
+        const M = {
+            'button0':'A/Croix','button1':'B/Rond','button2':'X/Carré','button3':'Y/△',
+            'button4':'LB/L1','button5':'RB/R1','button6':'LT/L2','button7':'RT/R2',
+            'button8':'Select','button9':'Start','button10':'L3','button11':'R3',
+            'button12':'D↑','button13':'D↓','button14':'D←','button15':'D→',
+            'axis0+':'🕹R','axis0-':'🕹L','axis1-':'🕹↑','axis1+':'🕹↓',
+            'axis6+':'D→','axis6-':'D←','axis7-':'D↑','axis7+':'D↓',
+        };
+        return M[b] || b;
+    }
+
+    let _rebindAction = null;
+    let _rebindBtn    = null;
+    let _rebindMode   = 'kb'; // 'kb' | 'gp'
+
+    function startRebind(action, btn, mode) {
+        if (_rebindAction) cancelRebind();
         _rebindAction = action;
-        _rebindBtn = btn;
+        _rebindBtn    = btn;
+        _rebindMode   = mode || 'kb';
         btn.classList.add('waiting');
         btn.textContent = '...';
     }
 
     function cancelRebind() {
-        if (_rebindBtn) { _rebindBtn.classList.remove('waiting'); _rebindBtn.textContent = keyLabel(_keybinds[_rebindAction]); }
-        _rebindAction = null; _rebindBtn = null;
+        if (!_rebindBtn) return;
+        _rebindBtn.classList.remove('waiting');
+        _rebindBtn.textContent = _rebindMode === 'gp'
+            ? gpLabel(_gpBinds[_rebindAction])
+            : keyLabel(_keybinds[_rebindAction]);
+        _rebindAction = null; _rebindBtn = null; _rebindMode = 'kb';
     }
 
     function refreshBindLabels() {
         document.querySelectorAll('.opt-bind-key').forEach(btn => {
-            const action = btn.getAttribute('onclick')?.match(/startRebind\('(\w+)'/)?.[1];
-            if (action && _keybinds[action]) btn.textContent = keyLabel(_keybinds[action]);
+            const m = btn.getAttribute('onclick')?.match(/startRebind\('(\w+)',this,'(\w+)'\)/);
+            if (!m) return;
+            const [, action, mode] = m;
+            btn.textContent = mode === 'gp' ? gpLabel(_gpBinds[action]) : keyLabel(_keybinds[action] || '');
         });
         const sfxSlider = document.getElementById('sfxVolumeSlider');
         if (sfxSlider) { sfxSlider.value = Math.round(SFX.getVolume() * 100); document.getElementById('sfxVolumeVal').textContent = sfxSlider.value + '%'; }
     }
+
+    // ── Gamepad polling ─────────────────────────────────────────
+    let _gpPrev = null;
+    function _pollGamepad() {
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        let gp = null;
+        for (const g of gamepads) { if (g) { gp = g; break; } }
+        if (!gp) { _gpPrev = null; return; }
+
+        const btns = Array.from(gp.buttons, b => b.pressed);
+        const axes = Array.from(gp.axes);
+        const prev = _gpPrev;
+
+        if (_rebindAction && _rebindMode === 'gp') {
+            // Détection front montant : button ou axe non pressé la frame précédente
+            for (let i = 0; i < btns.length; i++) {
+                if (btns[i] && !prev?.buttons[i]) {
+                    const bind = `gp:button${i}`;
+                    _gpBinds[_rebindAction] = bind; saveGpBinds();
+                    _rebindBtn.classList.remove('waiting');
+                    _rebindBtn.textContent = gpLabel(bind);
+                    _rebindAction = null; _rebindBtn = null; _rebindMode = 'kb';
+                    _gpPrev = { buttons: btns, axes }; return;
+                }
+            }
+            for (let i = 0; i < axes.length; i++) {
+                const v = axes[i], pv = prev?.axes[i] ?? 0;
+                let bind = null;
+                // Seuil bas (0.15) + delta (0.25) pour couvrir D-pad hat-switch
+                // (certaines manettes USB ont neutre à -1.0 et valeurs intermédiaires)
+                if (v >  0.15 && Math.abs(v - pv) > 0.25) bind = `gp:axis${i}+`;
+                if (v < -0.15 && Math.abs(v - pv) > 0.25) bind = `gp:axis${i}-`;
+                if (bind) {
+                    _gpBinds[_rebindAction] = bind; saveGpBinds();
+                    _rebindBtn.classList.remove('waiting');
+                    _rebindBtn.textContent = gpLabel(bind);
+                    _rebindAction = null; _rebindBtn = null; _rebindMode = 'kb';
+                    _gpPrev = { buttons: btns, axes }; return;
+                }
+            }
+        } else {
+            // Mode jeu : recompute keys = clavier pur | gamepad (évite les touches bloquées)
+            const gpA = bind => {
+                if (!bind?.startsWith('gp:')) return false;
+                const b = bind.slice(3);
+                if (b.startsWith('button')) return btns[+b.slice(6)] ?? false;
+                const m = b.match(/^axis(\d+)([+-])$/);
+                if (m) { const v = axes[+m[1]] ?? 0; return m[2] === '+' ? v > 0.5 : v < -0.5; }
+                return false;
+            };
+            for (const action of Object.keys(keys)) {
+                keys[action] = (_kbKeys[action] ?? false) || (_gpBinds[action] ? gpA(_gpBinds[action]) : false);
+            }
+            // D-pad mouvement toujours actif — boutons 12-15 (standard)
+            // + axes 6/7 (D-pad hat-switch sur manettes USB génériques)
+            keys.up    = keys.up    || btns[12] || (axes[7] ?? 0) < -0.5;
+            keys.right = keys.right || btns[15] || (axes[6] ?? 0) >  0.5;
+            keys.left  = keys.left  || btns[14] || (axes[6] ?? 0) < -0.5;
+
+            // Actions toggle via manette (détection front montant)
+            // Menu/quests/weapons/shield/chat/pause ne sont pas des touches "tenues"
+            // → on les déclenche sur le rising edge pour ne pas répéter chaque frame
+            if (!_ingameMenuOpen) {
+                const _gpRising = (bind) => {
+                    if (!bind?.startsWith('gp:')) return false;
+                    const b = bind.slice(3);
+                    if (b.startsWith('button')) { const i = +b.slice(6); return btns[i] && !prev?.buttons[i]; }
+                    const m = b.match(/^axis(\d+)([+-])$/);
+                    if (m) { const v = axes[+m[1]] ?? 0, pv2 = prev?.axes[+m[1]] ?? 0;
+                        return m[2] === '+' ? (v > 0.5 && pv2 <= 0.5) : (v < -0.5 && pv2 >= -0.5); }
+                    return false;
+                };
+                if (_gpRising(_gpBinds.pause) && gameState === 'PLAYING') {
+                    if (_ingameMenuOpen) closeIngameMenu(); else openIngameMenu();
+                }
+                if (_gpRising(_gpBinds.menu) && (gameState === 'PLAYING' || gameState === 'MENU')) toggleMenu('inventory');
+                if (_gpRising(_gpBinds.quests) && (gameState === 'PLAYING' || gameState === 'MENU')) toggleMenu('quests');
+                if (_gpRising(_gpBinds.weapons) && (gameState === 'PLAYING' || gameState === 'MENU')) toggleMenu('weapons');
+                if (_gpRising(_gpBinds.shield) && (gameState === 'PLAYING' || gameState === 'MENU')) toggleMenu('shields');
+                if (_gpRising(_gpBinds.chat) && gameState === 'PLAYING' && (gameMode === 'host' || gameMode === 'guest')) openGameChat();
+            }
+        }
+        _gpPrev = { buttons: btns, axes };
+    }
+
+    window.addEventListener('gamepadconnected', e => {
+        const profile = _matchGpProfile(e.gamepad.id);
+        const lastProfile = localStorage.getItem('sckt_gpprofile');
+
+        if (profile && lastProfile !== profile.name) {
+            // Nouveau type de manette — appliquer les defaults du profil
+            _gpBinds = { ...GAMEPAD_BINDS_DEFAULT, ...profile.gp };
+            saveGpBinds();
+            localStorage.setItem('sckt_gpprofile', profile.name);
+            refreshBindLabels();
+        }
+
+        const el = document.getElementById('gp-status');
+        if (el) {
+            const label = profile ? profile.name : e.gamepad.id.slice(0, 30);
+            el.textContent = `🎮 ${label} connectée`;
+            el.classList.remove('disconnected');
+        }
+    });
+    window.addEventListener('gamepaddisconnected', () => {
+        const el = document.getElementById('gp-status');
+        if (el) { el.textContent = '🎮 Manette : Non connectée'; el.classList.add('disconnected'); }
+        _gpPrev = null;
+    });
+
+    // Boucle de polling manette indépendante du gameLoop
+    // (fonctionne aussi sur l'écran de démarrage, hub, menu options)
+    (function gpPollLoop() {
+        _pollGamepad();
+        requestAnimationFrame(gpPollLoop);
+    })();
 
     function openOptions() {
         document.getElementById('optionsOverlay').classList.remove('hidden');
@@ -4202,6 +4459,7 @@
         _ingameMenuOpen = true;
         document.getElementById('ingameMenu').classList.remove('hidden');
         keys.right = false; keys.left = false; keys.up = false; keys.attack = false;
+        _kbKeys.right = false; _kbKeys.left = false; _kbKeys.up = false; _kbKeys.attack = false;
     }
 
     function closeIngameMenu() {
@@ -4218,11 +4476,12 @@
         // Capture de rebind en cours
         if (_rebindAction) {
             if (e.code === 'Escape') { cancelRebind(); e.preventDefault(); return; }
+            if (_rebindMode === 'gp') { e.preventDefault(); return; } // attend un bouton manette
             _keybinds[_rebindAction] = e.code;
             saveKeybinds();
             _rebindBtn.classList.remove('waiting');
             _rebindBtn.textContent = keyLabel(e.code);
-            _rebindAction = null; _rebindBtn = null;
+            _rebindAction = null; _rebindBtn = null; _rebindMode = 'kb';
             e.preventDefault(); return;
         }
 
@@ -4232,8 +4491,8 @@
             return;
         }
 
-        // Navigation Escape selon l'écran visible
-        if (e.code === 'Escape') {
+        // Navigation Escape / touche pause selon l'écran visible
+        if (e.code === 'Escape' || isKey(e, 'pause')) {
             if (gameState === 'PLAYING') {
                 if (_ingameMenuOpen) closeIngameMenu(); else openIngameMenu();
                 e.preventDefault(); return;
@@ -4261,18 +4520,18 @@
 
         if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
 
-        if (e.code === 'ArrowRight' || isKey(e,'right')) keys.right = true;
-        if (e.code === 'ArrowLeft' || isKey(e,'left')) keys.left = true;
-        if (e.code === 'ArrowUp' || isKey(e,'up')) keys.up = true;
-        if (e.code === 'Numpad0' || isKey(e,'attack')) keys.attack = true;
-        if (isKey(e,'block')) keys.block = true;
-        if (isKey(e,'parry')) keys.parry = true;
-        if (e.code === 'ShiftRight' || isKey(e,'dash')) keys.dash = true;
-        if (isKey(e,'ability')) keys.ability = true;
-        if (e.code === 'Numpad8' || e.code === 'Digit8') { keys.weaponWheel = true; e.preventDefault(); }
+        if (e.code === 'ArrowRight' || isKey(e,'right')) { _kbKeys.right   = true; keys.right   = true; }
+        if (e.code === 'ArrowLeft'  || isKey(e,'left'))  { _kbKeys.left    = true; keys.left    = true; }
+        if (e.code === 'ArrowUp'    || isKey(e,'up'))    { _kbKeys.up      = true; keys.up      = true; }
+        if (e.code === 'Numpad0'    || isKey(e,'attack')){ _kbKeys.attack  = true; keys.attack  = true; }
+        if (isKey(e,'block'))   { _kbKeys.block   = true; keys.block   = true; }
+        if (isKey(e,'parry'))   { _kbKeys.parry   = true; keys.parry   = true; }
+        if (e.code === 'ShiftRight' || isKey(e,'dash'))  { _kbKeys.dash    = true; keys.dash    = true; }
+        if (isKey(e,'ability')) { _kbKeys.ability  = true; keys.ability  = true; }
+        if (e.code === 'Numpad8' || isKey(e,'weaponWheel')) { _kbKeys.weaponWheel = true; keys.weaponWheel = true; e.preventDefault(); }
         if (e.code === 'KeyF' && gameState === 'PLAYING') { _useConsumableByType('heal'); e.preventDefault(); }
         if (e.code === 'KeyG' && gameState === 'PLAYING') { _useConsumableByType('damage'); e.preventDefault(); }
-        if (isKey(e,'interact')) keys.interact = true;
+        if (isKey(e,'interact')) { _kbKeys.interact = true; keys.interact = true; }
 
         if (e.code === 'Enter' || e.code === 'NumpadEnter') {
             if (assetsLoaded && (gameState === 'START' || gameState === 'GAMEOVER')) startGame();
@@ -4291,16 +4550,16 @@
     });
 
     window.addEventListener('keyup', (e) => {
-        if (e.code === 'ArrowRight' || isKey(e,'right')) keys.right = false;
-        if (e.code === 'ArrowLeft' || isKey(e,'left')) keys.left = false;
-        if (e.code === 'ArrowUp' || isKey(e,'up')) keys.up = false;
-        if (e.code === 'Numpad0' || isKey(e,'attack')) keys.attack = false;
-        if (isKey(e,'block')) keys.block = false;
-        if (isKey(e,'parry')) keys.parry = false;
-        if (e.code === 'ShiftRight' || isKey(e,'dash')) keys.dash = false;
-        if (isKey(e,'ability')) keys.ability = false;
-        if (e.code === 'Numpad8' || e.code === 'Digit8') keys.weaponWheel = false;
-        if (isKey(e,'interact')) keys.interact = false;
+        if (e.code === 'ArrowRight' || isKey(e,'right')) { _kbKeys.right   = false; keys.right   = false; }
+        if (e.code === 'ArrowLeft'  || isKey(e,'left'))  { _kbKeys.left    = false; keys.left    = false; }
+        if (e.code === 'ArrowUp'    || isKey(e,'up'))    { _kbKeys.up      = false; keys.up      = false; }
+        if (e.code === 'Numpad0'    || isKey(e,'attack')){ _kbKeys.attack  = false; keys.attack  = false; }
+        if (isKey(e,'block'))   { _kbKeys.block   = false; keys.block   = false; }
+        if (isKey(e,'parry'))   { _kbKeys.parry   = false; keys.parry   = false; }
+        if (e.code === 'ShiftRight' || isKey(e,'dash'))  { _kbKeys.dash    = false; keys.dash    = false; }
+        if (isKey(e,'ability')) { _kbKeys.ability  = false; keys.ability  = false; }
+        if (e.code === 'Numpad8' || isKey(e,'weaponWheel')) { _kbKeys.weaponWheel = false; keys.weaponWheel = false; }
+        if (isKey(e,'interact')) { _kbKeys.interact = false; keys.interact = false; }
     });
 
     const btnLeft = document.getElementById('btn-left');
@@ -4612,6 +4871,7 @@
             menuScreen.classList.remove('hidden');
             
             keys.right = false; keys.left = false; keys.up = false; keys.attack = false; keys.weaponWheel = false; keys.block = false;
+            _kbKeys.right = false; _kbKeys.left = false; _kbKeys.up = false; _kbKeys.attack = false; _kbKeys.weaponWheel = false; _kbKeys.block = false;
             if (player._wheelOpen) { player._wheelOpen = false; player._wheelHeld = false; }
 
             showTab(tab);
@@ -9563,16 +9823,18 @@
         // pas de nuages — fond nuit statique
     }
 
-    // ── Rendu couche parallaxe (espace écran) ─────────────────────────────────
+    // ── Rendu couche parallaxe (espace monde, à appeler dans la camera transform) ──
+    // Formule : world_x = it.x + cameraX*(1-speedX) → écran = world_x - cameraX = it.x - cameraX*speedX
+    // Identique visuellement à l'ancien espace-écran, mais compatible avec le référentiel monde de l'éditeur.
     function _drawParallaxLayer(layer) {
         const its = currentLevelData?.parallax?.[layer];
         if (!its?.length) return;
         its.forEach(it => {
             const img = _parallaxImgs[it.dataUrl];
             if (!img?.complete || !img.naturalWidth) return;
-            const sx = it.x - cameraX * (it.speedX ?? 0.2);
-            const sy = it.y - cameraY * (it.speedY ?? 0);
-            ctx.drawImage(img, sx, sy, img.naturalWidth * (it.scale||1), img.naturalHeight * (it.scale||1));
+            const wx = it.x + cameraX * (1 - (it.speedX ?? 0.2));
+            const wy = it.y + cameraY * (1 - (it.speedY ?? 0));
+            ctx.drawImage(img, wx, wy, img.naturalWidth * (it.scale||1), img.naturalHeight * (it.scale||1));
         });
     }
 
@@ -9602,6 +9864,245 @@
             ctx.textAlign = 'left';
             ctx.restore();
         }
+    }
+
+    // ── FLAME & LIGHTING HELPERS ──────────────────────────────────────────────
+    // Cache flicker par frame (évite de recalculer 3× par torche par frame)
+    let _flickerNow = -1;
+    const _flickerMap = new Map();
+    function _torchFlicker(tx, ty, now) {
+        if (now !== _flickerNow) { _flickerNow = now; _flickerMap.clear(); }
+        const key = tx * 100000 + ty;
+        if (_flickerMap.has(key)) return _flickerMap.get(key);
+        const h = Math.sin(tx * 127.1 + ty * 311.7) * 43758.5453;
+        const phase = (h - Math.floor(h)) * 628.3;
+        const t = now * 0.001;
+        const v = Math.sin(t * 7.3  + phase)        * 0.50
+                + Math.sin(t * 13.1 + phase * 1.31) * 0.30
+                + Math.sin(t *  4.7 + phase * 0.71) * 0.20;
+        _flickerMap.set(key, v);
+        return v;
+    }
+
+    function _hexToRgb(hex) {
+        const v = parseInt((hex || '#ffb950').replace('#', ''), 16);
+        return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+    }
+    // Cache RGB sur l'objet torche (évite re-parse chaque frame)
+    function _torchRgb(t) {
+        if (!t._rgb) t._rgb = _hexToRgb(t.color || '#ffb950');
+        return t._rgb;
+    }
+
+    // Étincelles — pool persistant keyed par index torche
+    const _sparks = new Map();
+    function _tickSparks(key, tx, ty, now) {
+        if (!_sparks.has(key)) _sparks.set(key, []);
+        const pool = _sparks.get(key);
+        // Faire vieillir
+        for (let i = pool.length - 1; i >= 0; i--) {
+            const s = pool[i];
+            s.x  += s.vx; s.y += s.vy;
+            s.vy += 0.04;            // gravité légère
+            s.vx *= 0.97;
+            s.life -= s.decay;
+            if (s.life <= 0) pool.splice(i, 1);
+        }
+        // Spawner (max 6 par torche, ~2.5% chance/frame)
+        if (pool.length < 6 && Math.random() < 0.025) {
+            pool.push({
+                x: tx + (Math.random() - 0.5) * 4,
+                y: ty - 20,
+                vx: (Math.random() - 0.5) * 1.4,
+                vy: -(Math.random() * 1.2 + 0.6),
+                life: 1,
+                decay: Math.random() * 0.022 + 0.014,
+                size: Math.random() * 1.4 + 0.6,
+            });
+        }
+    }
+    function _drawSparks(c, key) {
+        const pool = _sparks.get(key);
+        if (!pool?.length) return;
+        c.save();
+        for (const s of pool) {
+            c.globalAlpha = s.life * 0.9;
+            c.fillStyle = s.life > 0.5 ? '#fff8a0' : '#ff9922';
+            c.beginPath();
+            c.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            c.fill();
+        }
+        c.globalAlpha = 1; c.restore();
+    }
+
+    function _drawFlame(c, x, y, now, scale, tx, ty) {
+        const h = Math.sin((tx ?? x) * 127.1 + (ty ?? y) * 311.7) * 43758.5453;
+        const phase = (h - Math.floor(h)) * 628.3;
+        const t = now * 0.001;
+        const f = Math.sin(t * 7.1  + phase)        * 0.45
+                + Math.sin(t * 12.7 + phase * 1.27) * 0.30
+                + Math.sin(t *  4.9 + phase * 0.63) * 0.25;
+        const wobble = Math.sin(t * 5.3 + phase * 0.5) * 3.0 * scale;
+        const h2 = (26 + f * 7) * scale;
+        const w  =  8 * scale;
+        const layers = [
+            { col:'#ff6600', a:0.82, sw:0.80, sh:0.88 },
+            { col:'#ffcc00', a:0.90, sw:0.50, sh:0.65 },
+            { col:'#fff4cc', a:0.80, sw:0.22, sh:0.38 },
+        ];
+        c.save();
+        for (const l of layers) {
+            const lw = w * l.sw, lh = h2 * l.sh, ox = wobble * l.sw;
+            c.beginPath();
+            c.moveTo(x + ox, y);
+            c.bezierCurveTo(x+lw+ox*0.5, y-lh*0.28, x+lw*0.5+ox, y-lh*0.75, x+ox, y-lh);
+            c.bezierCurveTo(x-lw*0.5+ox, y-lh*0.75, x-lw+ox*0.5, y-lh*0.28, x+ox, y);
+            c.globalAlpha = l.a; c.fillStyle = l.col; c.fill();
+        }
+        c.globalAlpha = 1; c.restore();
+    }
+
+    // Dessine les torches dans l'espace monde (appelé à l'intérieur du ctx.save caméra)
+    function _drawWorldTorches() {
+        const torches = currentLevelData?.torches;
+        if (!torches?.length) return;
+        const now = performance.now();
+        torches.forEach((t, i) => {
+            // Socle (pas de save/restore — on ne change pas la transform)
+            ctx.fillStyle = '#6b3a1f';
+            ctx.fillRect(t.x - 3, t.y - 14, 6, 14);
+            ctx.fillStyle = '#8b5a2b';
+            ctx.fillRect(t.x - 4, t.y - 18, 8, 4);
+            // Étincelles + flamme
+            _tickSparks(i, t.x, t.y, now);
+            _drawSparks(ctx, i);
+            _drawFlame(ctx, t.x, t.y - 18, now, 1, t.x, t.y);
+        });
+    }
+
+    // Offscreen canvas persistant pour l'overlay lumière
+    // ── GLOBAL TINT ───────────────────────────────────────────────────────────
+    function _drawGlobalTint() {
+        const t = currentLevelData?.tint;
+        if (!t || t.opacity <= 0.001) return;
+        const [cr, cg, cb] = _hexToRgb(t.color || '#ff8800');
+        ctx.save();
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${t.opacity})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+    }
+
+    // ── REVERB ZONES ──────────────────────────────────────────────────────────
+    function _updateReverbZones() {
+        const zones = currentLevelData?.reverbZones;
+        if (!zones?.length || !player) { ReverbSystem.setTarget(0, 2); ReverbSystem.update(); return; }
+        let bestWet = 0, bestDecay = 2;
+        for (const z of zones) {
+            if (player.x > z.x && player.x < z.x + z.w &&
+                player.y > z.y && player.y < z.y + z.h) {
+                if ((z.amount ?? 0.5) > bestWet) {
+                    bestWet   = z.amount ?? 0.5;
+                    bestDecay = z.decay  ?? 2;
+                }
+            }
+        }
+        ReverbSystem.setTarget(bestWet, bestDecay);
+        ReverbSystem.update();
+    }
+
+    let _lightOff = null, _lightOc = null;
+    let _bgCache = null, _bgCacheKey = '';
+    let _lightTemplate = null;          // template blanc pré-rendu (pour destination-out)
+    const _colorTemplates = new Map();  // templates colorés pré-rendus par couleur hex
+
+    // Crée le template blanc une seule fois
+    function _getLightTemplate() {
+        if (_lightTemplate) return _lightTemplate;
+        const S = 256, c = document.createElement('canvas');
+        c.width = c.height = S;
+        const x = c.getContext('2d');
+        const g = x.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
+        g.addColorStop(0,    'rgba(255,255,255,1)');
+        g.addColorStop(0.55, 'rgba(255,255,255,0.4)');
+        g.addColorStop(1,    'rgba(255,255,255,0)');
+        x.fillStyle = g; x.fillRect(0, 0, S, S);
+        return (_lightTemplate = c);
+    }
+
+    // Crée un template coloré par couleur (une fois par couleur unique)
+    function _getColorTemplate(color) {
+        const key = color || '#ffb950';
+        if (_colorTemplates.has(key)) return _colorTemplates.get(key);
+        const S = 128, c = document.createElement('canvas');
+        c.width = c.height = S;
+        const x = c.getContext('2d');
+        const [cr, cg, cb] = _hexToRgb(key);
+        const g = x.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
+        g.addColorStop(0, `rgba(${cr},${cg},${cb},1)`);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        x.fillStyle = g; x.fillRect(0, 0, S, S);
+        _colorTemplates.set(key, c);
+        return c;
+    }
+
+    // ── LIGHTING OVERLAY ──────────────────────────────────────────────────────
+    function _drawLightingOverlay() {
+        const gl = currentLevelData?.globalLight ?? 1;
+        if (gl >= 0.999) return;
+        const torches = currentLevelData?.torches || [];
+        const W = canvas.width, H = canvas.height;
+        const now = performance.now();
+        // Réutiliser ou créer l'offscreen canvas
+        if (!_lightOff || _lightOff.width !== W || _lightOff.height !== H) {
+            _lightOff = document.createElement('canvas');
+            _lightOff.width = W; _lightOff.height = H;
+            _lightOc = _lightOff.getContext('2d');
+        }
+        const oc = _lightOc;
+
+        const tmpl = _getLightTemplate();
+
+        // --- Pass 1 : overlay sombre avec trous via template pré-rendu ---
+        oc.globalCompositeOperation = 'source-over';
+        oc.globalAlpha = 1;
+        oc.clearRect(0, 0, W, H);
+        oc.fillStyle = `rgba(0,4,18,${1 - gl})`;
+        oc.fillRect(0, 0, W, H);
+        oc.globalCompositeOperation = 'destination-out';
+        torches.forEach(t => {
+            const fl = _torchFlicker(t.x, t.y, now);
+            const sx = t.x - cameraX + shakeOffsetX;
+            const sy = t.y - cameraY + shakeOffsetY;
+            const r  = (t.radius ?? 200) * (1 + fl * 0.07);
+            // Culling : torche hors écran
+            if (sx + r < 0 || sx - r > W || sy + r < 0 || sy - r > H) return;
+            oc.globalAlpha = Math.min(1, (t.intensity ?? 0.85) * (1 + fl * 0.10));
+            oc.drawImage(tmpl, sx - r, sy - r, r * 2, r * 2);
+        });
+        // Halo joueur
+        if (player) {
+            const px = player.x - cameraX + shakeOffsetX;
+            const py = player.y - cameraY + shakeOffsetY;
+            const pr = 75;
+            oc.globalAlpha = (1 - gl) * 0.45;
+            oc.drawImage(tmpl, px - pr, py - pr, pr * 2, pr * 2);
+        }
+        oc.globalAlpha = 1;
+        ctx.drawImage(_lightOff, 0, 0);
+
+        // --- Pass 2 : teinture colorée via template coloré pré-rendu ---
+        ctx.save();
+        torches.forEach(t => {
+            const fl = _torchFlicker(t.x, t.y, now);
+            const sx = t.x - cameraX + shakeOffsetX;
+            const sy = t.y - cameraY + shakeOffsetY;
+            const r  = (t.radius ?? 200) * (1 + fl * 0.07) * 0.65;
+            if (sx + r < 0 || sx - r > W || sy + r < 0 || sy - r > H) return;
+            ctx.globalAlpha = Math.min(1, (t.intensity ?? 0.85) * (1 + fl * 0.10)) * 0.28;
+            ctx.drawImage(_getColorTemplate(t.color), sx - r, sy - r, r * 2, r * 2);
+        });
+        ctx.globalAlpha = 1;
+        ctx.restore();
     }
 
     // --- BOUCLE PRINCIPALE ---
@@ -9767,29 +10268,38 @@
             }
         }
 
-        // ── Fond dégradé (couleurs éditeur ou nuit par défaut) ────────
-        const _sky = currentLevelData?.sky;
-        const _bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        _bgGrad.addColorStop(0,    _sky?.top    || '#040610');
-        _bgGrad.addColorStop(0.55, _sky?.bottom || '#0d1828');
-        _bgGrad.addColorStop(1,    _sky?.bottom || '#060c18');
-        ctx.fillStyle = _bgGrad;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        // étoiles statiques basées sur canvas size
-        ctx.fillStyle = 'rgba(255,255,255,0.55)';
-        const _starSeed = 42;
-        for (let _si = 0; _si < 120; _si++) {
-            const _sx2 = (((_si * 2531 + _starSeed) % canvas.width + canvas.width) % canvas.width);
-            const _sy2 = ((_si * 1747 + _starSeed * 3) % Math.round(canvas.height * 0.65));
-            const _sr  = _si % 7 === 0 ? 1.5 : 0.8;
-            ctx.beginPath(); ctx.arc(_sx2, _sy2, _sr, 0, Math.PI * 2); ctx.fill();
+        // ── Fond dégradé + étoiles (offscreen caché — recrée uniquement si taille/couleurs changent) ──
+        {
+            const _sky = currentLevelData?.sky;
+            const _top = _sky?.top || '#040610', _bot = _sky?.bottom || '#0d1828';
+            const _W = canvas.width, _H = canvas.height;
+            const _bgKey = `${_W}x${_H}:${_top}:${_bot}`;
+            if (!_bgCache || _bgCacheKey !== _bgKey) {
+                _bgCacheKey = _bgKey;
+                _bgCache = document.createElement('canvas');
+                _bgCache.width = _W; _bgCache.height = _H;
+                const bc = _bgCache.getContext('2d');
+                const g = bc.createLinearGradient(0, 0, 0, _H);
+                g.addColorStop(0, _top); g.addColorStop(0.55, _bot); g.addColorStop(1, _bot);
+                bc.fillStyle = g; bc.fillRect(0, 0, _W, _H);
+                // Étoiles (dans le cache — coût payé une seule fois)
+                bc.fillStyle = 'rgba(255,255,255,0.55)';
+                for (let i = 0; i < 120; i++) {
+                    const sx = ((i * 2531 + 42) % _W + _W) % _W;
+                    const sy = (i * 1747 + 126) % Math.round(_H * 0.65);
+                    bc.beginPath();
+                    bc.arc(sx, sy, i % 7 === 0 ? 1.5 : 0.8, 0, Math.PI * 2);
+                    bc.fill();
+                }
+            }
+            ctx.drawImage(_bgCache, 0, 0);
         }
-        // ── Couches parallaxe (espace écran, avant la camera) ─────────
-        _drawParallaxLayer('background');
-        _drawParallaxLayer('midground');
-
         ctx.save();
         ctx.translate(-cameraX + shakeOffsetX, -cameraY + shakeOffsetY);
+
+        // ── Couches parallaxe (espace monde, dans la camera transform) ─
+        _drawParallaxLayer('background');
+        _drawParallaxLayer('midground');
 
         // On dessine le sang au sol en premier, AVANT les plateformes pour un bel effet d'intégration (ou juste au dessus)
         platforms.forEach(p => p.draw());
@@ -9802,6 +10312,7 @@
         items.forEach(i => i.draw());
         droppedWeapons.forEach(dw => dw.draw());
         levelInteractables.forEach(it => it.draw());
+        _drawWorldTorches();
 
         if (currentLevelData.goal) {
             drawFlag(currentLevelData.goal.x + 50, currentLevelData.goal.y - 100);
@@ -9832,10 +10343,19 @@
         decapHeads.forEach(dh => dh.draw());
         damageNumbers.forEach(dn => dn.draw());
 
+        // ── Couche foreground parallaxe (devant gameplay, dans la camera transform) ──
+        _drawParallaxLayer('foreground');
+
         ctx.restore();
 
-        // ── Couche foreground parallaxe (devant tout) ─────────────────
-        _drawParallaxLayer('foreground');
+        // ── Lighting overlay (obscurité + torches) ────────────────────
+        _drawLightingOverlay();
+
+        // ── Teinte globale du niveau ───────────────────────────────────
+        _drawGlobalTint();
+
+        // ── Zones de reverb ───────────────────────────────────────────
+        _updateReverbZones();
 
         // ── Indicateur hors-écran (hors du ctx.save camera) ──
         if (roomCode && remotePlayer.visible) drawOffscreenIndicator(remotePlayer);
@@ -10191,6 +10711,7 @@
         cancelAnimationFrame(animationId);
         MusicPlayer.play('music/default.mp3');
         keys.right = false; keys.left = false; keys.up = false; keys.attack = false;
+        _kbKeys.right = false; _kbKeys.left = false; _kbKeys.up = false; _kbKeys.attack = false;
 
         startScreen.classList.add('hidden');
         gameOverScreen.classList.add('hidden');

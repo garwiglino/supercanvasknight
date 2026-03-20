@@ -4661,6 +4661,9 @@
             let nextX = this.x + this.vx;
 
             for (let p of platforms) {
+                // Pré-filtre AABB rapide — ignore les plateformes trop loin
+                if (this.x < p.x - 32 || this.x > p.x + p.width + 32) continue;
+                if (this.y < p.y - 32 || this.y > p.y + p.height + 32) continue;
                 const pw = p.x + p.width;
                 const pb = p.y + p.height;
 
@@ -8408,6 +8411,10 @@
 
         draw() {
             if (this.state === 'DEAD') return;
+            // Frustum culling
+            const _esx = this.x - cameraX, _esy = this.y - cameraY;
+            if (_esx + this.width + 60 < 0 || _esx - 60 > canvas.width ||
+                _esy + this.height + 60 < 0 || _esy - 60 > canvas.height) return;
             const isDying = this.state === 'DYING';
             if (this.hurtTimer > 0 && !isDying && Math.floor(Date.now() / 100) % 2 === 0) return;
 
@@ -9039,6 +9046,10 @@
 
         draw() {
             if (this.state === 'DEAD') return;
+            // Frustum culling
+            const _gsx = this.x - cameraX, _gsy = this.y - cameraY;
+            if (_gsx + this.width + 60 < 0 || _gsx - 60 > canvas.width ||
+                _gsy + this.height + 60 < 0 || _gsy - 60 > canvas.height) return;
             const isDying = this.state === 'DYING';
             if (this.hurtTimer > 0 && !isDying && Math.floor(Date.now() / 80) % 2 === 0) return;
 
@@ -9257,6 +9268,11 @@
         }
 
         draw() {
+            // ── Frustum culling (évite tout rendu hors-écran) ─────────────
+            const _sx = this.x - cameraX, _sy = this.y - cameraY;
+            if (_sx + this.width < -8 || _sx > canvas.width + 8 ||
+                _sy + this.height < -8 || _sy > canvas.height + 8) return;
+
             if (this.type === 'goal') {
                 ctx.fillStyle = '#444';
                 ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -9264,6 +9280,28 @@
                 ctx.fillRect(this.x, this.y, this.width, 15);
                 return;
             }
+
+            // ── Eau : animée → pas de cache, rendu direct ─────────────────
+            if (this.surface === 'water') {
+                this._drawSurface(ctx);
+                return;
+            }
+
+            // ── Surfaces statiques : cache offscreen (dessiné une seule fois) ──
+            if (!this._cache) {
+                const _oc = document.createElement('canvas');
+                _oc.width  = Math.max(1, this.width);
+                _oc.height = Math.max(1, this.height);
+                const _c = _oc.getContext('2d');
+                _c.translate(-this.x, -this.y); // coordonnées monde → locales
+                this._drawSurface(_c);
+                this._cache = _oc;
+            }
+            ctx.drawImage(this._cache, this.x, this.y);
+        }
+
+        // Rendu effectif — reçoit le contexte cible (ctx live ou offscreen)
+        _drawSurface(ctx) {
             const { x, y, width: W, height: H } = this;
 
             // ── Zones tileset : top (surface marchée) / mid (corps) / bottom (profond) ──

@@ -7787,8 +7787,8 @@
     // ── Coups critiques ───────────────────────────────────────────────────
     const CRIT_CHANCE        = 0.15; // 15 % de chance
     const CRIT_MULTIPLIER    = 2.0;
-    const PARRY_WINDOW_SKEL  = 50;  // frames de fenêtre de parade — squelette (~0.83s)
-    const PARRY_WINDOW_GOB   = 40;  // frames de fenêtre de parade — goblin (~0.67s)
+    const PARRY_WINDOW_SKEL  = 28;  // frames de fenêtre de parade — squelette (~0.47s)
+    const PARRY_WINDOW_GOB   = 22;  // frames de fenêtre de parade — goblin (~0.37s)
     const PARRY_STUN_FRAMES  = 200; // durée étourdissement (~3.3 s)
     const PARRY_RANGE        = 105; // portée de parade (px)
 
@@ -9874,7 +9874,7 @@
                 const b = it.blur * 2.5;
                 ctx.save();
                 ctx.beginPath(); ctx.rect(wx, wy, dw, dh); ctx.clip();
-                ctx.filter = `blur(${it.blur}px)`;
+                ctx.filter = it._blurStr || (it._blurStr = `blur(${it.blur}px)`);
                 ctx.drawImage(src, wx - b, wy - b, dw + b*2, dh + b*2);
                 ctx.filter = 'none';
                 ctx.restore();
@@ -10093,39 +10093,51 @@
     }
 
     // ── LIGHTING OVERLAY ──────────────────────────────────────────────────────
+    // Cache fill string pour l'overlay sombre (ne change que si globalLight change)
+    let _lightFillStr = '', _lightFillGl = -1;
+
     function _drawLightingOverlay() {
         const gl = currentLevelData?.globalLight ?? 1;
         if (gl >= 0.999) return;
         const torches = currentLevelData?.torches || [];
         const W = canvas.width, H = canvas.height;
         const now = performance.now();
-        // Réutiliser ou créer l'offscreen canvas
         if (!_lightOff || _lightOff.width !== W || _lightOff.height !== H) {
             _lightOff = document.createElement('canvas');
             _lightOff.width = W; _lightOff.height = H;
             _lightOc = _lightOff.getContext('2d');
         }
         const oc = _lightOc;
-
         const tmpl = _getLightTemplate();
 
-        // --- Pass 1 : overlay sombre avec trous via template pré-rendu ---
+        // Cache fill string (évite allocation de chaîne chaque frame)
+        if (_lightFillGl !== gl) { _lightFillStr = `rgba(0,4,18,${1 - gl})`; _lightFillGl = gl; }
+
+        // --- Pass 1 : overlay sombre ---
         oc.globalCompositeOperation = 'source-over';
         oc.globalAlpha = 1;
         oc.clearRect(0, 0, W, H);
-        oc.fillStyle = `rgba(0,4,18,${1 - gl})`;
+        oc.fillStyle = _lightFillStr;
         oc.fillRect(0, 0, W, H);
         oc.globalCompositeOperation = 'destination-out';
-        torches.forEach(t => {
+
+        // Pré-calcul flicker une seule fois par torche (évite double appel)
+        const _tLen = torches.length;
+        for (let _ti = 0; _ti < _tLen; _ti++) {
+            const t = torches[_ti];
             const fl = _torchFlicker(t.x, t.y, now);
             const sx = t.x - cameraX + shakeOffsetX;
             const sy = t.y - cameraY + shakeOffsetY;
             const r  = (t.radius ?? 200) * (1 + fl * 0.07);
-            // Culling : torche hors écran
-            if (sx + r < 0 || sx - r > W || sy + r < 0 || sy - r > H) return;
-            oc.globalAlpha = Math.min(1, (t.intensity ?? 0.85) * (1 + fl * 0.10));
+            if (sx + r < 0 || sx - r > W || sy + r < 0 || sy - r > H) {
+                t._fl = -1; continue; // marqué hors-écran
+            }
+            const intensity = Math.min(1, (t.intensity ?? 0.85) * (1 + fl * 0.10));
+            t._fl = fl; t._sx = sx; t._sy = sy; t._r = r; t._intensity = intensity;
+            oc.globalAlpha = intensity;
             oc.drawImage(tmpl, sx - r, sy - r, r * 2, r * 2);
-        });
+        }
+
         // Halo joueur
         if (player) {
             const px = player.x - cameraX + shakeOffsetX;
@@ -10137,20 +10149,26 @@
         oc.globalAlpha = 1;
         ctx.drawImage(_lightOff, 0, 0);
 
-        // --- Pass 2 : teinture colorée via template coloré pré-rendu ---
+        // --- Pass 2 : teinture colorée (réutilise les valeurs pré-calculées) ---
         ctx.save();
-        torches.forEach(t => {
-            const fl = _torchFlicker(t.x, t.y, now);
-            const sx = t.x - cameraX + shakeOffsetX;
-            const sy = t.y - cameraY + shakeOffsetY;
-            const r  = (t.radius ?? 200) * (1 + fl * 0.07) * 0.65;
-            if (sx + r < 0 || sx - r > W || sy + r < 0 || sy - r > H) return;
-            ctx.globalAlpha = Math.min(1, (t.intensity ?? 0.85) * (1 + fl * 0.10)) * 0.28;
-            ctx.drawImage(_getColorTemplate(t.color), sx - r, sy - r, r * 2, r * 2);
-        });
+        for (let _ti = 0; _ti < _tLen; _ti++) {
+            const t = torches[_ti];
+            if (t._fl === -1) continue; // hors-écran, skip
+            const r2 = t._r * 0.65;
+            ctx.globalAlpha = t._intensity * 0.28;
+            ctx.drawImage(_getColorTemplate(t.color), t._sx - r2, t._sy - r2, r2 * 2, r2 * 2);
+        }
         ctx.globalAlpha = 1;
         ctx.restore();
     }
+
+    // --- Caches DOM et constantes extraits de la boucle principale ---
+    let _glCdBar = null, _glCdIcon = null, _glHintEl = null;
+    const _ABILITY_ICONS = {
+        'Chevalier Classique':'⚔️','Rôdeur Sylvestre':'🏹','Chevalier Noir':'🩸',
+        'Paladin Doré':'✨','Valkyrie Écarlate':'🔱','Chasseresse des Bois':'🌿',
+        'Ombre Maudite':'👁','Séraphin Céleste':'🌟'
+    };
 
     // --- BOUCLE PRINCIPALE ---
     function gameLoop() {
@@ -10160,32 +10178,30 @@
             player.update(platforms);
 
             // Mise à jour HUD capacité spéciale (charge par hits)
-            const abilityIcons = {
-                'Chevalier Classique':'⚔️','Rôdeur Sylvestre':'🏹','Chevalier Noir':'🩸',
-                'Paladin Doré':'✨','Valkyrie Écarlate':'🔱','Chasseresse des Bois':'🌿',
-                'Ombre Maudite':'👁','Séraphin Céleste':'🌟'
-            };
-            const cdBar = document.getElementById('abilityCooldownBar');
-            const cdIcon = document.getElementById('abilityIcon');
-            if (cdBar && cdIcon) {
+            if (!_glCdBar) { _glCdBar = document.getElementById('abilityCooldownBar'); }
+            if (!_glCdIcon) { _glCdIcon = document.getElementById('abilityIcon'); }
+            if (_glCdBar && _glCdIcon) {
                 const pct = player.abilityCharge / player.abilityMaxCharge;
-                cdBar.style.width = (pct * 100) + '%';
+                _glCdBar.style.width = (pct * 100) + '%';
                 const ready = pct >= 1;
-                cdBar.style.background = ready ? '#00e5ff' : '#2a5566';
-                cdBar.style.boxShadow = ready ? '0 0 6px #00e5ff' : 'none';
-                cdIcon.innerText = abilityIcons[player.skin.name] || '✨';
-                cdIcon.style.opacity = ready ? '1' : '0.45';
+                _glCdBar.style.background = ready ? '#00e5ff' : '#2a5566';
+                _glCdBar.style.boxShadow = ready ? '0 0 6px #00e5ff' : 'none';
+                _glCdIcon.innerText = _ABILITY_ICONS[player.skin.name] || '✨';
+                _glCdIcon.style.opacity = ready ? '1' : '0.45';
             }
-            
-            enemies = enemies.filter(enemy => enemy.state !== 'DEAD'); 
-            enemies.forEach(enemy => enemy.update(platforms, player));
+
+            // Ennemis : purge + update en une seule passe (évite filter() allocation)
+            for (let _ei = enemies.length - 1; _ei >= 0; _ei--) {
+                if (enemies[_ei].state === 'DEAD') { enemies.splice(_ei, 1); continue; }
+                enemies[_ei].update(platforms, player);
+            }
 
             coins.forEach(c => c.update());
             items.forEach(i => i.update());
 
             // ── ARMES AU SOL : update + ramassage ──────────────────────
             player._nearDroppedWeapon = null;
-            const _hintEl = document.getElementById('weaponPickupHint');
+            if (!_glHintEl) { _glHintEl = document.getElementById('weaponPickupHint'); }
             let _showHint = false;
             droppedWeapons.forEach(dw => {
                 dw.update(platforms);
@@ -10200,19 +10216,22 @@
                         player._nearDroppedWeapon = dw;
                         const icon = WEAPON_DATA[dw.weaponId]?.icon || '⚔️';
                         const name = WEAPON_DATA[dw.weaponId]?.name || dw.weaponId;
-                        if (_hintEl) { _hintEl.innerHTML = `${icon} <b>${name}</b> — <kbd style="background:#1a252f;border:1px solid #2980b9;padding:1px 5px;border-radius:3px;font-family:monospace">E</kbd> pour échanger`; _showHint = true; }
+                        if (_glHintEl) { _glHintEl.innerHTML = `${icon} <b>${name}</b> — <kbd style="background:#1a252f;border:1px solid #2980b9;padding:1px 5px;border-radius:3px;font-family:monospace">E</kbd> pour échanger`; _showHint = true; }
                     }
                 }
             });
-            droppedWeapons = droppedWeapons.filter(dw => !dw._collected);
+            for (let _di = droppedWeapons.length - 1; _di >= 0; _di--) {
+                if (droppedWeapons[_di]._collected) droppedWeapons.splice(_di, 1);
+            }
 
             // ── Objets interactifs (coffres, panneaux) ─────────────────
+            if (!_glHintEl) { _glHintEl = document.getElementById('weaponPickupHint'); }
             const _justInteractNow = keys.interact && !player._lastInteract;
             levelInteractables.forEach(it => {
                 if (it.used) return;
                 const dist = Math.hypot((player.x + 25) - it.x, (player.y + 25) - it.y);
                 if (dist < 55) {
-                    if (_hintEl) { _hintEl.innerHTML = `${it.type==='sign'?'📜':'📦'} <b>${it.label}</b> — <kbd style="background:#1a1a1a;border:1px solid #c8841a;padding:1px 5px;border-radius:3px;font-family:monospace">E</kbd> pour interagir`; _showHint = true; }
+                    if (_glHintEl) { _glHintEl.innerHTML = `${it.type==='sign'?'📜':'📦'} <b>${it.label}</b> — <kbd style="background:#1a1a1a;border:1px solid #c8841a;padding:1px 5px;border-radius:3px;font-family:monospace">E</kbd> pour interagir`; _showHint = true; }
                     if (_justInteractNow) {
                         it.used = true;
                         if (it.type === 'weapon_chest') {
@@ -10228,14 +10247,14 @@
                 }
             });
 
-            if (_hintEl) _hintEl.style.display = _showHint ? 'block' : 'none';
+            if (_glHintEl) _glHintEl.style.display = _showHint ? 'block' : 'none';
 
             // ── Revive partenaire (coop) ──────────────────────────────
             if (remotePlayer.visible && remotePlayer.downed && !player.downed) {
                 const _rdist = Math.hypot((player.x + 25) - (remotePlayer.x + 25), (player.y + 25) - (remotePlayer.y + 25));
-                const _hintRevive = document.getElementById('weaponPickupHint');
+                if (!_glHintEl) { _glHintEl = document.getElementById('weaponPickupHint'); }
                 if (_rdist < 80) {
-                    if (_hintRevive) { _hintRevive.innerHTML = `💀 <b>${remotePlayer.pseudo || 'Partenaire'}</b> — <kbd style="background:#1a1a1a;border:1px solid #c49a20;padding:1px 5px;border-radius:3px;font-family:monospace">E</kbd> pour ranimer`; _hintRevive.style.display = 'block'; }
+                    if (_glHintEl) { _glHintEl.innerHTML = `💀 <b>${remotePlayer.pseudo || 'Partenaire'}</b> — <kbd style="background:#1a1a1a;border:1px solid #c49a20;padding:1px 5px;border-radius:3px;font-family:monospace">E</kbd> pour ranimer`; _glHintEl.style.display = 'block'; }
                     if (keys.interact) {
                         keys.interact = false;
                         socket.emit('game-event', { type: 'revive-partner', roomCode });
@@ -10247,29 +10266,39 @@
                 endGame(false);
             }
 
-            // Mise à jour des effets de sang
+            // Mise à jour des effets de sang — boucles inverses (pas d'allocation filter)
             if (floorBloods.length > 20) floorBloods.splice(0, floorBloods.length - 20);
-            floorBloods.forEach(fb => fb.update());
-            floorBloods = floorBloods.filter(fb => fb.life > 0);
+            for (let _i = floorBloods.length - 1; _i >= 0; _i--) {
+                floorBloods[_i].update();
+                if (floorBloods[_i].life <= 0) floorBloods.splice(_i, 1);
+            }
             if (wallBloods.length > 12) wallBloods.splice(0, wallBloods.length - 12);
-            wallBloods.forEach(wb => wb.update());
-            wallBloods = wallBloods.filter(wb => wb.life > 0);
+            for (let _i = wallBloods.length - 1; _i >= 0; _i--) {
+                wallBloods[_i].update();
+                if (wallBloods[_i].life <= 0) wallBloods.splice(_i, 1);
+            }
             if (ceilingBloods.length > 8) ceilingBloods.splice(0, ceilingBloods.length - 8);
-            ceilingBloods.forEach(cb => cb.update());
-            ceilingBloods = ceilingBloods.filter(cb => cb.life > 0);
-            
+            for (let _i = ceilingBloods.length - 1; _i >= 0; _i--) {
+                ceilingBloods[_i].update();
+                if (ceilingBloods[_i].life <= 0) ceilingBloods.splice(_i, 1);
+            }
             if (bloodDrops.length > 60) bloodDrops.splice(0, bloodDrops.length - 60);
-            bloodDrops.forEach(bd => bd.update(platforms));
-            bloodDrops = bloodDrops.filter(bd => bd.life > 0);
-            
-            hitEffects.forEach(he => he.update());
-            hitEffects = hitEffects.filter(he => he.life > 0);
-
-            damageNumbers.forEach(dn => dn.update());
-            damageNumbers = damageNumbers.filter(dn => dn.life > 0);
-
-            decapHeads.forEach(dh => dh.update(platforms));
-            decapHeads = decapHeads.filter(dh => dh.life > 0);
+            for (let _i = bloodDrops.length - 1; _i >= 0; _i--) {
+                bloodDrops[_i].update(platforms);
+                if (bloodDrops[_i].life <= 0) bloodDrops.splice(_i, 1);
+            }
+            for (let _i = hitEffects.length - 1; _i >= 0; _i--) {
+                hitEffects[_i].update();
+                if (hitEffects[_i].life <= 0) hitEffects.splice(_i, 1);
+            }
+            for (let _i = damageNumbers.length - 1; _i >= 0; _i--) {
+                damageNumbers[_i].update();
+                if (damageNumbers[_i].life <= 0) damageNumbers.splice(_i, 1);
+            }
+            for (let _i = decapHeads.length - 1; _i >= 0; _i--) {
+                decapHeads[_i].update(platforms);
+                if (decapHeads[_i].life <= 0) decapHeads.splice(_i, 1);
+            }
 
             let targetCameraX = player.x - canvas.width / 3;
             let targetCameraY = player.y - canvas.height / 1.5; 

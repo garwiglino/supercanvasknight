@@ -496,6 +496,8 @@ let activeIntPayload = 'sword';
 let activeSVGLayer = 'background';
 let activeSVGSpeedX = 0.15;
 let activeSVGSpeedY = 0.0;
+const SVG_LAYER_OPACITY = { background: 0.65, midground: 0.85, foreground: 1.0 };
+let activeSVGOpacity = SVG_LAYER_OPACITY['background'];
 let pendingSVG = null;        // { dataUrl, img, name }
 let layerVis = { background: true, midground: true, foreground: true, gameplay: true };
 let selected  = null;         // { type, obj, layer? }
@@ -627,7 +629,7 @@ function drawParallax(layer) {
         if (!img || !img.complete || !img.naturalWidth) return;
         const w = img.naturalWidth * it.scale, h = img.naturalHeight * it.scale;
         ctx.save();
-        ctx.globalAlpha = layer === 'background' ? 0.65 : layer === 'midground' ? 0.8 : 0.9;
+        ctx.globalAlpha = it.opacity ?? SVG_LAYER_OPACITY[layer] ?? 1;
         ctx.drawImage(img, it.x, it.y, w, h);
         // Layer indicator badge
         const bx = it.x, by = it.y - 14/cam.zoom;
@@ -1182,7 +1184,8 @@ function onMD(e) {
     } else if (tool === 'svg') {
         if (pendingSVG) {
             const it = { id:uid(), name:pendingSVG.name, dataUrl:pendingSVG.dataUrl,
-                x:snp(wp.x), y:snp(wp.y), scale:1, speedX:activeSVGSpeedX, speedY:activeSVGSpeedY };
+                x:snp(wp.x), y:snp(wp.y), scale:1, speedX:activeSVGSpeedX, speedY:activeSVGSpeedY,
+                opacity: activeSVGOpacity };
             saveState();
             level.parallax[activeSVGLayer].push(it);
             svgCache[it.id] = pendingSVG.img;
@@ -1517,9 +1520,10 @@ function updateToolUI() {
     } else if (tool==='svg') {
         c.innerHTML = `<button class="btn" onclick="document.getElementById('svgFileInput').click()" style="width:100%;margin-bottom:6px">📁 Importer SVG</button>`
             + (pendingSVG ? `<p style="font-size:11px;color:#44ff88;margin-bottom:6px">✓ ${pendingSVG.name} — clic sur le canvas</p>` : `<p class="hint" style="margin-bottom:6px">Importer puis cliquer</p>`)
-            + `<div class="prow"><label>Couche</label><select onchange="activeSVGLayer=this.value" style="flex:1">`
+            + `<div class="prow"><label>Couche</label><select id="svgLayerSel" onchange="activeSVGLayer=this.value;activeSVGOpacity=SVG_LAYER_OPACITY[this.value]??1;document.getElementById('svgOpacityIn').value=activeSVGOpacity;document.getElementById('svgOpacityPct').textContent=Math.round(activeSVGOpacity*100)+'%'" style="flex:1">`
             + LAYERS.map(l=>`<option value="${l}" ${activeSVGLayer===l?'selected':''}>${l}</option>`).join('')
             + `</select></div>`
+            + `<div class="prow"><label>Opacité</label><input type="range" id="svgOpacityIn" min="0" max="1" step="0.05" value="${activeSVGOpacity}" oninput="activeSVGOpacity=+this.value;document.getElementById('svgOpacityPct').textContent=Math.round(this.value*100)+'%'" style="flex:1"><span id="svgOpacityPct" style="font-size:10px;min-width:32px;text-align:right;color:#8888aa">${Math.round(activeSVGOpacity*100)}%</span></div>`
             + `<div class="prow"><label>Vitesse X</label><input type="number" step="0.05" min="0" max="2" value="${activeSVGSpeedX}" onchange="activeSVGSpeedX=+this.value" style="flex:1"></div>`
             + `<div class="prow"><label>Vitesse Y</label><input type="number" step="0.05" min="0" max="2" value="${activeSVGSpeedY}" onchange="activeSVGSpeedY=+this.value" style="flex:1"></div>`;
     } else if (tool==='torch') {
@@ -1611,6 +1615,9 @@ function updateProps() {
         h += `<div class="prop-row"><label>Échelle</label><input type="number" value="${o.scale||1}" step="0.1" min="0.05" style="flex:1" onchange="saveState();selected.obj.scale=+this.value||1;render()"></div>`;
         h += `<div class="prop-row"><label>Couche</label><select onchange="moveSVGLayer(this.value)" style="flex:1">`
             + LAYERS.map(l=>`<option value="${l}" ${layer===l?'selected':''}>${l}</option>`).join('') + `</select></div>`;
+        h += `<div class="prop-row"><label>Opacité</label><input type="range" min="0" max="1" step="0.05" value="${o.opacity??SVG_LAYER_OPACITY[layer]??1}" style="flex:1"
+            oninput="saveState();selected.obj.opacity=+this.value;render()">
+            <span style="font-size:10px;min-width:32px;color:#8888aa">${Math.round((o.opacity??SVG_LAYER_OPACITY[layer]??1)*100)}%</span></div>`;
         h += `<div class="prop-row"><label>Vit. X</label><input type="number" value="${o.speedX||0}" step="0.05" min="0" max="2" style="flex:1" onchange="saveState();selected.obj.speedX=+this.value;render()"></div>`;
         h += `<div class="prop-row"><label>Vit. Y</label><input type="number" value="${o.speedY||0}" step="0.05" min="0" max="2" style="flex:1" onchange="saveState();selected.obj.speedY=+this.value;render()"></div>`;
     } else if (type==='torch') {
@@ -1648,7 +1655,9 @@ function moveSVGLayer(nl) {
     saveState();
     level.parallax[selected.layer] = level.parallax[selected.layer].filter(i=>i!==selected.obj);
     level.parallax[nl].push(selected.obj);
-    selected.layer = nl; render();
+    // Proposer l'opacité par défaut de la nouvelle couche si l'objet n'en a pas encore
+    if (selected.obj.opacity === undefined) selected.obj.opacity = SVG_LAYER_OPACITY[nl] ?? 1;
+    selected.layer = nl; render(); updateProps();
 }
 
 // ─── STATUS ───────────────────────────────────────────────────────────────────

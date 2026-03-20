@@ -9829,13 +9829,16 @@
     function _drawParallaxLayer(layer) {
         const its = currentLevelData?.parallax?.[layer];
         if (!its?.length) return;
+        ctx.save();
         its.forEach(it => {
             const img = _parallaxImgs[it.dataUrl];
             if (!img?.complete || !img.naturalWidth) return;
             const wx = it.x + cameraX * (1 - (it.speedX ?? 0.2));
             const wy = it.y + cameraY * (1 - (it.speedY ?? 0));
+            ctx.globalAlpha = it.opacity ?? 1;
             ctx.drawImage(img, wx, wy, img.naturalWidth * (it.scale||1), img.naturalHeight * (it.scale||1));
         });
+        ctx.restore();
     }
 
     // ── Objet interactif de niveau (coffres, panneaux) ─────────────────────────
